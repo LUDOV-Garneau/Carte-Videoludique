@@ -1,0 +1,12 @@
+@import './base.css';
+
+#app,
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+.map-container {
+  height: 100vh;
+}
