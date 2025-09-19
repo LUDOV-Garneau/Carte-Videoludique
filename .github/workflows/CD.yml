@@ -61,38 +61,33 @@ jobs:
     defaults:
       run:
         working-directory: api
+    env:
+    # on mappe les secrets vers des env vars
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
     steps:
     - uses: actions/checkout@v4
 
-    # Court-circuit si les secrets Vercel ne sont pas définis
+    # Skip propre si un secret manque
     - name: Skip if Vercel secrets missing
-    # si un des secrets manque -> on affiche un msg et on arrête le job
-      if: ${{ !(secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID) }}
+      if: ${{ env.VERCEL_TOKEN == '' || env.VERCEL_ORG_ID == '' || env.VERCEL_PROJECT_ID == '' }}
       run: |
         echo "Skipping backend deploy: Vercel secrets not set."
         exit 0
 
     - uses: actions/setup-node@v4
-      if: ${{ secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID }}
       with:
         node-version: 20
         cache: npm
         cache-dependency-path: api/package-lock.json
 
     - run: npm ci
-      if: ${{ secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID }}
 
     - name: Vercel pull (project settings)
-      if: ${{ secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID }}
-      env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       run: npx vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
 
     - name: Deploy to Vercel (production)
-      if: ${{ secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID }}
-      env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       run: npx vercel --prod --yes --token "$VERCEL_TOKEN"
 
