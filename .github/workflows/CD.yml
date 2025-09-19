@@ -13,11 +13,11 @@ permissions:
 concurrency:
   group: "pages"
   cancel-in-progress: true
-  
+
 jobs:
-# ==========================
-# Build & deploy Front
-# ==========================
+  # ==========================
+  # Build & deploy Front
+  # ==========================
   build-frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -25,15 +25,17 @@ jobs:
         working-directory: public
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: public/package-lock.json
-          
+
       - run: npm ci
       - run: npm run build
-      # ⚠️ Utile si tu ajoutes Vue Router en "history mode" plus tard
+
+      # Utile si Vue Router en "history mode"
       - name: SPA fallback (404.html)
         run: cp dist/index.html dist/404.html || true
 
@@ -52,29 +54,33 @@ jobs:
         uses: actions/deploy-pages@v4
 
   # =====================
-  # BUILD & TEST BACKEND
+  # BUILD & DEPLOY BACKEND (Vercel si secrets présents)
   # =====================
   backend:
-    if: ${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_ORG_ID != '' && secrets.VERCEL_PROJECT_ID != '' }}
+    if: ${{ secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID }}
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: api
     steps:
-     - uses: actions/checkout@v4
-     - uses: actions/setup-node@v4
-       with:
-         node-version: 20
-         cache: npm
-         cache-dependency-path: api/package-lock.json
-     - run: npm ci
-     - name: Vercel pull
-       env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-       run: npx vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
-     - name: Deploy to Vercel
-       env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-       run: npx vercel --prod --yes --token "$VERCEL_TOKEN"
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - run: npm ci
+
+      - name: Vercel pull (project settings)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+
+      - name: Deploy to Vercel (production)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel --prod --yes --token "$VERCEL_TOKEN"
