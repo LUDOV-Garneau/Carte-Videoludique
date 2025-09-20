@@ -20,6 +20,7 @@ jobs:
   # ==========================
   build-frontend:
     runs-on: ubuntu-latest
+    environment: vercel
     defaults:
       run:
         working-directory: public
