@@ -55,7 +55,7 @@ onMounted(() => {
       btn.setAttribute('role', 'button')
       btn.setAttribute('aria-label', 'Ajouter un marqueur')
       // btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>'
-      btn.innerHTML = '<span aria-hidden="true">+</span><span class="sr-only">Ajouter un marqueur</span>';
+      btn.innerHTML = '<span aria-hidden="true"> + </span><span class="sr-only">Ajouter un marqueur</span>';
 
       L.DomEvent.disableClickPropagation(container)
       L.DomEvent.disableScrollPropagation(container)
@@ -88,6 +88,27 @@ onUnmounted(() => {
   width: 100%;
   /* 100vh si tu veux plein écran, sinon fixe une hauteur : */
   height: 100vh;
+}
+
+.leaflet-control-custom {
+
+}
+.btn-ajout-marqueur {
+  background-color: white;
+  border: 2px solid #4CAF50;
+  color: #4CAF50;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-ajout-marqueur:hover {
+  background-color: #4CAF50;
+  color: white;
 }
 
 </style>
