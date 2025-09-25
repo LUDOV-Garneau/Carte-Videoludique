@@ -10,7 +10,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"No tests yet\" && exit 0",
+    "test": "vitest",
     "start": "nodemon app.js"
   },
   "repository": {
@@ -22,6 +22,8 @@
   "bugs": {
     "url": "https://github.com/LUDOV-Garneau/Carte-Videoludique/issues"
   },
-  "homepage": "https://github.com/LUDOV-Garneau/Carte-Videoludique#readme"
-  
+  "homepage": "https://github.com/LUDOV-Garneau/Carte-Videoludique#readme",
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
 }

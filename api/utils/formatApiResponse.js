@@ -1,3 +1,4 @@
+'use strict';
 /**
  * Génère une réponse d'erreur formatée pour une API REST selon OpenAPI
  *
