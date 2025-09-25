@@ -10,7 +10,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"No tests yet\" && exit 0",
+    "test": "vitest",
     "start": "nodemon app.js"
   },
   "repository": {
