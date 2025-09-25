@@ -8,10 +8,16 @@ const adminController = require("../controllers/adminController");
 
 
 // GET => /admins/:adminId
-router.get("/admins/:adminId", adminController.getAdmin);
+router.get("/admins/:adminId", adminController.getAdmin); //À Faire
 
-// GET => /admins/:admin
-router.get("/admins", adminController.getAdmins);
+// GET => /admins
+router.get("/admins", adminController.getAdmins); //À Faire
+
+// POST => /signup
+router.post("/signup", adminController.signup);
+
+// POST => /login
+router.post("/login", adminController.login);
 
 
 module.exports = router;
