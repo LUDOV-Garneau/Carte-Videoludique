@@ -1,6 +1,6 @@
 "use strict";
 
-const {formatErrorResponse} = require('../utils/formatApiResponse.js'); // Import de la fonction utilitaire
+const {formatErrorResponse} = require('../utils/formatErrorResponse.js'); // Import de la fonction utilitaire
 
 exports.get404 = (req, res, next) => {
   res.status(404).json(formatErrorResponse(

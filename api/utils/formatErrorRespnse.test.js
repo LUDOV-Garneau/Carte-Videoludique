@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatErrorResponse, formatSuccessResponse } from './utils/formatApiResponse'
+import { formatErrorResponse, formatSuccessResponse } from './utils/formatErrorResponse'
 
 describe('formatApiResponse utils', () => {
   it('formatErrorResponse retourne un objet structuré', () => {
