@@ -30,7 +30,7 @@ app.use(express.json());
 
 // Importe les routes
 // const authRoutes = require("./routes/auth");
-// const utilisateurRoutes = require("./routes/utilisateur");
+// const adminRoutes = require("./routes/admin");
 // const tableauRoutes = require("./routes/tableau");
 // const listeRoutes = require("./routes/liste");
 // const carteRoutes = require("./routes/carte");
