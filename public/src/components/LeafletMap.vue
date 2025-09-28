@@ -175,87 +175,79 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="map-wrap">
-    <div class="map" ref="mapEl"></div>
-    <!-- Panneau overlay -->
-    <transition name="panel-fade">
-      <aside
-        v-if="panelOpen"
-        class="panel"
-        role="dialog"
-        aria-label="Ajouter un lieu"
-      >
-        <header class="panel__header">
-          <h3>Ajouter un lieu</h3>
-          <button class="panel__close" @click="closePanel" aria-label="Fermer">
-            ×
-          </button>
-        </header>
+  <div class="map" ref="mapEl"></div>
+  <!-- Panneau overlay -->
+  <transition name="panel-fade">
+    <aside
+      v-if="panelOpen"
+      class="panel"
+      role="dialog"
+      aria-label="Ajouter un lieu"
+    >
+      <header class="panel__header">
+        <h3>Ajouter un lieu</h3>
+        <button class="panel__close" @click="closePanel" aria-label="Fermer">
+          ×
+        </button>
+      </header>
 
-        <div class="panel__body">
-          <!-- Placeholders pour ressembler à l’image -->
-          <form class="form" @submit.prevent="sendRequest">
-            <div class="form-group">
-              <label for="lng">Longitude</label>
-              <input type="number" id="lng" v-model.trim.number="form.lng" placeholder="Longitude" inputmode="decimal" min="-180" max="180" class="form-inputText"/>
-              <span class="error" v-if="formErrors.lng">{{ formErrors.lng }}</span>
-            </div>
-            <div class="form-group">
-              <label for="lat">Latitude</label>
-              <input type="number" id="lat" v-model.trim.number="form.lat" placeholder="Latitude" inputmode="decimal" min="-90" max="90" class="form-inputText"/>
-              <span class="error" v-if="formErrors.lat">{{ formErrors.lat }}</span>
-            </div>
-            <div class="form-group">
-              <label for="adresse">Adresse</label>
-              <input type="text" id="adresse" v-model.trim="form.adresse" placeholder="Adresse" class="form-inputText"/>
-              <span class="error" v-if="formErrors.adresse">{{ formErrors.adresse }}</span>
-            </div>
-            <div class="form-group">
-              <label for="titre">Titre <span class="required">*</span></label>
-              <input type="text" id="titre" v-model.trim="form.titre" placeholder="Titre" class="form-inputText"/>
-              <span class="error" v-if="formErrors.titre">{{ formErrors.titre }}</span>
-            </div>
-            <div class="form-group">
-              <label for="type">Type</label>
-            </div>
-            <div class="form-group">
-              <label for="description">Description <span class="required">*</span></label>
-              <input type="text" id="description" v-model.trim="form.description" placeholder="Description" class="form-inputText"/>
-              <span class="error" v-if="formErrors.description">{{ formErrors.description }}</span>
-            </div>
-            <div class="form-group">
-              <label for="nom">Nom</label>
-              <input type="text" id="nom" v-model.trim="form.nom" placeholder="Nom" class="form-inputText"/>
-              <span class="error" v-if="formErrors.nom">{{ formErrors.nom }}</span>
-            </div>
-            <div class="form-group">
-              <label for="email">Courriel</label>
-              <input type="email" id="email" v-model.trim="form.email" placeholder="Courriel" class="form-inputText"/>
-              <span class="error" v-if="formErrors.email">{{ formErrors.email }}</span>
-            </div>
-            <div class="form-group">
-              <label for="souvenir">Souvenir</label>
-              <textarea id="souvenir" v-model.trim="form.souvenir" placeholder="Souvenir" class="form-textarea" rows="5"></textarea>
-              <span class="error" v-if="formErrors.souvenir">{{ formErrors.souvenir }}</span>
-            </div>
-            <div class="form-group form-submit">
-              <span class="error" v-if="formErrors.error">{{ formErrors.error }}</span>
-              <button type="submit" class="btn-submit">Envoyer</button>
-            </div>
-          </form>
-        </div>
-      </aside>
-    </transition>
-  </div>
+      <div class="panel__body">
+        <!-- Placeholders pour ressembler à l’image -->
+        <form class="form" @submit.prevent="sendRequest">
+          <div class="form-group">
+            <label for="lng">Longitude</label>
+            <input type="number" id="lng" v-model.trim.number="form.lng" placeholder="Longitude" inputmode="decimal" min="-180" max="180" class="form-inputText"/>
+            <span class="error" v-if="formErrors.lng">{{ formErrors.lng }}</span>
+          </div>
+          <div class="form-group">
+            <label for="lat">Latitude</label>
+            <input type="number" id="lat" v-model.trim.number="form.lat" placeholder="Latitude" inputmode="decimal" min="-90" max="90" class="form-inputText"/>
+            <span class="error" v-if="formErrors.lat">{{ formErrors.lat }}</span>
+          </div>
+          <div class="form-group">
+            <label for="adresse">Adresse</label>
+            <input type="text" id="adresse" v-model.trim="form.adresse" placeholder="Adresse" class="form-inputText"/>
+            <span class="error" v-if="formErrors.adresse">{{ formErrors.adresse }}</span>
+          </div>
+          <div class="form-group">
+            <label for="titre">Titre <span class="required">*</span></label>
+            <input type="text" id="titre" v-model.trim="form.titre" placeholder="Titre" class="form-inputText"/>
+            <span class="error" v-if="formErrors.titre">{{ formErrors.titre }}</span>
+          </div>
+          <div class="form-group">
+            <label for="type">Type</label>
+          </div>
+          <div class="form-group">
+            <label for="description">Description <span class="required">*</span></label>
+            <input type="text" id="description" v-model.trim="form.description" placeholder="Description" class="form-inputText"/>
+            <span class="error" v-if="formErrors.description">{{ formErrors.description }}</span>
+          </div>
+          <div class="form-group">
+            <label for="nom">Nom</label>
+            <input type="text" id="nom" v-model.trim="form.nom" placeholder="Nom" class="form-inputText"/>
+            <span class="error" v-if="formErrors.nom">{{ formErrors.nom }}</span>
+          </div>
+          <div class="form-group">
+            <label for="email">Courriel</label>
+            <input type="email" id="email" v-model.trim="form.email" placeholder="Courriel" class="form-inputText"/>
+            <span class="error" v-if="formErrors.email">{{ formErrors.email }}</span>
+          </div>
+          <div class="form-group">
+            <label for="souvenir">Souvenir</label>
+            <textarea id="souvenir" v-model.trim="form.souvenir" placeholder="Souvenir" class="form-textarea" rows="5"></textarea>
+            <span class="error" v-if="formErrors.souvenir">{{ formErrors.souvenir }}</span>
+          </div>
+          <div class="form-group form-submit">
+            <span class="error" v-if="formErrors.error">{{ formErrors.error }}</span>
+            <button type="submit" class="btn-submit">Envoyer</button>
+          </div>
+        </form>
+      </div>
+    </aside>
+  </transition>
 </template>
 
 <style scoped>
-.map-wrap {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  background: #111;
-}
 .map {
   position: absolute;
   inset: 0;
