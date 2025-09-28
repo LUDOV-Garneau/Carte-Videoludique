@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
+import { isValidEmail } from '../utils.js'
 import L from 'leaflet'
 
 // (Fix des icônes avec Vite)
@@ -25,7 +26,28 @@ let controlAjoutMarqueur
 let btnAjoutMarqueur
 
 const panelOpen = ref(false)
-const panelSide = ref('right')
+const form = ref({
+  lng: '',
+  lat: '',
+  titre: '',
+  description: '',
+  type: '',
+  nom: '',
+  email: '',
+  souvenir: '',
+  adresse: '',
+})
+const formErrors = ref({
+  lng: '',
+  lat: '',
+  titre: '',
+  description: '',
+  type: '',
+  nom: '',
+  email: '',
+  souvenir: '',
+  adresse: '',
+})
 
 function openPanel() {
   panelOpen.value = true
@@ -35,6 +57,15 @@ function openPanel() {
 function closePanel() {
   panelOpen.value = false
   if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = ''
+}
+
+function validateForm() {
+  let isValid = true
+
+}
+
+async function sendRequest() {
+
 }
 
 onMounted(() => {
@@ -108,7 +139,6 @@ onUnmounted(() => {
       <aside
         v-if="panelOpen"
         class="panel"
-        :class="panelSide"
         role="dialog"
         aria-label="Ajouter un lieu"
       >
@@ -121,24 +151,50 @@ onUnmounted(() => {
 
         <div class="panel__body">
           <!-- Placeholders pour ressembler à l’image -->
-          <form class="fake-form">
-            <label>Latitude :</label>
-            <input disabled placeholder="" />
-            <label>Longitude :</label>
-            <input disabled placeholder="" />
-            <label>Nom du lieu :</label>
-            <input disabled placeholder="" />
-            <label>Adresse :</label>
-            <input disabled placeholder="" />
-            <label>Description :</label>
-            <textarea disabled rows="3"></textarea>
-            <label>Anecdote lié à ce lieu</label>
-            <textarea disabled rows="3"></textarea>
-            <label>Nom :</label>
-            <input disabled placeholder="" />
-            <label>Votre adresse courriel :</label>
-            <input disabled placeholder="" />
-            <button type="button" disabled class="send">Envoyer</button>
+          <form class="form" @submit.prevent="sendRequest">
+            <div class="form-group">
+              <label for="lng">Longitude</label>
+              <input type="text" id="lng" v-model.trim.number="form.lng" placeholder="Longitude" class="form-inputText"/>
+              <span class="error" v-if="formErrors.lng">{{ formErrors.lng }}</span>
+            </div>
+            <div class="form-group">
+              <label for="lat">Latitude</label>
+              <input type="text" id="lat" v-model.trim.number="form.lat" placeholder="Latitude" class="form-inputText"/>
+              <span class="error" v-if="formErrors.lat">{{ formErrors.lat }}</span>
+            </div>
+            <div class="form-group">
+              <label for="adresse">Adresse</label>
+              <input type="text" id="adresse" v-model.trim="form.adresse" placeholder="Adresse" class="form-inputText"/>
+              <span class="error" v-if="formErrors.adresse">{{ formErrors.adresse }}</span>
+            </div>
+            <div class="form-group">
+              <label for="titre">Titre <span class="required">*</span></label>
+              <input type="text" id="titre" v-model.trim="form.titre" placeholder="Titre" class="form-inputText"/>
+              <span class="error" v-if="formErrors.titre">{{ formErrors.titre }}</span>
+            </div>
+            <div class="form-group">
+              <label for="type">Type</label>
+            </div>
+            <div class="form-group">
+              <label for="description">Description <span class="required">*</span></label>
+              <input type="text" id="description" v-model.trim="form.description" placeholder="Description" class="form-inputText"/>
+              <span class="error" v-if="formErrors.description">{{ formErrors.description }}</span>
+            </div>
+            <div class="form-group">
+              <label for="nom">Nom</label>
+              <input type="text" id="nom" v-model.trim="form.nom" placeholder="Nom" class="form-inputText"/>
+              <span class="error" v-if="formErrors.nom">{{ formErrors.nom }}</span>
+            </div>
+            <div class="form-group">
+              <label for="email">Courriel</label>
+              <input type="email" id="email" v-model.trim="form.email" placeholder="Courriel" class="form-inputText"/>
+              <span class="error" v-if="formErrors.email">{{ formErrors.email }}</span>
+            </div>
+            <div class="form-group">
+              <label for="souvenir">Souvenir</label>
+              <textarea id="souvenir" v-model.trim="form.souvenir" placeholder="Souvenir" class="form-textarea" rows="5"></textarea>
+              <span class="error" v-if="formErrors.souvenir">{{ formErrors.souvenir }}</span>
+            </div>
           </form>
         </div>
       </aside>
@@ -146,11 +202,11 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style>
+<style scoped>
 .map-wrap {
   position: relative;
   width: 100%;
-  height: 100vh; /* plein écran */
+  height: 100vh;
   background: #111;
 }
 .map {
@@ -163,18 +219,17 @@ onUnmounted(() => {
   position: absolute;
   top: 12px;
   bottom: 12px;
-  width: 320px;            /* ajuste selon besoin */
+  width: 320px;
   background: #f2f2f2;
   color: #111;
-  border: 2px solid #673ab7; /* contour mauve comme sur l’image */
+  border: 2px solid #4CAF50;
   border-radius: 4px;
-  z-index: 1000;           /* au-dessus des contrôles Leaflet */
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  right: 12px;
 }
-.panel.right { right: 12px; }
-.panel.left  { left: 12px; }
 
 .panel__header {
   display: flex;
@@ -209,32 +264,30 @@ onUnmounted(() => {
   overflow: auto;
 }
 
-/* Imitation visuelle du formulaire de l’image */
-.fake-form {
-  display: grid;
-  row-gap: 10px;
+/* Formulaire */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.fake-form label {
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-inputText {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   font-size: 14px;
 }
-.fake-form input,
-.fake-form textarea {
-  width: 100%;
-  background: #c7c7c7;
-  border: none;
-  border-radius: 8px;
-  height: 32px;
-  padding: 6px 10px;
-}
-.fake-form textarea { height: auto; padding-top: 8px; }
-.fake-form .send {
-  margin-top: 6px;
-  align-self: start;
-  background: #e5e5e5;
-  border: 1px solid #bbb;
-  border-radius: 8px;
-  padding: 6px 12px;
-  cursor: not-allowed;
+
+.form-textarea {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: none;
 }
 
 /* Transition simple (fade + léger slide) */
@@ -249,7 +302,7 @@ onUnmounted(() => {
 .leaflet-control-custom {
 
 }
-.leaflet-control-custom .btn-ajout-marqueur {
+:deep(.leaflet-control-custom .btn-ajout-marqueur) {
   background-color: white;
   border: 2px solid #4CAF50;
   color: #4CAF50;
@@ -262,7 +315,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.3s ease;
 }
-.btn-ajout-marqueur:hover {
+:deep(.btn-ajout-marqueur:hover) {
   background-color: #4CAF50;
   color: white;
 }
