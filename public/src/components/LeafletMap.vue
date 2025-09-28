@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { isValidEmail } from '../utils.js'
 import L from 'leaflet'
 
+
 // (Fix des icônes avec Vite)
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
