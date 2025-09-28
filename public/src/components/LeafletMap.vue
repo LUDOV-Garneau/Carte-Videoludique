@@ -47,6 +47,7 @@ const formErrors = ref({
   email: '',
   souvenir: '',
   adresse: '',
+  error: '',
 })
 
 function openPanel() {
@@ -61,11 +62,52 @@ function closePanel() {
 
 function validateForm() {
   let isValid = true
-
+  formErrors.value = {
+    lng: '',
+    lat: '',
+    titre: '',
+    description: '',
+    type: '',
+    nom: '',
+    email: '',
+    souvenir: '',
+    adresse: '',
+  }
+  // Vérif coordonnées complètes
+  if (!form.value.lng && form.value.lat || form.value.lng && !form.value.lat) {
+    formErrors.value.lng = 'La longitude et la latitude doivent être toutes les deux remplies ou laissées vides.'
+    formErrors.value.lat = 'La longitude et la latitude doivent être toutes les deux remplies ou laissées vides.'
+    isValid = false
+  }
+  // Vérif que minimum adresse ou coordonnées
+  if (!form.value.adresse && (!form.value.lng && !form.value.lat)) {
+    formErrors.value.error = 'Il faut fournir une adresse ou des coordonnées (longitude et latitude).'
+    isValid = false
+  }
+  // Vérif titre requis
+  if (!form.value.titre) {
+    formErrors.value.titre = 'Le titre est requis.'
+    isValid = false
+  }
+  // Vérif description requise
+  if (!form.value.description) {
+    formErrors.value.description = 'La description est requise.'
+    isValid = false
+  }
+  // Vérif email si rempli
+  if (form.value.email && !isValidEmail(form.value.email)) {
+    formErrors.value.email = 'Le courriel n’est pas valide.'
+    isValid = false
+  }
+  return isValid
 }
 
 async function sendRequest() {
-
+  try {
+    if (validateForm()) {
+      console.log('Envoi du formulaire')
+    }
+  } catch (err) {}
 }
 
 onMounted(() => {
@@ -154,12 +196,12 @@ onUnmounted(() => {
           <form class="form" @submit.prevent="sendRequest">
             <div class="form-group">
               <label for="lng">Longitude</label>
-              <input type="text" id="lng" v-model.trim.number="form.lng" placeholder="Longitude" class="form-inputText"/>
+              <input type="number" id="lng" v-model.trim.number="form.lng" placeholder="Longitude" inputmode="decimal" min="-180" max="180" class="form-inputText"/>
               <span class="error" v-if="formErrors.lng">{{ formErrors.lng }}</span>
             </div>
             <div class="form-group">
               <label for="lat">Latitude</label>
-              <input type="text" id="lat" v-model.trim.number="form.lat" placeholder="Latitude" class="form-inputText"/>
+              <input type="number" id="lat" v-model.trim.number="form.lat" placeholder="Latitude" inputmode="decimal" min="-90" max="90" class="form-inputText"/>
               <span class="error" v-if="formErrors.lat">{{ formErrors.lat }}</span>
             </div>
             <div class="form-group">
@@ -194,6 +236,10 @@ onUnmounted(() => {
               <label for="souvenir">Souvenir</label>
               <textarea id="souvenir" v-model.trim="form.souvenir" placeholder="Souvenir" class="form-textarea" rows="5"></textarea>
               <span class="error" v-if="formErrors.souvenir">{{ formErrors.souvenir }}</span>
+            </div>
+            <div class="form-group form-submit">
+              <span class="error" v-if="formErrors.error">{{ formErrors.error }}</span>
+              <button type="submit" class="btn-submit">Envoyer</button>
             </div>
           </form>
         </div>
@@ -260,8 +306,11 @@ onUnmounted(() => {
   color: white;
 }
 .panel__body {
-  padding: 12px;
+  padding: 12px 12px 0 12px;
   overflow: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Formulaire */
@@ -269,19 +318,22 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1;
 }
 .form-group {
   display: flex;
   flex-direction: column;
 }
-
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
 .form-inputText {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 14px;
 }
-
 .form-textarea {
   padding: 8px;
   border: 1px solid #ccc;
@@ -289,6 +341,36 @@ onUnmounted(() => {
   font-size: 14px;
   resize: none;
 }
+.error {
+  color: #D8000C;
+  font-size: 13px;
+  margin-top: 4px;
+}
+.btn-submit {
+  background-color: white;
+  color: #4CAF50;
+  padding: 10px;
+  border: 2px solid #4CAF50;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-top: 12px;
+}
+.btn-submit:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+.form-submit {
+  position: sticky;
+  bottom: 0;
+  background: #f2f2f2;
+  padding: 12px 0;
+  margin-top: auto;
+  border-top: 1px solid #ddd;
+}
+
 
 /* Transition simple (fade + léger slide) */
 .panel-fade-enter-active,
@@ -299,9 +381,6 @@ onUnmounted(() => {
 .panel.left.panel-fade-leave-to { transform: translateX(-8px); }
 
 /* ---------- Contrôle Leaflet custom ---------- */
-.leaflet-control-custom {
-
-}
 :deep(.leaflet-control-custom .btn-ajout-marqueur) {
   background-color: white;
   border: 2px solid #4CAF50;
