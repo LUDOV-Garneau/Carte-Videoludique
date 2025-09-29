@@ -2,8 +2,8 @@
 //const {formatErrorResponse, formatSuccessResponse} = require('../utils/formatApiResponse');
 'use strict';
 
-const jwt = require("jsonwebtoken"); // à installer
-const bcrypt = require("bcrypt"); // à installer
+const jwt = require("jsonwebtoken"); 
+const bcrypt = require("bcrypt"); 
 const dotenv = require("dotenv");
 dotenv.config();
 //const url_base = process.env.URL + ":" + process.env.PORT;
@@ -11,11 +11,11 @@ dotenv.config();
 const Admin = require("../models/admin");
 
 /**
- * Fonction permettant de créer un admin
+ * Fonction permettant de créer un administrateur
  * @param {*} req - L'objet de requête Express.
  * @param {*} res - L'objet de réponse Express.
  * @param {*} next - La fonction middleware suivante
- * @returns - retourne un utilisateur crée
+ * @returns - retourne un administrateur crée
  */
 exports.signup = async(req, res, next) => {
     const { nom,prenom, courriel, mdp,mdp2 } = req.body;
@@ -42,15 +42,14 @@ exports.signup = async(req, res, next) => {
       if (adminExistant) {
         return res.status(409).json({
           status: "Conflict",
-          message: "Un utilisateur avec ce courriel existe déjà.",
+          message: "Un administrateur avec ce courriel existe déjà.",
           path: req.originalUrl,
           timestamp: new Date().toISOString(),
         });
       }
-      
-          // Encryption du mot de passe
+        // Encryption du mot de passe
           const hashedPassword = await bcrypt.hash(mdp, 12);
-          // Création d'un nouvel utilisateur
+          // Création d'un nouvel administrateur
           const admin = new Admin({
           nom: nom,
           prenom: prenom,
@@ -61,7 +60,7 @@ exports.signup = async(req, res, next) => {
           await admin.save();
           return res.status(201).json({
             status: "Succès",
-            message: "Utilisateur créé !",
+            message: "Adminitrateur créé !",
             data:admin,
             timestamp: new Date().toISOString()
           });
@@ -106,10 +105,9 @@ exports.login = async (req, res, next) => {
           courriel: admin.courriel,
           nom: admin.nom,
           prenom:admin.prenom,
-
           id: admin.id,
         },
-        process.env.SECRET_JWT, // why do I have this error??
+        process.env.SECRET_JWT,
         { expiresIn: "24h" }
       );
   
@@ -117,6 +115,63 @@ exports.login = async (req, res, next) => {
     } catch (err) {
       next(err);
     }
+};
+
+/**
+ * Fonction permettant de récupérer tout les administrateurs
+ * @param {*} req - L'objet de requête Express. 
+ * @param {*} res - L'objet de réponse Express.
+ * @param {*} next - La fonction middleware suivante 
+ * @returns - retourne les administrateurs récupérés
+ */
+exports.getAdmins = async (req, res, next) => {
+    try {
+        const admins = await Admin.find();
+        return res.status(200).json({
+          status: "succès",
+          message: "Les administrateurs ont été récupérés",
+          data: admins,
+          path: req.originalUrl,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (err) {
+        next(err);
+      }
+};
+
+/**
+ * Fonction permettant de récupérer un administrateur
+ * @param {*} req - L'objet de requête Express. 
+ * @param {*} res - L'objet de réponse Express.
+ * @param {*} next - La fonction middleware suivante 
+ * @returns - retourne l'administrateur récupéré
+ */
+exports.getAdmin = (req, res, next) => {
+    try {
+        const admin = req.admin;
+        if(admin.id == req.params.adminId){
+            return res.status(200).json({
+                status: "succès",
+                message: "L'administrateur est trouvé",
+                data: admin,
+                path: req.originalUrl,
+                timestamp: new Date().toISOString(),
+              });
+        }
+        else{
+            return res.status(403).json({
+                status: 403,
+                error: "Forbidden",
+                message: "Cette ressource ne vous appartient pas",
+                path: req.originalUrl,
+                timestamp: new Date().toISOString(),
+              });
+        }
+        
+      } catch (err) {
+        next(err);
+      }
+	
 };
 
 
