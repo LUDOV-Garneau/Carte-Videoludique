@@ -25,10 +25,17 @@ import LeafletMap from '../components/LeafletMap.vue'
 
 <style scoped>
 h1 {
-  color:black
+  color:black;
+}
+h2 {
+    color: black;
+    text-decoration: underline;
 }
 p {
   color:black
+}
+table{
+  color: black;
 }
 .layout {
   display: flex;
@@ -36,14 +43,14 @@ p {
   background-color: white;
 }
 .sidebar {
-  width: 75px;
+  width: 90px;
   background-color: #d9d9d9;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 .brand-vertical{
-  margin-top: 25px;
+  margin-top: 60px;
   writing-mode: vertical-rl;
   text-orientation: upright;
   height:100%;
@@ -53,6 +60,7 @@ p {
   color:#000;
 }
 .content {
+  margin:30px;
   flex: 1;
   padding: 16px 32px;
 }
