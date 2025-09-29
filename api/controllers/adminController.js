@@ -1,5 +1,5 @@
 
-//const {formatErrorResponse, formatSuccessResponse} = require('../utils/formatApiResponse');
+const {formatErrorResponse, formatSuccessResponse} = require('../utils/formatErrorResponse');
 'use strict';
 
 const jwt = require("jsonwebtoken"); 
