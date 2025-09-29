@@ -212,6 +212,7 @@ onMounted(() => {
 onUnmounted(() => {
   if (map) {
     if (controlAjoutMarqueur) map.removeControl(controlAjoutMarqueur)
+    if (controlAdmin) map.removeControl(controlAdmin)
     if (map.__onKey) window.removeEventListener('keydown', map.__onKey)
     map.remove()
   }
