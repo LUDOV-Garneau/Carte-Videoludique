@@ -25,6 +25,7 @@ const mapEl = ref(null)
 let map
 let controlAjoutMarqueur
 let btnAjoutMarqueur
+let controlAdmin
 
 const TYPES = [
   'Écoles et instituts de formation',
@@ -168,8 +169,33 @@ onMounted(() => {
       return container
     }
   })
+  const ControlAdmin = L.Control.extend({
+    options : { position: 'topleft' },
+    onAdd: function () {
+      const container = L.DomUtil.create('div', 'leaflet-control leaflet-control-custom')
+      const btn = L.DomUtil.create('a', 'btn-admin', container)
+      btn.href = '#'
+      btn.title = 'Admin'
+      btn.textContent = 'Admin'
+      btn.setAttribute('role', 'button')
+      btn.setAttribute('aria-label', 'Admin')
+      btn.innerHTML = '<span aria-hidden="true"> ⚙ </span><span class="sr-only">Admin</span>';
+
+      L.DomEvent.disableClickPropagation(container)
+      L.DomEvent.disableScrollPropagation(container)
+
+      L.DomEvent.on(btn, 'click', (e) => {
+        L.DomEvent.preventDefault(e)
+        console.log('Clique sur le bouton admin')
+        alert('Fonctionnalité admin à venir!')
+      })
+      return container
+    }
+  })
+  controlAdmin = new ControlAdmin()
   controlAjoutMarqueur = new ControlAjoutMarqueur()
   map.addControl(controlAjoutMarqueur)
+  map.addControl(controlAdmin)
 
   // ESC pour fermer
   const onKey = (e) => { if (e.key === 'Escape' && panelOpen.value) closePanel() }
@@ -398,7 +424,7 @@ onUnmounted(() => {
 .panel.left.panel-fade-leave-to { transform: translateX(-8px); }
 
 /* ---------- Contrôle Leaflet custom ---------- */
-:deep(.leaflet-control-custom .btn-ajout-marqueur) {
+:deep(.btn-ajout-marqueur) {
   background-color: white;
   border: 2px solid #4CAF50;
   color: #4CAF50;
@@ -416,4 +442,21 @@ onUnmounted(() => {
   color: white;
 }
 
+:deep(.btn-admin) {
+  background-color: white;
+  border: 2px solid #4CAF50;
+  color: #4CAF50;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+:deep(.btn-admin:hover) {
+  background-color: #4CAF50;
+  color: white;
+}
 </style>
