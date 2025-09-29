@@ -11,10 +11,8 @@ import LeafletMap from '../components/LeafletMap.vue'
     <main class="content">   
       <header class="page-header">
         <h1>Le jeu vidéo au Québec</h1>
-        <p class="subtitle">
-          Cette carte vise à répertorier les lieux où le jeu vidéo s’est vendu, joué,
-          échangé et créé au fil de son histoire au Québec.
-        </p>
+        
+        
       </header>     
       <section class="map-wrapper">
         <LeafletMap /> 
