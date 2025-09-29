@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from "vue-router";
 import { isValidEmail } from '../utils.js'
 import L from 'leaflet'
 
@@ -8,6 +9,8 @@ import L from 'leaflet'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+
+const router = useRouter()
 
 const DefaultIcon = L.icon({
   iconUrl: markerIcon,
@@ -124,6 +127,10 @@ async function sendRequest() {
   } catch (err) {}
 }
 
+function goToAdmin() {
+  router.push('/admin')
+}
+
 onMounted(() => {
   // Centre par défaut (Montréal) — ajuste selon ton besoin
   map = L.map(mapEl.value, { zoomControl: true }).setView([45.5017, -73.5673], 12)
@@ -186,8 +193,7 @@ onMounted(() => {
 
       L.DomEvent.on(btn, 'click', (e) => {
         L.DomEvent.preventDefault(e)
-        console.log('Clique sur le bouton admin')
-        alert('Fonctionnalité admin à venir!')
+        goToAdmin()
       })
       return container
     }
