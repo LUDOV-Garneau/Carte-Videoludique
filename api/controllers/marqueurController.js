@@ -1,6 +1,6 @@
 "use strict";
 
-const Marqueur = require("../models/marqueur"); // Corrigé
+const Marqueur = require("../models/marqueur");
 
 const dotenv = require("dotenv");
 const { formatErrorResponse, formatSuccessResponse } = require("../utils/formatErrorResponse");
@@ -21,13 +21,22 @@ dotenv.config();
  */
 exports.createMarqueur = async (req, res, next) => {
     try {
-        const { titre, type, adresse, description, temoignage, image } = req.body;
+        const { 
+            titre, 
+            type, 
+            adresse, 
+            description, 
+            temoignage, 
+            image,
+            longitude,
+            latitude
+        } = req.body;
 
-        if (!titre || !type || !adresse) {
+        if (!titre || !type || !adresse || longitude === undefined || latitude === undefined) {
             return res.status(400).json(formatErrorResponse(
                 400,
                 "Bad Request",
-                "Un des paramètres obligatoires est manquant (titre, type ou adresse)",
+                "Paramètres manquants : titre, type, adresse, longitude ou latitude",
                 req.originalUrl
             ));
         }
@@ -38,7 +47,11 @@ exports.createMarqueur = async (req, res, next) => {
             adresse, 
             description, 
             temoignage, 
-            image 
+            image,
+            location: {
+                type: "Point",
+                coordinates: [longitude, latitude] 
+            }
         });
 
         const result = await marqueur.save();
@@ -46,7 +59,7 @@ exports.createMarqueur = async (req, res, next) => {
         res.location(`/marqueurs/${result._id}`);
         res.status(201).json(formatSuccessResponse(
             201,
-            "Le marqueur est créé avec succès!",
+            "Le marqueur a été créé avec succès !",
             result,
             req.originalUrl
         ));
