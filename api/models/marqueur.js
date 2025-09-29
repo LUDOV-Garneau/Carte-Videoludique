@@ -28,13 +28,31 @@ const MarqueurSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    location: {
+        type: {
+            type: String,
+            enum: ["Point"],
+            required: true
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            required: true
+        }
+    },
     image: {
-        type: String, 
+        type: String,
         default: ""  
+    },
+    courriel:{
+        type: String,
+        default: "",
+        required: true
     }
 }, 
 {
     timestamps: true, 
 });
+
+MarqueurSchema.index({ location: "2dsphere" });
 
 module.exports = mongoose.model("Marqueur", MarqueurSchema);
