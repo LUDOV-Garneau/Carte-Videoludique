@@ -26,6 +26,18 @@ let map
 let controlAjoutMarqueur
 let btnAjoutMarqueur
 
+const TYPES = [
+  'Écoles et instituts de formation',
+  'Développement et édition de jeux',
+  'Boutiques spécialisées',
+  'Magasins à grande surface',
+  'Friperies, marchés aux puces et d\'occasion',
+  'Dépanneurs et marchés',
+  'Clubs vidéo',
+  'Arcades et salles de jeux',
+  'Organismes et institutions'
+]
+
 const panelOpen = ref(false)
 const form = ref({
   lng: '',
@@ -216,6 +228,11 @@ onUnmounted(() => {
           </div>
           <div class="form-group">
             <label for="type">Type</label>
+            <select id="type" v-model="form.type" class="form-select">
+              <option value="" selected>Aucun</option>
+              <option v-for="type in TYPES" :key="type" :value="type">{{ type }}</option>
+            </select>
+            <span class="error" v-if="formErrors.type">{{ formErrors.type }}</span>
           </div>
           <div class="form-group">
             <label for="description">Description <span class="required">*</span></label>
@@ -333,6 +350,13 @@ onUnmounted(() => {
   border-radius: 4px;
   font-size: 14px;
   resize: none;
+}
+.form-select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
 }
 .error {
   color: #D8000C;
