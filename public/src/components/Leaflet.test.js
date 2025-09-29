@@ -76,7 +76,7 @@ describe('LeafletMap.vue', () => {
     expect(L.marker).toHaveBeenCalledTimes(1)
 
     // Le control custom a été ajouté
-    expect(mapApi.addControl).toHaveBeenCalledTimes(1)
+    expect(mapApi.addControl).toHaveBeenCalledTimes(2)
 
     // Unmount => nettoyage
     wrapper.unmount()
