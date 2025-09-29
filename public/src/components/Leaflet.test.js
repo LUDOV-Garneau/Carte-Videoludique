@@ -10,18 +10,23 @@ vi.mock('leaflet/dist/images/marker-shadow.png', () => ({ default: 'marker-shado
 const addEventListenerSpy = vi.spyOn(window, 'addEventListener')
 const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
 
+let createdElements = []
+
 // --- Mock de Leaflet (namespace L exporté en default)
 const mapApi = {
   setView: vi.fn().mockReturnThis(),
   on: vi.fn(),
-  addControl: vi.fn(),
+  addControl: vi.fn((ctrl) => {
+    // ⬅️ Simuler le vrai comportement de Leaflet
+    if (ctrl && typeof ctrl.onAdd === 'function') {
+      const el = ctrl.onAdd(mapApi)
+      if (el) createdElements.push(el)
+    }
+    return mapApi
+  }),
   removeControl: vi.fn(),
   remove: vi.fn(),
 }
-const tileLayerApi = { addTo: vi.fn() }
-const markerApi = { addTo: vi.fn().mockReturnThis(), bindPopup: vi.fn().mockReturnThis() }
-
-let createdElements = []
 
 vi.mock('leaflet', () => {
   // Simuler L.Control.extend(...) qui retourne une "classe" contrôleur
@@ -39,7 +44,7 @@ vi.mock('leaflet', () => {
     create: (tag, className, parent) => {
       const el = document.createElement(tag)
       if (className) el.className = className
-      if (parent) parent.appendChild(el)
+      if (parent && parent.appendChild) parent.appendChild(el)
       createdElements.push(el)
       return el
     },
@@ -56,6 +61,9 @@ vi.mock('leaflet', () => {
   // Simuler le prototype de L.Marker accédé dans ton composant
   function Marker() {}
   Marker.prototype.options = {}
+
+  const tileLayerApi = { addTo: vi.fn() }
+  const markerApi = { addTo: vi.fn().mockReturnThis(), bindPopup: vi.fn().mockReturnThis() }
 
   return {
     default: {
