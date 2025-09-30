@@ -1,6 +1,8 @@
 <script setup>
 import LeafletMap from '../components/LeafletMap.vue'
+
 </script>
+
 
 <template>
   <div class="layout">
@@ -60,9 +62,6 @@ import LeafletMap from '../components/LeafletMap.vue'
               </tbody>
             </table>
         </div>
-
-       
-        
       <section class="map-wrapper">
         <LeafletMap /> 
       </section>      
