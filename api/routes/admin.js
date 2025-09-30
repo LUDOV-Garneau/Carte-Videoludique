@@ -6,18 +6,21 @@ const router = express.Router();
 
 const adminController = require("../controllers/adminController");
 
+const isAuth = require("../middlewares/isAuth");
 
-// GET => /admins/:adminId
-router.get("/admins/:adminId", adminController.getAdmin); //À Faire
 
-// GET => /admins
-router.get("/admins", adminController.getAdmins); //À Faire
 
 // POST => /signup
 router.post("/signup", adminController.signup);
 
 // POST => /login
 router.post("/login", adminController.login);
+
+// GET => /admins
+router.get("/admins",isAuth, adminController.getAdmins); 
+
+// GET => /admins/:adminId
+router.get("/admins/:adminId",isAuth, adminController.getAdmin); 
 
 
 module.exports = router;

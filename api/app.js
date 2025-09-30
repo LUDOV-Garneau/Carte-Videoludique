@@ -29,8 +29,8 @@ app.use(express.json());
 
 
 // Importe les routes
-// const authRoutes = require("./routes/auth");
-// const adminRoutes = require("./routes/admin");
+
+const adminRoutes = require("./routes/admin");
 // const tableauRoutes = require("./routes/tableau");
 // const listeRoutes = require("./routes/liste");
 // const carteRoutes = require("./routes/carte");
@@ -38,8 +38,8 @@ app.use(express.json());
 
 // Utilisation des routes en tant que middleware
 // app.use(seed);
-// app.use(authRoutes);
-// app.use(utilisateurRoutes);
+
+app.use(adminRoutes);
 // app.use(tableauRoutes);
 // app.use(listeRoutes);
 // app.use(carteRoutes);
