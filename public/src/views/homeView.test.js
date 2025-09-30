@@ -1,17 +1,36 @@
 import { mount } from '@vue/test-utils'
 import HomeView from './HomeView.vue'
 import { describe, it, expect } from 'vitest'
+import { defineComponent } from 'vue'
+
+
+
+const LeafletMapStub = defineComponent({
+  name: 'LeafletMap',
+  template: '<div data-testid="map"></div>',
+})
 
 describe('HomeView.vue', () => {
-  it('montre correctement l\'accueil', () => {
+  it("Se monte sans erreur", () => {
     const wrapper = mount(HomeView, {
-      global: {
-        stubs: {
-          LeafletMap: true
-        }
-      }
+      global: { stubs: { LeafletMap: LeafletMapStub} }
     })
     expect(wrapper.exists()).toBe(true)
+  })
+
+  it("Affiche le titre et la marque vertical", () => {
+    const wrapper = mount(HomeView, {
+      global: { stubs: { LeafletMap: LeafletMapStub} }
+    })
+    expect(wrapper.find('h1').text()).toContain("Le jeu vidéo au Québec")
+    expect(wrapper.find('.brand-vertical').text()).toBe('L U D O V')
+  })
+
+  it("Rend la carte dans la page", () => {
+    const wrapper = mount(HomeView, {
+      global: { stubs: { LeafletMap: LeafletMapStub} }
+    })
+    expect(wrapper.get('[data-testid="map"]').exists()).toBe(true)
     expect(wrapper.findComponent({ name: 'LeafletMap' }).exists()).toBe(true)
   })
 })
