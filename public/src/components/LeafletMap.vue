@@ -29,6 +29,7 @@ let map
 let controlAjoutMarqueur
 let btnAjoutMarqueur
 let controlAdmin
+let controlImport
 
 const TYPES = [
   'Écoles et instituts de formation',
@@ -198,10 +199,34 @@ onMounted(() => {
       return container
     }
   })
+  const ControlImport = L.Control.extend({
+    options : { position: 'topleft' },
+    onAdd: function () {
+      const container = L.DomUtil.create('div', 'leaflet-control leaflet-control-custom')
+      const btn = L.DomUtil.create('a', 'btn-import', container)
+      btn.href = '#'
+      btn.title = 'Importer des marqueurs'
+      btn.textContent = 'Importer des marqueurs'
+      btn.setAttribute('role', 'button')
+      btn.setAttribute('aria-label', 'Importer des marqueurs')
+      btn.innerHTML = '<span aria-hidden="true"> ⬆ </span><span class="sr-only">Importer des marqueurs</span>';
+
+      L.DomEvent.disableClickPropagation(container)
+      L.DomEvent.disableScrollPropagation(container)
+
+      L.DomEvent.on(btn, 'click', (e) => {
+        L.DomEvent.preventDefault(e)
+        console.log('Clique sur le bouton pour importer des marqueurs')
+      })
+      return container
+    }
+  })
   controlAdmin = new ControlAdmin()
   controlAjoutMarqueur = new ControlAjoutMarqueur()
+  controlImport = new ControlImport()
   map.addControl(controlAjoutMarqueur)
   map.addControl(controlAdmin)
+  map.addControl(controlImport)
 
   // ESC pour fermer
   const onKey = (e) => { if (e.key === 'Escape' && panelOpen.value) closePanel() }
@@ -449,7 +474,7 @@ onUnmounted(() => {
   color: white;
 }
 
-:deep(.btn-admin) {
+:deep(.btn-admin), :deep(.btn-import) {
   background-color: white;
   border: 2px solid #4CAF50;
   color: #4CAF50;
@@ -462,7 +487,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.3s ease;
 }
-:deep(.btn-admin:hover) {
+:deep(.btn-admin:hover), :deep(.btn-import:hover) {
   background-color: #4CAF50;
   color: white;
 }
