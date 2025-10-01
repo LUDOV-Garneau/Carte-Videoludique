@@ -55,4 +55,4 @@ const MarqueurSchema = new mongoose.Schema({
 
 MarqueurSchema.index({ location: "2dsphere" });
 
-module.exports = mongoose.model("Marqueur", MarqueurSchema);
+module.exports = mongoose.models.Marqueur || mongoose.model('Marqueur', MarqueurSchema);
