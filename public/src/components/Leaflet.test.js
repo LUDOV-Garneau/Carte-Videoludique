@@ -150,10 +150,10 @@ describe('LeafletMap.vue', () => {
     expect(routerPushMock).toHaveBeenCalled()
     const arg = routerPushMock.mock.calls[0][0]
     if (typeof arg === 'string') {
-      expect(arg).toBe('/admin')
+      expect(arg).toBe('/connexion')
     } else if (arg && typeof arg === 'object') {
-      if ('path' in arg) expect(arg.path).toBe('/admin')
-      else if ('name' in arg) expect(String(arg.name).toLowerCase()).toBe('admin')
+      if ('path' in arg) expect(arg.path).toBe('/connexion')
+      else if ('name' in arg) expect(String(arg.name).toLowerCase()).toBe('connexion')
       else throw new Error('router.push doit cibler "/admin" (path ou name).')
     } else {
       throw new Error('router.push argument inattendu')
