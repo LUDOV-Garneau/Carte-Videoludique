@@ -28,7 +28,7 @@ beforeEach(() =>{
 /* -------------------- createMarqueur -------------------- */
 describe('MarqueurController.createMarqueur', () => {
   it('400 si paramètres requis manquants', async () => {
-    const req = mockReq({ body: { titre: 'A', type: 'Lieu', adresse: 'X' } }) // pas de long/lat
+    const req = mockReq({ body: { titre: 'A', type: 'Autres', adresse: 'X' } }) // pas de description
     const res = mockRes()
     await marqueurController.createMarqueur(req, res, mockNext)
     expect(res.statusCode).toBe(400)
