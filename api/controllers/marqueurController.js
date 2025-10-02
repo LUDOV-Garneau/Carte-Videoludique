@@ -25,7 +25,7 @@ exports.createMarqueur = async (req, res, next) => {
         const form = req.body;
         console.log("FORM =", form);
 
-        if (!form.titre) {
+        if (!form.titre || !form.description) {
             return res.status(400).json(formatErrorResponse(
                 400,
                 "Bad Request",
