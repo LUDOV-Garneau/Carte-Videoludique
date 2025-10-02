@@ -23,6 +23,7 @@ function mockNext() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  process.env.SECRET_JWT = 'test-secret' 
 })
 
 /* ---------- SIGNUP ---------- */
