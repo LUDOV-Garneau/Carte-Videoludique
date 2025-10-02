@@ -6,7 +6,7 @@ const router = express.Router();
 
 const marqueurController = require("../controllers/marqueurController");
 
-const isAuth = require("../middleware/isAuth");
+const isAuth = require("../middlewares/isAuth");
 
 
 // POST => /marqueurs
