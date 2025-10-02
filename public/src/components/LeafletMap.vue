@@ -123,7 +123,7 @@ function validateForm() {
 async function sendRequest() {
   try {
     if (validateForm()) {
-      const response = await fetch("http://localhost:3000/marqueurs", {
+      const response = await fetch("https://vercel.com/broskie67s-projects/carte-videoludique/marqueurs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form.value)
