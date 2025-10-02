@@ -21,31 +21,31 @@ exports.signup = async(req, res, next) => {
     const { nom,prenom, courriel, mdp,mdp2 } = req.body;
     
     if(!nom ||!prenom || !courriel || !mdp || !mdp2){
-      return res.status(400).json({
-        status: "Bad Request",
-        message: "Tous les champs sont requis.",
-        path: req.originalUrl,
-        timestamp: new Date().toISOString(),
-      });
+      return res.status(400).json(formatErrorResponse(
+        400,
+        "Bad Request",
+        "Tous les champs sont requis.",
+        req.originalUrl,
+      ));
     }
 
   try {
     if(mdp !== mdp2){
-      return res.status(400).json({
-        status: "Bad Request",
-        message: "Les mots de passe ne correspondent pas.",
-        path: req.originalUrl,
-        timestamp: new Date().toISOString(),
-      });
+      return res.status(400).json(formatErrorResponse(
+        400,
+        "Bad Request",
+        "Les mots de passe ne correspondent pas.",
+        req.originalUrl,
+      ));
     }
       const adminExistant = await Admin.findOne({courriel:courriel});
       if (adminExistant) {
-        return res.status(409).json({
-          status: "Conflict",
-          message: "Un administrateur avec ce courriel existe déjà.",
-          path: req.originalUrl,
-          timestamp: new Date().toISOString(),
-        });
+        return res.status(409).json(formatErrorResponse(
+          409,
+          "Conflict",
+          "Un administrateur avec ce courriel existe déjà.",
+          req.originalUrl,
+        ));
       }
         // Encryption du mot de passe
           const hashedPassword = await bcrypt.hash(mdp, 12);
@@ -58,12 +58,12 @@ exports.signup = async(req, res, next) => {
           });
   
           await admin.save();
-          return res.status(201).json({
-            status: "Succès",
-            message: "Adminitrateur créé !",
-            data:admin,
-            timestamp: new Date().toISOString()
-          });
+          return res.status(201).json(formatSuccessResponse(
+            201,
+            'Administrateur créé !',
+            admin,
+            req.originalUrl
+));
             
   } catch (err) {
     if (!err.statusCode) {
@@ -84,20 +84,28 @@ exports.login = async (req, res, next) => {
     const { courriel, mdp } = req.body;
   
     try {
-      const admin = await Admin.findOne({ courriel: courriel });
-      if (!admin) { //des logs peut-être pour savoir exactement ce qui se passe??
-        const error = new Error("Courriel ou mot de passe invalide");
-        error.statusCode = 401;
-        throw error;
+      const admin = await Admin.findOne({ courriel });
+    if (!admin) {
+      return res.status(401).json(formatErrorResponse(
+            401,
+            'Unauthorized',
+            'Courriel ou mot de passe invalide',
+            req.originalUrl
+          )
+        );
       }
   
       // Vérifie si le mot de passe est valide
-      const isEqual = await bcrypt.compare(mdp, admin.motDePasse);
-      if (!isEqual) { //des logs peut-être pour savoir exactement ce qui se passe??
-        const error = new Error("Courriel ou mot de passe invalide");
-        error.statusCode = 401;
-        throw error;
-      }
+       const isEqual = await bcrypt.compare(mdp, admin.motDePasse);
+    if (!isEqual) {
+      return res.status(401).json(formatErrorResponse(
+            401,
+            'Unauthorized',
+            'Courriel ou mot de passe invalide',
+            req.originalUrl
+          )
+        );
+    }
           
       // Création d'un jeton JWT
       const token = jwt.sign(
@@ -111,7 +119,13 @@ exports.login = async (req, res, next) => {
         { expiresIn: "24h" }
       );
   
-      res.status(200).json({ token: token });
+      return res.status(200).json(formatSuccessResponse(
+          200,
+          'Authentifié',
+          { token },
+          req.originalUrl
+        )
+      );
     } catch (err) {
       next(err);
     }
@@ -127,16 +141,16 @@ exports.login = async (req, res, next) => {
 exports.getAdmins = async (req, res, next) => {
     try {
         const admins = await Admin.find();
-        return res.status(200).json({
-          status: "succès",
-          message: "Les administrateurs ont été récupérés",
-          data: admins,
-          path: req.originalUrl,
-          timestamp: new Date().toISOString(),
-        });
-      } catch (err) {
-        next(err);
-      }
+        return res.status(200).json(formatSuccessResponse(
+          200,
+          'Les administrateurs ont été récupérés',
+          admins,
+          req.originalUrl
+        ));
+    } 
+    catch (err) {
+      next(err);
+    }
 };
 
 /**
@@ -149,29 +163,25 @@ exports.getAdmins = async (req, res, next) => {
 exports.getAdmin = (req, res, next) => {
     try {
         const admin = req.admin;
-        if(admin.id == req.params.adminId){
-            return res.status(200).json({
-                status: "succès",
-                message: "L'administrateur est trouvé",
-                data: admin,
-                path: req.originalUrl,
-                timestamp: new Date().toISOString(),
-              });
-        }
-        else{
-            return res.status(403).json({
-                status: 403,
-                error: "Forbidden",
-                message: "Cette ressource ne vous appartient pas",
-                path: req.originalUrl,
-                timestamp: new Date().toISOString(),
-              });
-        }
-        
+        if (admin.id == req.params.adminId) {
+          return res.status(200).json(formatSuccessResponse(
+            200,
+            "L'administrateur est trouvé",
+            admin,
+            req.originalUrl
+          )
+        );
+    }
+    return res.status(403).json(formatErrorResponse(
+          403,
+          'Forbidden',
+          'Cette ressource ne vous appartient pas',
+          req.originalUrl
+        )
+      );
       } catch (err) {
         next(err);
       }
-	
 };
 
 

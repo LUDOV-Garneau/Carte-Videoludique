@@ -31,6 +31,7 @@ app.use(express.json());
 // Importe les routes
 
 const adminRoutes = require("./routes/admin");
+const marqueurRoutes = require("./routes/marqueur")
 // const tableauRoutes = require("./routes/tableau");
 // const listeRoutes = require("./routes/liste");
 // const carteRoutes = require("./routes/carte");
@@ -40,6 +41,7 @@ const adminRoutes = require("./routes/admin");
 // app.use(seed);
 
 app.use(adminRoutes);
+app.use(marqueurRoutes);
 // app.use(tableauRoutes);
 // app.use(listeRoutes);
 // app.use(carteRoutes);

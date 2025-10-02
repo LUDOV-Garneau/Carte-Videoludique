@@ -24,10 +24,9 @@
   "bugs": {
     "url": "https://github.com/LUDOV-Garneau/Carte-Videoludique/issues"
   },
-
   "homepage": "https://github.com/LUDOV-Garneau/Carte-Videoludique#readme",
   "devDependencies": {
+    "supertest": "^7.1.4",
     "vitest": "^3.2.4"
   }
-
 }
