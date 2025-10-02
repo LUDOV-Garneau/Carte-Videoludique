@@ -1,9 +1,9 @@
 'use strict'
+
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import * as adminController from './adminController.js'       
 import Admin from '../models/admin.js'                          
 import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
 
 function mockRes() {
   return {
@@ -22,8 +22,7 @@ function mockNext() {
 }
 
 beforeEach(() => {
-  vi.restoreAllMocks()
-  process.env.SECRET_JWT = 'test-secret'
+  vi.clearAllMocks()
 })
 
 /* ---------- SIGNUP ---------- */
@@ -130,7 +129,6 @@ describe('AdminController.login', () => {
     const admin = { courriel:'a@b.com', nom:'A', prenom:'B', id:'123', motDePasse:'hash' }
     vi.spyOn(Admin, 'findOne').mockResolvedValue(admin)
     vi.spyOn(bcrypt, 'compare').mockResolvedValue(true)
-    vi.spyOn(jwt, 'sign').mockReturnValue('token-123')
 
     const req = mockReq({ courriel:'a@b.com', mdp:'x' })
     const res = mockRes()
@@ -142,8 +140,20 @@ describe('AdminController.login', () => {
     expect(res.body).toMatchObject({
       status: 200,
       message: 'Authentifié',
-      data: { token: 'token-123' },
-      path: req.originalUrl
+      path: req.originalUrl,
+    })
+  
+    expect(typeof res.body.data?.token).toBe('string')
+
+    expect(res.body.data.token).toMatch(/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/)
+
+    const { default: jwt } = await import('jsonwebtoken')
+    const decoded = jwt.decode(res.body.data.token)
+    expect(decoded).toMatchObject({
+      courriel: 'a@b.com',
+      nom: 'A',
+      prenom: 'B',
+      id: '123',
     })
   })
 })
@@ -195,6 +205,7 @@ describe('AdminController.getAdmin', () => {
     expect(res.body.error).toBe('Forbidden')
   })
 })
+
 
 
 

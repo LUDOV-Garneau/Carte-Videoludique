@@ -1,57 +1,80 @@
 "use strict";
+const { formatErrorResponse} = require("../utils/formatErrorResponse");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 dotenv.config();
 const Admin = require("../models/admin");
 
-/** Vérifie si la requête a un token JWT valide */
-
+/** Vérifie si la requête a un token JWT valide (Bearer obligatoire) */
 module.exports = async (req, res, next) => {
-  // Récupère le jeton depuis l'en-tête Authorization de la requête
   const authHeader = req.get("Authorization");
 
-  // Vérifie si l'en-tête Authorization est présent
-  if (!authHeader) {
-    return res.status(401).json({ error: "Non authentifié." });
+  // 1) Header manquant OU ne commence pas par "Bearer "
+  if (!authHeader || !/^Bearer\s+/i.test(authHeader)) {
+    return res
+      .status(401)
+      .json(
+        formatErrorResponse(401, "Unauthorized", "Non authentifié.", req.originalUrl)
+      );
   }
 
-  // Récupère le jeton JWT
+  // 2) Extraire le token après "Bearer "
   const token = authHeader.split(" ")[1];
-  let decodedToken;
+  if (!token) {
+    return res
+      .status(401)
+      .json(
+        formatErrorResponse(401, "Unauthorized", "Non authentifié.", req.originalUrl)
+      );
+  }
 
   try {
-    // Vérifie le jeton et récupére les données associées
-    decodedToken = jwt.verify(token, process.env.SECRET_JWT);
-    console.log(decodedToken);
+    const decoded = jwt.verify(token, process.env.SECRET_JWT);
 
-    if (decodedToken.exp < Date.now() / 1000) {
-      return res.status(401).json({
-        status: 401,
-        error: "Unauthorized",
-        message: "Session expirée",
-        data: null,
-        path: req.originalUrl,
-        timestamp: new Date().toISOString(),
-      });
+    // 3) Payload invalide
+    if (!decoded || typeof decoded !== "object" || !decoded.id) {
+      return res
+        .status(401)
+        .json(
+          formatErrorResponse(
+            401,
+            "Unauthorized",
+            "Token invalide ou non vérifié.",
+            req.originalUrl
+          )
+        );
     }
 
-    const admin = await Admin.findById(decodedToken.id);
+    // 4) Expiration
+    if (typeof decoded.exp === "number" && decoded.exp < Date.now() / 1000) {
+      return res
+        .status(401)
+        .json(
+          formatErrorResponse(401, "Unauthorized", "Session expirée.", req.originalUrl)
+        );
+    }
+
+    // 5) Admin
+    const admin = await Admin.findById(decoded.id);
     if (!admin) {
-      return res.status(404).json({
-        status: 404,
-        error: "Not Found",
-        message: "Administrateur inexistant",
-        data: admin,
-        path: req.originalUrl,
-        timestamp: new Date().toISOString(),
-      });
+      return res
+        .status(404)
+        .json(
+          formatErrorResponse(
+            404,
+            "Not Found",
+            "Administrateur inexistant.",
+            req.originalUrl
+          )
+        );
     }
 
-    // Ajoute les données associées à l'objet de requête pour utilisation ultérieure
     req.admin = admin;
     next();
   } catch (err) {
-    err.statusCode = 401;
-    return next(err);
+  if (err.name === "TokenExpiredError") {
+    return res.status(401).json(formatErrorResponse(401, "Unauthorized", "Session expirée.", req.originalUrl));
   }
+  return res.status(401).json(formatErrorResponse(401, "Unauthorized", "Token invalide.", req.originalUrl));
+}
 };
