@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
 
 const MarqueurSchema = new mongoose.Schema({
     titre: {
@@ -10,19 +9,29 @@ const MarqueurSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        required: [true, "Le type est requis"],
-        minlength: 1,
-        maxlength: 100
+        enum: ['Écoles et instituts de formation',
+            'Développement et édition de jeux',
+            'Boutiques spécialisées',
+            'Magasins à grande surface',
+            'Friperies, marchés aux puces et d\'occasion',
+            'Dépanneurs et marchés',
+            'Clubs vidéo',
+            'Arcades et salles de jeux',
+            'Organismes et institutions',
+            'Autres',
+        ],
+        default: 'Autres'
     },
     adresse: {
         type: String,
-        required: [true, "L'adresse est requise"],
-        minlength: 1,
-        maxlength: 100
+        maxlength: 100,
+        default: ""
     },
     description: {
         type: String,
-        default: ""
+        required: [true, "La description est requise"],
+        minlength: 1,
+        maxlength: 1000
     },
     temoignage: {
         type: String,
@@ -32,11 +41,11 @@ const MarqueurSchema = new mongoose.Schema({
         type: {
             type: String,
             enum: ["Point"],
-            required: true
+            required: false
         },
         coordinates: {
             type: [Number], // [longitude, latitude]
-            required: true
+            required: false
         }
     },
     image: {
@@ -46,7 +55,11 @@ const MarqueurSchema = new mongoose.Schema({
     courriel:{
         type: String,
         default: "",
-        required: true
+    },
+    status: {
+        type: String,
+        enum: ['En attente', 'Approuvé', 'Rejeté'],
+        default: 'En attente'
     }
 }, 
 {
@@ -55,4 +68,4 @@ const MarqueurSchema = new mongoose.Schema({
 
 MarqueurSchema.index({ location: "2dsphere" });
 
-module.exports = mongoose.model("Marqueur", MarqueurSchema);
+module.exports = mongoose.models.Marqueur || mongoose.model('Marqueur', MarqueurSchema);

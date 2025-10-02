@@ -21,18 +21,11 @@ dotenv.config();
  */
 exports.createMarqueur = async (req, res, next) => {
     try {
-        const { 
-            titre, 
-            type, 
-            adresse, 
-            description, 
-            temoignage, 
-            image,
-            longitude,
-            latitude
-        } = req.body;
+        console.log("BODY =", req.body);
+        const form = req.body;
+        console.log("FORM =", form);
 
-        if (!titre || !type || !adresse || longitude === undefined || latitude === undefined) {
+        if (!form.titre || !form.description) {
             return res.status(400).json(formatErrorResponse(
                 400,
                 "Bad Request",
@@ -41,16 +34,20 @@ exports.createMarqueur = async (req, res, next) => {
             ));
         }
 
+        if (form.type == '') {
+            form.type = 'Autres';
+        }
+        
         const marqueur = new Marqueur({ 
-            titre, 
-            type, 
-            adresse, 
-            description, 
-            temoignage, 
-            image,
+            titre: form.titre, 
+            type: form.type, 
+            adresse: form.adresse, 
+            description: form.description, 
+            temoignage: form.souvenir, 
+            image: form.image,
             location: {
                 type: "Point",
-                coordinates: [longitude, latitude] 
+                coordinates: [form.lng, form.lat] 
             }
         });
 

@@ -39,7 +39,8 @@ const TYPES = [
   'Dépanneurs et marchés',
   'Clubs vidéo',
   'Arcades et salles de jeux',
-  'Organismes et institutions'
+  'Organismes et institutions',
+  'Autres',
 ]
 
 const panelOpen = ref(false)
@@ -122,9 +123,23 @@ function validateForm() {
 async function sendRequest() {
   try {
     if (validateForm()) {
-      console.log('Envoi du formulaire')
+      const response = await fetch("https://carte-videoludique.vercel.app/marqueurs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form.value)
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erreur lors de l’envoi du marqueur.");
+      }
+      const responseData = await response.json();
+      console.log("Marqueur ajouté avec succès :", responseData);
+      closePanel();
     }
-  } catch (err) {}
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
 }
 
 function goToAdmin() {

@@ -6,9 +6,11 @@ const mongoose = require("mongoose");
 const app = express();
 const dotenv = require('dotenv');
 dotenv.config();
-const cors = require('cors');
 
-app.use(cors());
+// const cors = require('cors');
+
+// app.use(cors());
+
 
 
 // parse application/json
@@ -18,11 +20,13 @@ app.use(express.json());
 
 app.use((req, res, next) => {
 	res.setHeader('Access-Control-Allow-Origin', '*');
-	res.setHeader(
-  'Access-Control-Allow-Methods',
-  'OPTIONS, GET, POST, PUT, PATCH, DELETE'
-	);
+
+	res.setHeader('Access-Control-Allow-Methods','OPTIONS, GET, POST, PUT, PATCH, DELETE');
 	res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+	if (req.method === 'OPTIONS') {
+		return res.sendStatus(200);
+	}
+
   next();
 });
 
@@ -31,6 +35,7 @@ app.use((req, res, next) => {
 // Importe les routes
 
 const adminRoutes = require("./routes/admin");
+const marqueurRoutes = require("./routes/marqueur")
 // const tableauRoutes = require("./routes/tableau");
 // const listeRoutes = require("./routes/liste");
 // const carteRoutes = require("./routes/carte");
@@ -40,6 +45,7 @@ const adminRoutes = require("./routes/admin");
 // app.use(seed);
 
 app.use(adminRoutes);
+app.use(marqueurRoutes);
 // app.use(tableauRoutes);
 // app.use(listeRoutes);
 // app.use(carteRoutes);
