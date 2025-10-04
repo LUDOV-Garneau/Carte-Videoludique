@@ -14,7 +14,8 @@
   "main": "app.js",
   "scripts": {
     "test": "vitest",
-    "start": "nodemon app.js"
+    "start": "set NODE_ENV=production && node app.js",
+    "dev": "set NODE_ENV=development && nodemon app.js"
   },
   "repository": {
     "type": "git",
