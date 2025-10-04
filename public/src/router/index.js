@@ -21,7 +21,7 @@ const router = createRouter({
         if (auth.isAuthenticated) {
           next()
         } else {
-          next('/connection')
+          next('/connexion')
         }
       },
     },
