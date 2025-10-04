@@ -123,7 +123,7 @@ function validateForm() {
 async function sendRequest() {
   try {
     if (validateForm()) {
-      const response = await fetch("https://carte-videoludique.vercel.app/api/marqueurs", {
+      const response = await fetch("https://carte-videoludique.vercel.app/marqueurs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form.value)
