@@ -143,7 +143,7 @@ async function sendRequest() {
 }
 
 function goToAdmin() {
-  router.push('/connexion')
+  router.push('/admin')
 }
 
 onMounted(() => {
