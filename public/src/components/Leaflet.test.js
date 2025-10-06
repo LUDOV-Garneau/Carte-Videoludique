@@ -112,25 +112,18 @@ describe('LeafletMap.vue', () => {
     expect(L.marker).toHaveBeenCalledTimes(1)
 
     // Le control custom a été ajouté
-    expect(mapApi.addControl).toHaveBeenCalledTimes(2)
+    expect(mapApi.addControl).toHaveBeenCalledTimes(1)
 
     // onAdd => containers + boutons créés
     const ajoutBtn = createdElements.find(el => el.className.includes('btn-ajout-marqueur'))
-    const adminBtn = createdElements.find(el => el.className.includes('btn-admin'))
     expect(ajoutBtn).toBeTruthy()
-    expect(adminBtn).toBeTruthy()
     expect(ajoutBtn.getAttribute('role')).toBe('button')
     expect(ajoutBtn.getAttribute('aria-label')).toBe('Ajouter un marqueur')
-    expect(adminBtn.getAttribute('role')).toBe('button')
-    expect(adminBtn.getAttribute('aria-label')).toBe('Admin')
 
     // Propagation désactivée sur le container
     const ajoutContainer = ajoutBtn.parentElement
-    const adminContainer = adminBtn.parentElement
     expect(L.DomEvent.disableClickPropagation).toHaveBeenCalledWith(ajoutContainer)
     expect(L.DomEvent.disableScrollPropagation).toHaveBeenCalledWith(ajoutContainer)
-    expect(L.DomEvent.disableClickPropagation).toHaveBeenCalledWith(adminContainer)
-    expect(L.DomEvent.disableScrollPropagation).toHaveBeenCalledWith(adminContainer)
 
     // Panneau fermé au départ
     expect(wrapper.find('aside.panel').exists()).toBe(false)
@@ -143,25 +136,9 @@ describe('LeafletMap.vue', () => {
     // Listener clavier enregistré
     expect(addEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
 
-    // Clic Admin → preventDefault + router.push('/admin')
-    const evt = {}
-    adminBtn.__handlers.click(evt)
-    expect(L.DomEvent.preventDefault).toHaveBeenCalled() // ou .toHaveBeenCalledWith(evt)
-    expect(routerPushMock).toHaveBeenCalled()
-    const arg = routerPushMock.mock.calls[0][0]
-    if (typeof arg === 'string') {
-      expect(arg).toBe('/admin')
-    } else if (arg && typeof arg === 'object') {
-      if ('path' in arg) expect(arg.path).toBe('/admin')
-      else if ('name' in arg) expect(String(arg.name).toLowerCase()).toBe('admin')
-      else throw new Error('router.push doit cibler "/admin" (path ou name).')
-    } else {
-      throw new Error('router.push argument inattendu')
-    }
-
     // Unmount => nettoyage
     wrapper.unmount()
-    expect(mapApi.removeControl).toHaveBeenCalledTimes(2)
+    expect(mapApi.removeControl).toHaveBeenCalledTimes(1)
     expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
     expect(mapApi.remove).toHaveBeenCalledTimes(1)
   })

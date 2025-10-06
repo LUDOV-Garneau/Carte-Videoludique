@@ -28,7 +28,6 @@ const mapEl = ref(null)
 let map
 let controlAjoutMarqueur
 let btnAjoutMarqueur
-let controlAdmin
 
 const TYPES = [
   'Écoles et instituts de formation',
@@ -142,10 +141,6 @@ async function sendRequest() {
   }
 }
 
-function goToAdmin() {
-  router.push('/admin')
-}
-
 onMounted(() => {
   // Centre par défaut (Montréal) — ajuste selon ton besoin
   map = L.map(mapEl.value, { zoomControl: true }).setView([45.5017, -73.5673], 12)
@@ -192,32 +187,9 @@ onMounted(() => {
       return container
     }
   })
-  const ControlAdmin = L.Control.extend({
-    options : { position: 'topleft' },
-    onAdd: function () {
-      const container = L.DomUtil.create('div', 'leaflet-control leaflet-control-custom')
-      const btn = L.DomUtil.create('a', 'btn-admin', container)
-      btn.href = '#'
-      btn.title = 'Admin'
-      btn.textContent = 'Admin'
-      btn.setAttribute('role', 'button')
-      btn.setAttribute('aria-label', 'Admin')
-      btn.innerHTML = '<span aria-hidden="true"> ⚙ </span><span class="sr-only">Admin</span>';
-
-      L.DomEvent.disableClickPropagation(container)
-      L.DomEvent.disableScrollPropagation(container)
-
-      L.DomEvent.on(btn, 'click', (e) => {
-        L.DomEvent.preventDefault(e)
-        goToAdmin()
-      })
-      return container
-    }
-  })
-  controlAdmin = new ControlAdmin()
+  
   controlAjoutMarqueur = new ControlAjoutMarqueur()
   map.addControl(controlAjoutMarqueur)
-  map.addControl(controlAdmin)
 
   // ESC pour fermer
   const onKey = (e) => { if (e.key === 'Escape' && panelOpen.value) closePanel() }
@@ -228,7 +200,6 @@ onMounted(() => {
 onUnmounted(() => {
   if (map) {
     if (controlAjoutMarqueur) map.removeControl(controlAjoutMarqueur)
-    if (controlAdmin) map.removeControl(controlAdmin)
     if (map.__onKey) window.removeEventListener('keydown', map.__onKey)
     map.remove()
   }
@@ -465,21 +436,4 @@ onUnmounted(() => {
   color: white;
 }
 
-:deep(.btn-admin) {
-  background-color: white;
-  border: 2px solid #4CAF50;
-  color: #4CAF50;
-  padding: 5px 10px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-:deep(.btn-admin:hover) {
-  background-color: #4CAF50;
-  color: white;
-}
 </style>
