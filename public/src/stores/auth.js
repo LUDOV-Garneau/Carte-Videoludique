@@ -7,7 +7,7 @@ export const useAuthStore = defineStore('auth', () => {
   
   //récupérer le token depuis localStorage si on l'utilise
   const token = ref(localStorage.getItem('jwt') || null);
-
+  console.log(token.value)
   function setToken(newToken) {
   token.value = newToken
   localStorage.setItem('jwt', newToken)

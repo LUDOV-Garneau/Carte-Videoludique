@@ -20,6 +20,7 @@ module.exports = async (req, res, next) => {
 
   // 2) Extraire le token après "Bearer "
   const token = authHeader.split(" ")[1];
+  console.log(token.value)
   if (!token) {
     return res
       .status(401)

@@ -18,6 +18,7 @@
     "bootstrap": "^5.3.8",
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
+    "mongoose": "^8.19.0",
     "pinia": "^3.0.3",
     "vue": "^3.5.18",
     "vue-leaflet": "^0.1.0",
