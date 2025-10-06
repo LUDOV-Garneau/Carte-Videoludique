@@ -260,7 +260,7 @@ onUnmounted(() => {
             <span class="error" v-if="formErrors.description">{{ formErrors.description }}</span>
           </div>
           <div class="form-group">
-            <label for="nom">Nom</label>
+            <label for="nom">Votre nom</label>
             <input type="text" id="nom" v-model.trim="form.nom" placeholder="Nom" class="form-inputText"/>
             <span class="error" v-if="formErrors.nom">{{ formErrors.nom }}</span>
           </div>
