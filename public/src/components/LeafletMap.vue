@@ -145,9 +145,10 @@ onMounted(() => {
   // Centre par défaut (Montréal) — ajuste selon ton besoin
   map = L.map(mapEl.value, { zoomControl: true }).setView([45.5017, -73.5673], 12)
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors',
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    subdomains: 'abcd'
   }).addTo(map)
 
   // Marqueur d’exemple
