@@ -19,9 +19,11 @@ const router = createRouter({
       beforeEnter: (to, from, next) => {
         const auth = useAuthStore()
         if (auth.isAuthenticated) {
+          console.log('yessir')
           next()
         } else {
           next('/connexion')
+          console.log('nop')
         }
       },
     },

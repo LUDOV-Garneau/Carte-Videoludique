@@ -1,4 +1,4 @@
-'use strict'
+
 <template>
   <div class="container mt-5">
     <h2>Connexion</h2>
@@ -62,7 +62,7 @@ const handleSubmit = async () => {
   if (!validateForm()) return
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
+    const response = await fetch(`https://carte-videoludique.vercel.app/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -75,7 +75,11 @@ const handleSubmit = async () => {
 
     if (response.ok) {
       const data = await response.json()
-      auth.setToken(data.token)
+      console.log("✅ Réponse du backend:", data)
+      console.log("🎟️ Token reçu:", data.data.token)
+      auth.setToken(data.data.token)
+      
+      
 
       router.push('/admin') 
     } else {
