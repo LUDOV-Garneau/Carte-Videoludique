@@ -115,4 +115,10 @@ function isValidEmail(email) {
 .alert {
   margin-top: 10px;
 }
+.error {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  display: block;
+}
 </style>
