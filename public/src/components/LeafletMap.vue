@@ -2,7 +2,8 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from "vue-router";
 import { isValidEmail } from '../utils.js'
-import L from 'leaflet'
+import AddImage  from '@/components/AddImage.vue';
+import L from 'leaflet';
 
 
 // (Fix des icônes avec Vite)
@@ -41,6 +42,9 @@ const TYPES = [
   'Organismes et institutions',
   'Autres',
 ]
+
+const files = ref([])
+
 
 const panelOpen = ref(false)
 const form = ref({
@@ -273,6 +277,9 @@ onUnmounted(() => {
             <label for="souvenir">Souvenir</label>
             <textarea id="souvenir" v-model.trim="form.souvenir" placeholder="Souvenir" class="form-textarea" rows="5"></textarea>
             <span class="error" v-if="formErrors.souvenir">{{ formErrors.souvenir }}</span>
+          </div>
+          <div class="form-group">
+            <AddImage v-model="files" />
           </div>
           <div class="form-group form-submit">
             <span class="error" v-if="formErrors.error">{{ formErrors.error }}</span>
