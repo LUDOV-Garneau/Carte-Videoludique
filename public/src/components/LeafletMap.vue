@@ -546,6 +546,11 @@ onUnmounted(() => {
             <textarea id="souvenir" v-model.trim="form.souvenir" placeholder="Souvenir" class="form-textarea" rows="5"></textarea>
             <span class="error" v-if="formErrors.souvenir">{{ formErrors.souvenir }}</span>
           </div>
+          <div class="form-group">
+            <label for="image">Photo du lieu</label>
+            <p>Des photos utiles</p>
+            
+          </div>
           <div class="form-group form-submit">
             <span class="error" v-if="formErrors.error">{{ formErrors.error }}</span>
             <button type="submit" class="btn-submit">Envoyer</button>
