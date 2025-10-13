@@ -1,7 +1,8 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import { isValidEmail } from '../utils.js'
-import L from 'leaflet'
+import AddImage  from '@/components/AddImage.vue';
+import L from 'leaflet';
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -38,6 +39,10 @@ const TYPES = [
 ]
 const longitude = ref('')
 const latitude = ref('')
+
+const files = ref([])
+
+
 const panelOpen = ref(false)
 const form = ref({
   lng: '',
@@ -545,6 +550,9 @@ onUnmounted(() => {
             <label for="souvenir">Souvenir</label>
             <textarea id="souvenir" v-model.trim="form.souvenir" placeholder="Souvenir" class="form-textarea" rows="5"></textarea>
             <span class="error" v-if="formErrors.souvenir">{{ formErrors.souvenir }}</span>
+          </div>
+          <div class="form-group">
+            <AddImage v-model="files" />
           </div>
           <div class="form-group form-submit">
             <span class="error" v-if="formErrors.error">{{ formErrors.error }}</span>
