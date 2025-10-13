@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import { isValidEmail } from '../utils.js'
+import AddImage from '@/components/AddImage.vue'
 import L from 'leaflet'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -549,7 +550,7 @@ onUnmounted(() => {
           <div class="form-group">
             <label for="image">Photo du lieu</label>
             <p>Des photos utiles</p>
-            
+            <AddImage />
           </div>
           <div class="form-group form-submit">
             <span class="error" v-if="formErrors.error">{{ formErrors.error }}</span>
