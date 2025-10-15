@@ -20,6 +20,8 @@ const DefaultIcon = L.icon({
 })
 L.Marker.prototype.options.icon = DefaultIcon
 
+const files = ref([]);
+
 const mapEl = ref(null)
 let map
 let controlAjoutMarqueur
@@ -550,7 +552,7 @@ onUnmounted(() => {
           <div class="form-group">
             <label for="image">Photo du lieu</label>
             <p>Des photos utiles</p>
-            <AddImage />
+            <AddImage v-model="files"/>
           </div>
           <div class="form-group form-submit">
             <span class="error" v-if="formErrors.error">{{ formErrors.error }}</span>
