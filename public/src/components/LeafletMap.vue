@@ -52,6 +52,7 @@ const form = ref({
   email: '',
   souvenir: '',
   adresse: '',
+  images: [],
 })
 const formErrors = ref({
   lng: '',
