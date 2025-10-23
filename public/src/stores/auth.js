@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     return null
   })
-// Obtenir le nom d'utilisateur depuis le token décodé
+// Obtenir le nom d'admin depuis le token décodé
   const username = computed(() => {
     return decodedToken.value ? decodedToken.value.nom : '';
   });

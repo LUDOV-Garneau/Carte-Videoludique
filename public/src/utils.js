@@ -5,4 +5,5 @@ function isValidEmail(email) {
     return re.test(email);
 }
 
-export { isValidEmail };
+
+export { isValidEmail};
