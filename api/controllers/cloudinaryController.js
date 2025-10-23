@@ -41,3 +41,37 @@ exports.createUploadSignature = async(req, res, next) => {
         next(err);
     }
 };
+
+/**
+ * Fonction permettant de nettoyer les images temporaires dans Cloudinary
+ * @param {*} req - L'objet de requête Express.
+ * @param {*} res - L'objet de réponse Express.
+ * @param {*} next - La fonction middleware suivante
+ * @returns - retourne le résultat du nettoyage
+ */
+exports.cleanupImages = async(req, res, next) => {
+    try {
+        const { publicIds } = req.body;
+        if (!Array.isArray(publicIds) || publicIds.length === 0) {
+            return res.status(400).json(formatErrorResponse(
+                400,
+                "Bad Request",
+                'La liste des publicIds est invalide ou vide.',
+                req.originalUrl
+            ));
+        }
+        const results = [];
+        for (const id of publicIds) {
+            const response = await cloudinary.uploader.destroy(id);
+            results.push(response);
+        }
+        return res.status(200).json(formatSuccessResponse(
+            200,
+            'Nettoyage des images Cloudinary effectué avec succès.',
+            results,
+            req.originalUrl
+        ));
+    } catch (err) {
+        next(err);
+    }
+}

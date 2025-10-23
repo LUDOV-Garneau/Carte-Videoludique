@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
-import { isValidEmail, uploadOneImage, uploadMultipleImages } from '../utils.js'
+import { isValidEmail, uploadMultipleImages, cleanupImages } from '../utils.js'
 import AddImage from '@/components/AddImage.vue'
 import L from 'leaflet'
 
@@ -153,18 +153,19 @@ async function sendRequest() {
         form.value.images = await uploadMultipleImages(files.value);
         console.log("images uploadées :", JSON.parse(JSON.stringify(form.value.images)));
       }
-      // const response = await fetch("http://localhost:3000/marqueurs", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(form.value)
-      // });
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   throw new Error(errorData.message || "Erreur lors de l’envoi du marqueur.");
-      // }
-      // const responseData = await response.json();
-      // console.log("Marqueur ajouté avec succès :", responseData);
-      // closePanel();
+      const response = await fetch("https://carte-videoludique.vercel.app/marqueurs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form.value)
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (form.value.images.length) await cleanupImages(form.value.images.map(img => img.publicId));
+        throw new Error(errorData.message || "Erreur lors de l’envoi du marqueur.");
+      }
+      const responseData = await response.json();
+      console.log("Marqueur ajouté avec succès :", responseData);
+      closePanel();
     }
   } catch (err) {
     console.error(err);

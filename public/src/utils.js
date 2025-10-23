@@ -9,7 +9,7 @@ function isValidEmail(email) {
 
 async function uploadOneImage(file) {
     try {
-        const signatureResponse = await fetch("http://localhost:3000/upload-signature?folder=MapImages/tmp");
+        const signatureResponse = await fetch("https://carte-videoludique.vercel.app/upload-signature?folder=MapImages/tmp");
         if (!signatureResponse.ok) throw new Error('Impossible de récupérer la signature d\'upload');
         const signatureData = await signatureResponse.json();
 
@@ -60,4 +60,17 @@ async function uploadMultipleImages(files) {
     }
 }
 
-export { isValidEmail, uploadOneImage, uploadMultipleImages };
+async function cleanupImages(publicIds) {
+    try {
+        await fetch("https://carte-videoludique.vercel.app/cleanup-images", {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ publicIds })
+        });
+    } catch (err) {
+        console.error("Erreur lors du nettoyage des images :", err);
+        throw err;
+    }
+}
+
+export { isValidEmail, uploadOneImage, uploadMultipleImages, cleanupImages };
