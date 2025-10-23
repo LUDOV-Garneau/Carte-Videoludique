@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
-import { isValidEmail, uploadOneImage } from '../utils.js'
+import { isValidEmail, uploadOneImage, uploadMultipleImages } from '../utils.js'
 import AddImage from '@/components/AddImage.vue'
 import L from 'leaflet'
 
@@ -149,10 +149,9 @@ function validateForm() {
 async function sendRequest() {
   try {
     if (validateForm()) {
-      console.log("fichiers d'images :" , files.value);
       if (files.value.length > 0) {
-        const imageData =await uploadOneImage(files.value[0]);
-        console.log("Données de l'image uploadée :", imageData);
+        form.value.images = await uploadMultipleImages(files.value);
+        console.log("images uploadées :", JSON.parse(JSON.stringify(form.value.images)));
       }
       // const response = await fetch("http://localhost:3000/marqueurs", {
       //   method: "POST",

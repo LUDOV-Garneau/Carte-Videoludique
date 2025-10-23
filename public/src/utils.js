@@ -12,7 +12,6 @@ async function uploadOneImage(file) {
         const signatureResponse = await fetch("http://localhost:3000/upload-signature?folder=MapImages/tmp");
         if (!signatureResponse.ok) throw new Error('Impossible de récupérer la signature d\'upload');
         const signatureData = await signatureResponse.json();
-        console.log(signatureData.data);
 
         const formData = new FormData();
         formData.append('file', file);
@@ -44,4 +43,21 @@ async function uploadOneImage(file) {
     }
 }
 
-export { isValidEmail, uploadOneImage };
+async function uploadMultipleImages(files) {
+    try {
+        const uploadPromises = await Promise.allSettled(files.map(file => uploadOneImage(file)));
+        const successes = uploadPromises.filter(result => result.status === 'fulfilled').map(result => result.value);
+        const failures = uploadPromises.filter(result => result.status === 'rejected').map(result => result.reason);
+        if (successes === 0) throw new Error('Aucun upload réussi');
+        if (failures.length > 0) {
+            console.warn(`${failures.length} uploads ont échoué`, failures);
+        }
+        console.log(successes);
+        return successes;
+    } catch (err) {
+        console.error(err);
+        throw err;
+    }
+}
+
+export { isValidEmail, uploadOneImage, uploadMultipleImages };
