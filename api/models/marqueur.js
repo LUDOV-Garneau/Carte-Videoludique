@@ -59,7 +59,7 @@ const MarqueurSchema = new mongoose.Schema({
             required: false
         }
     },
-    image: {
+    images: {
         type: [ImageSchema],
         default: []
     },

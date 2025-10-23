@@ -37,6 +37,8 @@ exports.createMarqueur = async (req, res, next) => {
         if (form.type == '') {
             form.type = 'Autres';
         }
+
+        console.log("images = " + form.images);
         
         const marqueur = new Marqueur({ 
             titre: form.titre, 
@@ -44,7 +46,7 @@ exports.createMarqueur = async (req, res, next) => {
             adresse: form.adresse, 
             description: form.description, 
             temoignage: form.souvenir, 
-            image: form.image,
+            images: form.images,
             location: {
                 type: "Point",
                 coordinates: [form.lng, form.lat] 
