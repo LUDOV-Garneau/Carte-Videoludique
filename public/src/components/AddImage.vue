@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onBeforeMount, watch } from 'vue';
+import { ref, reactive, onBeforeUnmount, watch } from 'vue';
 
 const props = defineProps({
     modelValue: { type: Array, default: () => [] }, // File[]
@@ -73,11 +73,25 @@ function onKeyDown(event) {
 }
 window.addEventListener('keydown', onKeyDown);
 
-onBeforeMount(() => {
+onBeforeUnmount(() => {
     window.removeEventListener('keydown', onKeyDown);
     images.forEach((image) => {
         if (image.file && image.url && !image.isExternal) { URL.revokeObjectURL(image.url); }
     })
+});
+
+// Exposer les méthodes pour les tests
+defineExpose({
+    addFiles,
+    removeAt,
+    open,
+    close,
+    previous,
+    next,
+    pick,
+    images,
+    lightboxOpen,
+    lightboxIndex
 });
 </script>
 <template>

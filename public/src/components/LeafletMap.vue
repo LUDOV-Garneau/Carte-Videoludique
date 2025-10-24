@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import { isValidEmail, uploadMultipleImages, cleanupImages } from '../utils.js'
-import AddImage from '@/components/AddImage.vue'
+import AddImage from './AddImage.vue'
 import L from 'leaflet'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -326,6 +326,8 @@ defineExpose({
   reverseGeocode,
   geocodeAddress,
   locateFromAddress,
+  sendRequest,
+  validateForm,
 
   form,
   formErrors,
@@ -333,6 +335,7 @@ defineExpose({
   longitude,
   currentMarker,
   map,
+  files,
 })
 
 /**

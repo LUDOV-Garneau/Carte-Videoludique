@@ -21,9 +21,7 @@ dotenv.config();
  */
 exports.createMarqueur = async (req, res, next) => {
     try {
-        console.log("BODY =", req.body);
         const form = req.body;
-        console.log("FORM =", form);
 
         if (!form.titre || !form.description) {
             return res.status(400).json(formatErrorResponse(
@@ -37,8 +35,6 @@ exports.createMarqueur = async (req, res, next) => {
         if (form.type == '') {
             form.type = 'Autres';
         }
-
-        console.log("images = " + form.images);
         
         const marqueur = new Marqueur({ 
             titre: form.titre, 
