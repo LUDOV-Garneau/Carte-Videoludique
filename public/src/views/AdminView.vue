@@ -1,5 +1,10 @@
 <script setup>
 import LeafletMap from '../components/LeafletMap.vue'
+// import { ref, onMounted} from 'vue'
+// import { useMarqueursStore } from '@/stores/useMarqueur'
+
+// const marqueurs = ref([])
+
 
 </script>
 
@@ -30,11 +35,11 @@ import LeafletMap from '../components/LeafletMap.vue'
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="row in rows" :key="row.id">
-                  <td class="provider">{{ row.provider }}</td>
-                  <td class="address">{{ row.address }}</td>
+                <tr v-for="marqueur in marqueurs" :key="marqueur.id">
+                  <td class="provider">{{ marqueur.titre }}</td>
+                  <td class="address">{{ marqueur.address }}</td>
                   <td class="info-col">
-                    <button class="info-btn" @click="$emit('show-info', row)">
+                    <button class="info-btn" @click="$emit('show-info', marqueur)">
                       <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.75" />
                         <line x1="12" y1="10.5" x2="12" y2="17" stroke="currentColor" stroke-width="1.75"/>
@@ -44,20 +49,19 @@ import LeafletMap from '../components/LeafletMap.vue'
                     </button>
                   </td>
                   <td class="menu-col">
-                    <button class="kebab" aria-label="Menu" @click="$emit('menu', row)">⋯</button>
+                    <button class="kebab" aria-label="Menu" @click="$emit('menu', marqueur)">⋯</button>
                   </td>
+
                   <td class="reject-col">
-                    <button class="action-btn reject" @click="$emit('reject', row)">Refuser</button>
+                    <button class="action-btn reject" @click="$emit('reject', marqueur)">Refuser</button>
                   </td>
                 </tr>
-                <tr v-if="!rows || rows.length === 0">
+                <tr v-if="!marqueurs || marqueurs.length === 0">
                   <td colspan="6" class="empty">Aucune offre pour le moment.
                     <div class="empty-btn">
                        <button class="clear-btn">Effacer les notifications</button>
-                    </div>
-                   
-                  </td>
-                  
+                    </div>     
+                  </td> 
                 </tr>
               </tbody>
             </table>
