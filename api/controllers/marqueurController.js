@@ -44,6 +44,36 @@ exports.createMarqueur = async (req, res, next) => {
         "Paramètres manquants : titre ou description",
         req.originalUrl
       ));
+        if (form.type == '') {
+            form.type = 'Autres';
+        }
+        
+        const marqueur = new Marqueur({ 
+            titre: form.titre, 
+            type: form.type, 
+            adresse: form.adresse, 
+            description: form.description, 
+            temoignage: form.souvenir, 
+            images: form.images,
+            location: {
+                type: "Point",
+                coordinates: [form.lng, form.lat] 
+            }
+            status: "En Attente",
+        });
+
+        const result = await marqueur.save();
+
+        res.location(`/marqueurs/${result._id}`);
+        res.status(201).json(formatSuccessResponse(
+            201,
+            "Le marqueur a été créé avec succès !",
+            result,
+            req.originalUrl
+        ));
+
+    } catch (err) {
+        next(err);
     }
 
     // Défaut pour type
