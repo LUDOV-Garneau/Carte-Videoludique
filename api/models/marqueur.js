@@ -1,5 +1,16 @@
 const mongoose = require("mongoose");
 
+const ImageSchema = new mongoose.Schema({
+    publicId: String,
+    url: String,
+    width: Number,
+    height: Number,
+    bytes: Number,
+    format: String,
+    createdAt: String,
+    originalFilename: String,
+}, { _id: false });
+
 const MarqueurSchema = new mongoose.Schema({
     titre: {
         type: String,
@@ -48,9 +59,9 @@ const MarqueurSchema = new mongoose.Schema({
             required: false
         }
     },
-    image: {
-        type: String,
-        default: ""  
+    images: {
+        type: [ImageSchema],
+        default: []
     },
     courriel:{
         type: String,

@@ -334,3 +334,134 @@ describe('locateFromAddress (exposed)', () => {
     expect(L.marker).not.toHaveBeenCalled()
   })
 })
+
+/* ----------------------------------------- */
+/* Tests de sendRequest (exposed)            */
+/* ----------------------------------------- */
+
+// Mock des fonctions utils
+vi.mock('../utils.js', () => ({
+  isValidEmail: vi.fn((email) => email.includes('@')),
+  uploadMultipleImages: vi.fn(() => Promise.resolve([
+    { publicId: 'img1', url: 'http://example.com/img1.jpg' },
+    { publicId: 'img2', url: 'http://example.com/img2.jpg' }
+  ])),
+  cleanupImages: vi.fn(() => Promise.resolve())
+}))
+
+import { uploadMultipleImages, cleanupImages } from '../utils.js'
+
+describe('sendRequest (exposed)', () => {
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = mount(LeafletMap)
+    // Ouvrir le panneau pour permettre l'envoi
+    const btn = document.querySelector('.btn-ajout-marqueur')
+    btn.__handlers?.click?.({})
+  })
+
+  afterEach(() => {
+    wrapper.unmount()
+    vi.clearAllMocks()
+  })
+
+  it('envoie avec succès un formulaire valide sans images', async () => {
+    // Remplir le formulaire avec des données valides
+    await wrapper.get('#titre').setValue('Mon lieu')
+    await wrapper.get('#description').setValue('Description du lieu')
+    await wrapper.get('#adresse').setValue('123 Rue Test, Québec')
+    
+    // Mock réponse API succès
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 1, message: 'Marqueur créé' })
+    })
+
+    await wrapper.vm.sendRequest()
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://carte-videoludique.vercel.app/marqueurs',
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: expect.stringContaining('Mon lieu')
+      })
+    )
+    expect(uploadMultipleImages).not.toHaveBeenCalled()
+    expect(wrapper.vm.panelOpen).toBe(false) // Panneau fermé après succès
+  })
+
+  it('envoie avec succès un formulaire valide avec images', async () => {
+    // Remplir le formulaire
+    await wrapper.get('#titre').setValue('Mon lieu avec images')
+    await wrapper.get('#description').setValue('Description')
+    await wrapper.get('#adresse').setValue('123 Rue Test')
+    
+    // Simuler des fichiers
+    wrapper.vm.files = [new File([''], 'test1.jpg'), new File([''], 'test2.jpg')]
+    
+    // Mock réponses
+    uploadMultipleImages.mockResolvedValueOnce([
+      { publicId: 'img1', url: 'http://example.com/img1.jpg' }
+    ])
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 1 })
+    })
+
+    await wrapper.vm.sendRequest()
+
+    expect(uploadMultipleImages).toHaveBeenCalledWith(wrapper.vm.files)
+    expect(fetch).toHaveBeenCalled()
+    expect(wrapper.vm.panelOpen).toBe(false)
+  })
+
+  it('ne fait rien si la validation échoue', async () => {
+    // Formulaire invalide (pas de titre)
+    await wrapper.get('#description').setValue('Description seulement')
+    
+    await wrapper.vm.sendRequest()
+
+    expect(fetch).not.toHaveBeenCalled()
+    expect(uploadMultipleImages).not.toHaveBeenCalled()
+    expect(wrapper.vm.panelOpen).toBe(true) // Panneau reste ouvert
+  })
+
+  it('nettoie les images et relance erreur si API échoue', async () => {
+    // Remplir formulaire valide
+    await wrapper.get('#titre').setValue('Mon lieu')
+    await wrapper.get('#description').setValue('Description')
+    await wrapper.get('#adresse').setValue('123 Rue Test')
+    
+    // Simuler upload d'images réussi
+    wrapper.vm.files = [new File([''], 'test.jpg')]
+    uploadMultipleImages.mockResolvedValueOnce([
+      { publicId: 'img1', url: 'http://example.com/img1.jpg' }
+    ])
+    
+    // Mock échec API
+    fetch.mockResolvedValueOnce({
+      ok: false,
+      json: () => Promise.resolve({ message: 'Erreur serveur' })
+    })
+
+    await expect(wrapper.vm.sendRequest()).rejects.toThrow('Erreur serveur')
+    
+    expect(cleanupImages).toHaveBeenCalledWith(['img1'])
+    expect(wrapper.vm.panelOpen).toBe(true) // Panneau reste ouvert
+  })
+
+  it('gère les erreurs de réseau', async () => {
+    // Remplir formulaire valide
+    await wrapper.get('#titre').setValue('Mon lieu')
+    await wrapper.get('#description').setValue('Description')
+    await wrapper.get('#adresse').setValue('123 Rue Test')
+    
+    // Mock erreur réseau
+    fetch.mockRejectedValueOnce(new Error('Network error'))
+
+    await expect(wrapper.vm.sendRequest()).rejects.toThrow('Network error')
+    expect(wrapper.vm.panelOpen).toBe(true)
+  })
+})
