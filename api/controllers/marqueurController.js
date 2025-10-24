@@ -21,9 +21,7 @@ dotenv.config();
  */
 exports.createMarqueur = async (req, res, next) => {
     try {
-        console.log("BODY =", req.body);
         const form = req.body;
-        console.log("FORM =", form);
 
         if (!form.titre || !form.description) {
             return res.status(400).json(formatErrorResponse(
@@ -44,7 +42,7 @@ exports.createMarqueur = async (req, res, next) => {
             adresse: form.adresse, 
             description: form.description, 
             temoignage: form.souvenir, 
-            image: form.image,
+            images: form.images,
             location: {
                 type: "Point",
                 coordinates: [form.lng, form.lat] 

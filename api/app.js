@@ -26,11 +26,13 @@ app.use((req, res, next) => {
 
 const adminRoutes = require("./routes/admin");
 const marqueurRoutes = require("./routes/marqueur")
+const cloudinaryRoutes = require("./routes/cloudinary");
 
 // app.use(seed);
 
 app.use(adminRoutes);
 app.use(marqueurRoutes);
+app.use(cloudinaryRoutes);
 
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
@@ -40,19 +42,19 @@ app.use((err, req, res, next) => {
 
 console.log("DATA_BASE =", process.env.DATA_BASE);
 
-// (async () => {
-// 	try {
-// 		await mongoose.connect(process.env.DATA_BASE);
+(async () => {
+	try {
+		await mongoose.connect(process.env.DATA_BASE);
   
-// 		app.listen(process.env.PORT, () => {
-// 			console.log(`Serveur à l'écoute sur : http://localhost:${process.env.PORT}`);
-// 		});
-// 	} catch (err) {
-// 		console.error("Erreur de connexion à MongoDB :", err);
-// 	}
-//   })();
-mongoose.connect(process.env.DATA_BASE)
-  .then(() => console.log("MongoDB connecté"))
-  .catch((err) => console.error("Erreur MongoDB :", err));
+		app.listen(process.env.PORT, () => {
+			console.log(`Serveur à l'écoute sur : http://localhost:${process.env.PORT}`);
+		});
+	} catch (err) {
+		console.error("Erreur de connexion à MongoDB :", err);
+	}
+  })();
+// mongoose.connect(process.env.DATA_BASE)
+//   .then(() => console.log("MongoDB connecté"))
+//   .catch((err) => console.error("Erreur MongoDB :", err));
 
 module.exports = app;
