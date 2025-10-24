@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
+    "flush-promises": "^1.0.2",
     "cloudinary": "^2.8.0",
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
