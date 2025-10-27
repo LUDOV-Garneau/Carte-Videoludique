@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { isValidEmail, uploadMultipleImages, cleanupImages } from '../utils.js'
 import AddImage from './AddImage.vue'
 import L from 'leaflet'
+import { useMarqueursStore } from '../stores/useMarqueur.js'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -21,6 +22,8 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon
 
 const files = ref([]);
+
+const marqueurStore = useMarqueursStore()
 
 const mapEl = ref(null)
 let map
@@ -87,7 +90,7 @@ function closePanel() {
   longitude.value = ''
   form.value.lat = ''
   form.value.lng = ''
-  form.value.adresse = ''
+  
 }
 
 function validateForm() {
@@ -102,6 +105,7 @@ function validateForm() {
     email: '',
     souvenir: '',
     adresse: '',
+   
   }
   // Vérif coordonnées complètes
   if (!form.value.lng && form.value.lat || form.value.lng && !form.value.lat) {
@@ -137,7 +141,7 @@ function validateForm() {
  *
  * La fonction :
  *  - Valide le formulaire via {@link validateForm}.
- *  - Envoie une requête POST vers l’API du site "Carte-Vidéoludique".
+ *  - Envoie une requête POST vers l’API du site "Carte-Vidéoludique" à travers {marqueurStore}.
  *  - Ferme le panneau en cas de succès.
  *  - Journalise et relance l’erreur en cas d’échec.
  *
@@ -153,24 +157,20 @@ async function sendRequest() {
         form.value.images = await uploadMultipleImages(files.value);
         console.log("images uploadées :", JSON.parse(JSON.stringify(form.value.images)));
       }
-      const response = await fetch("https://carte-videoludique.vercel.app/marqueurs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form.value)
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (form.value.images.length) await cleanupImages(form.value.images.map(img => img.publicId));
-        throw new Error(errorData.message || "Erreur lors de l’envoi du marqueur.");
-      }
-      const responseData = await response.json();
-      console.log("Marqueur ajouté avec succès :", responseData);
+      
+      const created = await marqueurStore.ajouterMarqueur(form.value);
+
+      console.log("Marqueur ajouté avec succès :", created);
       closePanel();
     }
   } catch (err) {
-    console.error(err);
+     if (form.value.images.length) {
+      try { await cleanupImages(form.value.images.map(img => img.publicId)); }
+      catch (e) { console.warn('Rollback Cloudinary a échoué :', e); }
+    }
+    console.error('sendRequest error:', err);
     throw err;
-  }
+  }    
 }
 
 /**
