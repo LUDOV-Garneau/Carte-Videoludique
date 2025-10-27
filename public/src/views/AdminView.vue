@@ -1,8 +1,46 @@
 <script setup>
 import LeafletMap from '../components/LeafletMap.vue'
+import { ref, onMounted, computed } from 'vue'
+import { useMarqueursStore } from '../stores/useMarqueur'
+import {useRoute} from 'vue-router'
 
+
+const marqueursStore = useMarqueursStore()
+// const route = useRoute()
+// const marqueurId = computed(() => route.params.marqueurId)
+
+const messageErreur = ref('')
+
+const filtreStatus = ref('pending')
+
+const marqueursFiltres = computed(() => {
+  console.log(marqueursStore.marqueurs)
+  return (marqueursStore.marqueurs ?? []).filter(
+    m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
+  )
+})
+
+const getMarqueurs = () => {
+  marqueursStore.getMarqueurs()
+  .catch(error => {
+    messageErreur.value = error.message;
+  });
+}
+const getMarqueur = (marqueurId) => {
+  marqueursStore.getMarqueur(marqueurId)
+  console.log(marqueurId)
+}
+
+const accepterMarqueur = (marqueurId) => {
+  marqueursStore.getMarqueur(marqueurId)
+  console.log(marqueurId)
+}
+
+onMounted(() => {
+  getMarqueurs()
+  // getMarqueur(marqueurId.value)
+})
 </script>
-
 
 <template>
   <div class="layout">
@@ -24,17 +62,17 @@ import LeafletMap from '../components/LeafletMap.vue'
                 <th>Lieu</th>
                   <th>Adresse</th>
                   <th class="info-col">Info</th>
-                  <th class="menu-col" aria-label="Plus d'options"></th>
+                  <th class="modif-col">Modification</th>
                   <th class="accept-col">Accepter</th>
                   <th class="reject-col">Refuser</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="row in rows" :key="row.id">
-                  <td class="provider">{{ row.provider }}</td>
-                  <td class="address">{{ row.address }}</td>
+                <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id">
+                  <td class="provider">{{ marqueur.properties.titre }}</td>
+                  <td class="address">{{ marqueur.properties.adresse }}</td>
                   <td class="info-col">
-                    <button class="info-btn" @click="$emit('show-info', row)">
+                    <button class="info-btn" @click="$emit('show-info', marqueur)">
                       <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.75" />
                         <line x1="12" y1="10.5" x2="12" y2="17" stroke="currentColor" stroke-width="1.75"/>
@@ -44,20 +82,21 @@ import LeafletMap from '../components/LeafletMap.vue'
                     </button>
                   </td>
                   <td class="menu-col">
-                    <button class="kebab" aria-label="Menu" @click="$emit('menu', row)">⋯</button>
+                    <button class="kebab" aria-label="Modifier" @click="$emit('menu', marqueur)">Modifier</button>
+                  </td>
+                  <td class="accept-col">
+                    <button class="action-btn accept" @click="accepterMarqueur(marqueurId)">Accepter</button>
                   </td>
                   <td class="reject-col">
-                    <button class="action-btn reject" @click="$emit('reject', row)">Refuser</button>
+                    <button class="action-btn reject" @click="$emit('reject', marqueur)">Refuser</button>
                   </td>
                 </tr>
-                <tr v-if="!rows || rows.length === 0">
+                <tr v-if="!marqueursFiltres || marqueursFiltres.length === 0">
                   <td colspan="6" class="empty">Aucune offre pour le moment.
                     <div class="empty-btn">
                        <button class="clear-btn">Effacer les notifications</button>
-                    </div>
-                   
-                  </td>
-                  
+                    </div>     
+                  </td> 
                 </tr>
               </tbody>
             </table>
@@ -97,8 +136,8 @@ th {
 .info-col { 
   width: 240px; 
 }
-.menu-col { 
-  width: 48px; 
+.modif-col { 
+  width: 120px; 
   text-align: center; 
 }
 .accept-col { 
@@ -130,8 +169,7 @@ th {
 .kebab { 
   background: transparent; 
   border: none; 
-  font-size: 28px; 
-  line-height: 16px; 
+  line-height: 16px;  
   cursor: pointer; 
 }
 .kebab:hover { 
@@ -146,12 +184,10 @@ th {
   background: transparent; 
 }
 .action-btn.accept:hover { 
-  background: var(--green-strong); 
-  color: #fff; 
+ text-decoration: underline;
 }
 .action-btn.reject:hover { 
-  background: var(--red-strong); 
-  color: #fff; 
+  text-decoration: underline;
 }
 
 

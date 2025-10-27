@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
+import { createPinia } from 'pinia'
+
 import App from '../App.vue'
 import HomeView from '../views/HomeView.vue'
 import AdminView from '../views/AdminView.vue'
@@ -24,7 +26,8 @@ describe('router', () => {
         router.push('/')
         await router.isReady()
 
-        const wrapper = mount(App, { global: { plugins: [router]}})
+         const pinia = createPinia()
+        const wrapper = mount(App, { global: { plugins: [router, pinia]}})
         expect(wrapper.find('h1').text()).toContain('Le jeu vidéo au Québec')
     })
 
@@ -33,7 +36,8 @@ describe('router', () => {
         router.push('/admin')
         await router.isReady()
 
-        const wrapper = mount(App, { global: { plugins: [router] } })
+        const pinia = createPinia()
+        const wrapper = mount(App, { global: { plugins: [router, pinia] } })
         expect(wrapper.find('h2').text()).toBe('Notification')
     })
 
