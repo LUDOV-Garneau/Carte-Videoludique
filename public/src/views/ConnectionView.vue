@@ -27,6 +27,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+import { API_URL } from '@/config'
 
 const email = ref('')
 const password = ref('')
