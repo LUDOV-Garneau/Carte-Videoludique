@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
-import { isValidEmail } from '../utils.js'
+import { isValidEmail, uploadMultipleImages, cleanupImages } from '../utils.js'
+import AddImage from './AddImage.vue'
 import L from 'leaflet'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -18,6 +19,8 @@ const DefaultIcon = L.icon({
   shadowSize: [41, 41],
 })
 L.Marker.prototype.options.icon = DefaultIcon
+
+const files = ref([]);
 
 const mapEl = ref(null)
 let map
@@ -49,6 +52,7 @@ const form = ref({
   email: '',
   souvenir: '',
   adresse: '',
+  images: [],
 })
 const formErrors = ref({
   lng: '',
@@ -145,6 +149,10 @@ function validateForm() {
 async function sendRequest() {
   try {
     if (validateForm()) {
+      if (files.value.length > 0) {
+        form.value.images = await uploadMultipleImages(files.value);
+        console.log("images uploadées :", JSON.parse(JSON.stringify(form.value.images)));
+      }
       const response = await fetch("https://carte-videoludique.vercel.app/marqueurs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -152,6 +160,7 @@ async function sendRequest() {
       });
       if (!response.ok) {
         const errorData = await response.json();
+        if (form.value.images.length) await cleanupImages(form.value.images.map(img => img.publicId));
         throw new Error(errorData.message || "Erreur lors de l’envoi du marqueur.");
       }
       const responseData = await response.json();
@@ -168,9 +177,9 @@ async function sendRequest() {
  * Effectue une géocodification inverse (coordonnées → adresse) à l’aide du service Nominatim d’OpenStreetMap.
  *
  * Cette fonction interroge l’API publique de Nominatim pour obtenir une adresse
- * correspondant à des coordonnées GPS (latitude et longitude).  
+ * correspondant à des coordonnées GPS (latitude et longitude).
  * Les résultats sont renvoyés en français et incluent :
- *  - une représentation complète de l’adresse (`display_name`),  
+ *  - une représentation complète de l’adresse (`display_name`),
  *  - un objet détaillé des composants d’adresse (`address`).
  *
  * ⚠️ Remarque :
@@ -181,9 +190,9 @@ async function sendRequest() {
  * @function reverseGeocode
  * @param {number} lat - Latitude en degrés décimaux.
  * @param {number} lng - Longitude en degrés décimaux.
- * @returns {Promise<{ full: string, address: object }>}  
+ * @returns {Promise<{ full: string, address: object }>}
  * Objet contenant :
- *  - `full` : chaîne textuelle complète de l’adresse (ex. `"123 Rue Saint-Jean, Québec, Canada"`)  
+ *  - `full` : chaîne textuelle complète de l’adresse (ex. `"123 Rue Saint-Jean, Québec, Canada"`)
  *  - `address` : objet détaillé incluant les clés `road`, `city`, `postcode`, `country`, etc.
  * @throws {Error} Si la requête HTTP échoue ou si la réponse n’est pas valide.
  *
@@ -215,7 +224,7 @@ async function reverseGeocode(lat, lng) {
  *
  * Cette fonction interroge l’API publique de Nominatim pour obtenir les coordonnées
  * (latitude et longitude) correspondant à une adresse textuelle donnée.
- * 
+ *
  * Elle retourne uniquement le premier résultat trouvé (paramètre `limit=1`).
  *
  * ⚠️ Remarque :
@@ -226,10 +235,10 @@ async function reverseGeocode(lat, lng) {
  * @async
  * @function geocodeAddress
  * @param {string} q - L’adresse à rechercher (ex. `"350 rue des Lilas Ouest, Québec"`).
- * @returns {Promise<{ lat: number, lng: number } | null>}  
+ * @returns {Promise<{ lat: number, lng: number } | null>}
  * Objet contenant :
- *  - `lat` : latitude en degrés décimaux  
- *  - `lng` : longitude en degrés décimaux  
+ *  - `lat` : latitude en degrés décimaux
+ *  - `lng` : longitude en degrés décimaux
  * ou `null` si aucune adresse correspondante n’a été trouvée.
  * @throws {Error} Si la requête HTTP échoue ou si la réponse du service est invalide.
  *
@@ -274,7 +283,7 @@ async function geocodeAddress(q) {
  *
  * @async
  * @function locateFromAddress
- * @returns {Promise<void>}  
+ * @returns {Promise<void>}
  * Ne retourne rien, mais met à jour la carte et le formulaire associés.
  * @throws {Error} En cas d’erreur réseau ou si l’API de géocodage échoue.
  *
@@ -317,6 +326,8 @@ defineExpose({
   reverseGeocode,
   geocodeAddress,
   locateFromAddress,
+  sendRequest,
+  validateForm,
 
   form,
   formErrors,
@@ -324,6 +335,7 @@ defineExpose({
   longitude,
   currentMarker,
   map,
+  files,
 })
 
 /**
@@ -545,6 +557,11 @@ onUnmounted(() => {
             <label for="souvenir">Souvenir</label>
             <textarea id="souvenir" v-model.trim="form.souvenir" placeholder="Souvenir" class="form-textarea" rows="5"></textarea>
             <span class="error" v-if="formErrors.souvenir">{{ formErrors.souvenir }}</span>
+          </div>
+          <div class="form-group">
+            <label for="image">Photo du lieu</label>
+            <p>Des photos utiles</p>
+            <AddImage v-model="files"/>
           </div>
           <div class="form-group form-submit">
             <span class="error" v-if="formErrors.error">{{ formErrors.error }}</span>
