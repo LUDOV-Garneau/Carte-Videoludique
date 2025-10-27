@@ -47,7 +47,7 @@ onMounted(() => {
                 <th>Lieu</th>
                   <th>Adresse</th>
                   <th class="info-col">Info</th>
-                  <th class="menu-col" aria-label="Plus d'options"></th>
+                  <th class="modif-col">Modification</th>
                   <th class="accept-col">Accepter</th>
                   <th class="reject-col">Refuser</th>
                 </tr>
@@ -67,7 +67,7 @@ onMounted(() => {
                     </button>
                   </td>
                   <td class="menu-col">
-                    <button class="kebab" aria-label="Menu" @click="$emit('menu', marqueur)">⋯</button>
+                    <button class="kebab" aria-label="Modifier" @click="$emit('menu', marqueur)">Modifier</button>
                   </td>
                   <td class="accept-col">
                     <button class="action-btn accept" @click="$emit('accept', marqueur)">Accepter</button>
@@ -121,8 +121,8 @@ th {
 .info-col { 
   width: 240px; 
 }
-.menu-col { 
-  width: 48px; 
+.modif-col { 
+  width: 120px; 
   text-align: center; 
 }
 .accept-col { 
@@ -154,8 +154,7 @@ th {
 .kebab { 
   background: transparent; 
   border: none; 
-  font-size: 28px; 
-  line-height: 16px; 
+  line-height: 16px;  
   cursor: pointer; 
 }
 .kebab:hover { 
