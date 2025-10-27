@@ -1,16 +1,26 @@
 const mongoose = require("mongoose");
 
+
 // Optionnel : sous-schéma pour les commentaires
 const CommentSchema = new mongoose.Schema({
   auteur: { type: String, trim: true },
   contenu: { type: String, trim: true, maxlength: 1000 },
   createdAt: { type: Date, default: Date.now }
 });
+const ImageSchema = new mongoose.Schema({
+    publicId: String,
+    url: String,
+    width: Number,
+    height: Number,
+    bytes: Number,
+    format: String,
+    createdAt: String,
+    originalFilename: String,
+}, { _id: false });
 
 const MarqueurSchema = new mongoose.Schema(
   {
     type: { type: String, enum: ["Feature"], default: "Feature", required: true },
-
     geometry: {
       type: { type: String, enum: ["Point"], required: true, default: "Point" },
       coordinates: {
@@ -39,6 +49,7 @@ const MarqueurSchema = new mongoose.Schema(
           "Organismes et institutions",
           "Autres"
         ],
+
         default: "Autres"
       },
       adresse: { type: String, trim: true, maxlength: 150 },
@@ -46,7 +57,7 @@ const MarqueurSchema = new mongoose.Schema(
       temoignage: { type: String, trim: true },
       image: { type: String, trim: true },
       courriel: { type: String, trim: true, lowercase: true },
-
+      images: { type: [ImageSchema], default: [] },
       status: {
         type: String,
         enum: ["pending", "approved", "rejected"],

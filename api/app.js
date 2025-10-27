@@ -25,10 +25,15 @@ app.use((req, res, next) => {
 });
 
 const adminRoutes = require("./routes/admin");
-const marqueurRoutes = require("./routes/marqueur");
+
+const marqueurRoutes = require("./routes/marqueur")
+const cloudinaryRoutes = require("./routes/cloudinary");
+
+// app.use(seed);
 
 app.use(adminRoutes);
 app.use(marqueurRoutes);
+app.use(cloudinaryRoutes);
 
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);

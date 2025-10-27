@@ -26,7 +26,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '../stores/auth.js'
 
 const email = ref('')
 const password = ref('')
@@ -75,12 +75,8 @@ const handleSubmit = async () => {
 
     if (response.ok) {
       const data = await response.json()
-      console.log("✅ Réponse du backend:", data)
-      console.log("🎟️ Token reçu:", data.data.token)
       auth.setToken(data.data.token)
       
-      
-
       router.push('/admin') 
     } else {
       if (response.status == 401) {
