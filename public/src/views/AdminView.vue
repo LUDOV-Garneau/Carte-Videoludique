@@ -5,6 +5,18 @@ import { useMarqueursStore } from '../stores/useMarqueur'
 import {useRoute} from 'vue-router'
 
 
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
+
+const auth = useAuthStore()
+const router = useRouter()
+
+const logout = () => {
+  auth.logout()
+  router.push('/connexion')
+}
+
+
 const marqueursStore = useMarqueursStore()
 // const route = useRoute()
 // const marqueurId = computed(() => route.params.marqueurId)
@@ -12,13 +24,19 @@ const marqueursStore = useMarqueursStore()
 const messageErreur = ref('')
 
 const filtreStatus = ref('pending')
-
 const marqueursFiltres = computed(() => {
   console.log(marqueursStore.marqueurs)
   return (marqueursStore.marqueurs ?? []).filter(
     m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
   )
 })
+
+// const marqueursFiltres = computed(() => {
+//   console.log(marqueursStore.marqueurs)
+//   return (marqueursStore.marqueurs ?? []).filter(
+//     m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
+//   )
+// })
 
 const getMarqueurs = () => {
   marqueursStore.getMarqueurs()
@@ -202,20 +220,6 @@ onMounted(() => {
     </main>
   </div>
 </template>
-
-<script setup>
-import LeafletMap from '../components/LeafletMap.vue'
-import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
-
-const auth = useAuthStore()
-const router = useRouter()
-
-const logout = () => {
-  auth.logout()
-  router.push('/connexion')
-}
-</script>
 
 <style scoped>
 /*Tableau notifications*/
