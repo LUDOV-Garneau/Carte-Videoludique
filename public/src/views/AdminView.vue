@@ -1,13 +1,31 @@
 <script setup>
 import LeafletMap from '../components/LeafletMap.vue'
-// import { ref, onMounted} from 'vue'
-// import { useMarqueursStore } from '@/stores/useMarqueur'
+import { ref, onMounted, computed } from 'vue'
+import { useMarqueursStore } from '../stores/useMarqueur'
 
-// const marqueurs = ref([])
+const marqueursStore = useMarqueursStore()
+const messageErreur = ref('')
 
+const filtreStatus = ref('En attente')
 
+const marqueursFiltres = computed(() => {
+  return (marqueursStore.marqueurs ?? []).filter(
+    m => (m.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
+  )
+  
+})
+
+const getMarqueurs = () => {
+  marqueursStore.getMarqueurs()
+  .catch(error => {
+    messageErreur.value = error.message;
+  });
+}
+
+onMounted(() => {
+  getMarqueurs()
+})
 </script>
-
 
 <template>
   <div class="layout">
@@ -35,7 +53,7 @@ import LeafletMap from '../components/LeafletMap.vue'
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="marqueur in marqueurs" :key="marqueur.id">
+                <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id">
                   <td class="provider">{{ marqueur.titre }}</td>
                   <td class="address">{{ marqueur.address }}</td>
                   <td class="info-col">
@@ -51,12 +69,14 @@ import LeafletMap from '../components/LeafletMap.vue'
                   <td class="menu-col">
                     <button class="kebab" aria-label="Menu" @click="$emit('menu', marqueur)">⋯</button>
                   </td>
-
+                  <td class="accept-col">
+                    <button class="action-btn accept" @click="$emit('accept', marqueur)">Accepter</button>
+                  </td>
                   <td class="reject-col">
                     <button class="action-btn reject" @click="$emit('reject', marqueur)">Refuser</button>
                   </td>
                 </tr>
-                <tr v-if="!marqueurs || marqueurs.length === 0">
+                <tr v-if="!marqueursFiltres || marqueursFiltres.length === 0">
                   <td colspan="6" class="empty">Aucune offre pour le moment.
                     <div class="empty-btn">
                        <button class="clear-btn">Effacer les notifications</button>

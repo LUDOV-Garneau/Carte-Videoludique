@@ -3,7 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { isValidEmail, uploadMultipleImages, cleanupImages } from '../utils.js'
 import AddImage from './AddImage.vue'
 import L from 'leaflet'
-import { useMarqueursStore } from '@/stores/useMarqueur.js'
+import { useMarqueursStore } from '../stores/useMarqueur.js'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -90,7 +90,7 @@ function closePanel() {
   longitude.value = ''
   form.value.lat = ''
   form.value.lng = ''
-  form.value.adresse = ''
+  
 }
 
 function validateForm() {
@@ -141,7 +141,7 @@ function validateForm() {
  *
  * La fonction :
  *  - Valide le formulaire via {@link validateForm}.
- *  - Envoie une requête POST vers l’API du site "Carte-Vidéoludique".
+ *  - Envoie une requête POST vers l’API du site "Carte-Vidéoludique" à travers {marqueurStore}.
  *  - Ferme le panneau en cas de succès.
  *  - Journalise et relance l’erreur en cas d’échec.
  *
@@ -157,12 +157,7 @@ async function sendRequest() {
         form.value.images = await uploadMultipleImages(files.value);
         console.log("images uploadées :", JSON.parse(JSON.stringify(form.value.images)));
       }
-      // const response = await fetch("https://carte-videoludique.vercel.app/marqueurs", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(form.value)
-      // });
-
+      
       const created = await marqueurStore.ajouterMarqueur(form.value);
 
       console.log("Marqueur ajouté avec succès :", created);

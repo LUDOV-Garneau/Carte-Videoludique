@@ -47,7 +47,7 @@ exports.createMarqueur = async (req, res, next) => {
                 type: "Point",
                 coordinates: [form.lng, form.lat] 
             }
-            status: "En Attente"
+            status: "En attente"
         });
 
         const result = await marqueur.save();
