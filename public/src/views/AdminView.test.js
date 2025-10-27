@@ -1,3 +1,4 @@
+
 import { mount } from '@vue/test-utils'
 import AdminView from './AdminView.vue'
 import { createPinia } from 'pinia'
