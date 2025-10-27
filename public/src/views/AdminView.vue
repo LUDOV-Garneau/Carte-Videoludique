@@ -1,3 +1,47 @@
+<script setup>
+import LeafletMap from '../components/LeafletMap.vue'
+import { ref, onMounted, computed } from 'vue'
+import { useMarqueursStore } from '../stores/useMarqueur'
+import {useRoute} from 'vue-router'
+
+
+const marqueursStore = useMarqueursStore()
+// const route = useRoute()
+// const marqueurId = computed(() => route.params.marqueurId)
+
+const messageErreur = ref('')
+
+const filtreStatus = ref('pending')
+
+const marqueursFiltres = computed(() => {
+  console.log(marqueursStore.marqueurs)
+  return (marqueursStore.marqueurs ?? []).filter(
+    m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
+  )
+})
+
+const getMarqueurs = () => {
+  marqueursStore.getMarqueurs()
+  .catch(error => {
+    messageErreur.value = error.message;
+  });
+}
+const getMarqueur = (marqueurId) => {
+  marqueursStore.getMarqueur(marqueurId)
+  console.log(marqueurId)
+}
+
+const accepterMarqueur = (marqueurId) => {
+  marqueursStore.getMarqueur(marqueurId)
+  console.log(marqueurId)
+}
+
+onMounted(() => {
+  getMarqueurs()
+  // getMarqueur(marqueurId.value)
+})
+</script>
+
 <template>
   <div class="layout">
     <aside class="sidebar">
@@ -205,9 +249,9 @@ th {
 .info-col {
   width: 240px;
 }
-.menu-col {
-  width: 48px;
-  text-align: center;
+.modif-col { 
+  width: 120px; 
+  text-align: center; 
 }
 .accept-col {
   width: 120px;
@@ -236,12 +280,11 @@ th {
   width: 18px;
   height: 18px;
 }
-.kebab {
-  background: transparent;
-  border: none;
-  font-size: 28px;
-  line-height: 16px;
-  cursor: pointer;
+.kebab { 
+  background: transparent; 
+  border: none; 
+  line-height: 16px;  
+  cursor: pointer; 
 }
 .kebab:hover {
   opacity: 0.7;
@@ -254,13 +297,11 @@ th {
   cursor: pointer;
   background: transparent;
 }
-.action-btn.accept:hover {
-  background: var(--green-strong);
-  color: #fff;
+.action-btn.accept:hover { 
+ text-decoration: underline;
 }
-.action-btn.reject:hover {
-  background: var(--red-strong);
-  color: #fff;
+.action-btn.reject:hover { 
+  text-decoration: underline;
 }
 
 /* Cellule vide */
