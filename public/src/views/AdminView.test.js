@@ -1,7 +1,10 @@
 import { mount } from '@vue/test-utils'
 import AdminView from './AdminView.vue'
-import { describe, it, expect } from 'vitest'
+import { createPinia } from 'pinia'
+import { describe, it, expect, beforeEach, afterEach} from 'vitest'
 import { defineComponent } from 'vue'
+import { useMarqueursStore } from '../stores/useMarqueur'
+
 
 const LeafletMapStub = defineComponent({
   name: 'LeafletMap',
@@ -9,9 +12,23 @@ const LeafletMapStub = defineComponent({
 })
 
 describe('AdminView.vue', () => {
+  let wrapper
+  let pinia
+  beforeEach(() => {
+    // Créer une nouvelle instance de Pinia pour chaque test
+    pinia = createPinia()
+  })
+
+  afterEach(() => {
+    wrapper?.unmount()
+  })
+
   it('se monte sans erreur', () => {
     const wrapper = mount(AdminView, {
-      global: { stubs: { LeafletMap: LeafletMapStub } }
+      global: { 
+        plugins: [pinia], 
+        stubs: { LeafletMap: LeafletMapStub } 
+      }
     })
     expect(wrapper.exists()).toBe(true)
   })
@@ -35,13 +52,26 @@ describe('AdminView.vue', () => {
     expect(wrapper.find('.clear-btn').exists()).toBe(true)
   })
 
-  it('rend les lignes quand rows est fourni', () => {
-    const wrapper = mount(AdminView, {
-      global: { stubs: { LeafletMap: LeafletMapStub } },
-      data() {
-        return { rows: [{ id: 1, provider: 'Vidéotron', address: '2300 rue X' }] }
+  it('rend les lignes quand rows est fourni', async () => {
+    wrapper = mount(AdminView, {
+      global: { 
+        plugins: [pinia],
+        stubs: { LeafletMap: LeafletMapStub } 
       }
     })
+
+    const marqueurStore = useMarqueursStore()
+
+    // ⬇️ IMPORTANT : Ajouter status: 'En attente'
+    marqueurStore.marqueurs = [{
+      id: 1, 
+      titre: 'Vidéotron', 
+      address: '2300 rue X',
+      status: 'En attente'  // ⬅️ ESSENTIEL pour passer le filtre
+    }]
+
+    await wrapper.vm.$nextTick()
+
     expect(wrapper.findAll('tbody tr')).toHaveLength(1)
     expect(wrapper.find('.provider').text()).toBe('Vidéotron')
     expect(wrapper.find('.address').text()).toContain('2300 rue X')

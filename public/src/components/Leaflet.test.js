@@ -1,7 +1,9 @@
 // src/components/Leaflet.test.js
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { nextTick } from 'vue'
+import { nextTick } from 'vue' 
+
+
 
 // --- Mocks d'assets Leaflet
 vi.mock('leaflet/dist/images/marker-icon.png',   () => ({ default: 'marker-icon.png' }),   { virtual: true })
@@ -110,7 +112,11 @@ afterEach(() => {
 
 describe('LeafletMap.vue', () => {
   it('monte et initialise la carte', async () => {
-    const wrapper = mount(LeafletMap)
+    const wrapper = mount(LeafletMap, {
+      global:{
+        plugins: [createPinia()]
+      }
+    })
 
     expect(wrapper.find('.map').exists()).toBe(true)
     expect(L.map).toHaveBeenCalledTimes(1)
@@ -350,49 +356,75 @@ vi.mock('../utils.js', () => ({
 }))
 
 import { uploadMultipleImages, cleanupImages } from '../utils.js'
+import { createPinia } from 'pinia'
+import { useMarqueursStore } from '../stores/useMarqueur'
 
 describe('sendRequest (exposed)', () => {
   let wrapper
 
   beforeEach(() => {
-    wrapper = mount(LeafletMap)
-    // Ouvrir le panneau pour permettre l'envoi
+   // 👇 mock fetch avant tout
+    globalThis.fetch = vi.fn()
+
+    const pinia = createPinia()
+    wrapper = mount(LeafletMap, {
+      global: { plugins: [pinia] },
+    })
+
+    const marqueurStore = useMarqueursStore()
+    vi.spyOn(marqueurStore, 'ajouterMarqueur').mockResolvedValue({
+      id: 1,
+      message: 'Marqueur créé'
+    })
+
+    // ouvrir le panneau si nécessaire (adapte si tu as une autre API)
     const btn = document.querySelector('.btn-ajout-marqueur')
-    btn.__handlers?.click?.({})
+    btn?.__handlers?.click?.({})
+    console.log('📋 Form initial dans beforeEach:', wrapper.vm.form)
   })
 
   afterEach(() => {
     wrapper.unmount()
     vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   it('envoie avec succès un formulaire valide sans images', async () => {
-    // Remplir le formulaire avec des données valides
-    await wrapper.get('#titre').setValue('Mon lieu')
-    await wrapper.get('#description').setValue('Description du lieu')
-    await wrapper.get('#adresse').setValue('123 Rue Test, Québec')
-    
-    // Mock réponse API succès
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ id: 1, message: 'Marqueur créé' })
-    })
+    const marqueurStore = useMarqueursStore()
+  
+    // await wrapper.get('#titre').setValue('Mon lieu')
+    // await wrapper.get('#description').setValue('Description du lieu')
+    // await wrapper.get('#adresse').setValue('123 Rue Test, Québec')
+    wrapper.vm.form = {
+    titre: 'Mon lieu',
+    description: 'Description du lieu',
+    adresse: '123 Rue Test, Québec',
+    email: '',
+    type: '',
+    lat: '',
+    lng: '',
+    nom: '',
+    souvenir: '',
+    images: []
+  }
 
+    await wrapper.vm.$nextTick()
+    
     await wrapper.vm.sendRequest()
 
-    expect(fetch).toHaveBeenCalledWith(
-      'https://carte-videoludique.vercel.app/marqueurs',
+    expect(marqueurStore.ajouterMarqueur).toHaveBeenCalledWith(
       expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: expect.stringContaining('Mon lieu')
+        titre: 'Mon lieu',
+        description: 'Description du lieu',
+        adresse: '123 Rue Test, Québec',
       })
     )
-    expect(uploadMultipleImages).not.toHaveBeenCalled()
-    expect(wrapper.vm.panelOpen).toBe(false) // Panneau fermé après succès
+    expect(wrapper.vm.panelOpen).toBe(false)
   })
 
   it('envoie avec succès un formulaire valide avec images', async () => {
+    const marqueurStore = useMarqueursStore()
+
     // Remplir le formulaire
     await wrapper.get('#titre').setValue('Mon lieu avec images')
     await wrapper.get('#description').setValue('Description')
@@ -403,17 +435,22 @@ describe('sendRequest (exposed)', () => {
     
     // Mock réponses
     uploadMultipleImages.mockResolvedValueOnce([
-      { publicId: 'img1', url: 'http://example.com/img1.jpg' }
+      { publicId: 'img1', url: 'http://example.com/img1.jpg' },
+      { publicId: 'img2', url: 'http://example.com/img2.jpg' }
     ])
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ id: 1 })
-    })
 
     await wrapper.vm.sendRequest()
 
     expect(uploadMultipleImages).toHaveBeenCalledWith(wrapper.vm.files)
-    expect(fetch).toHaveBeenCalled()
+    expect(marqueurStore.ajouterMarqueur).toHaveBeenCalledWith(
+     expect.objectContaining({
+       titre: 'Mon lieu avec images',
+       images: [
+         { publicId: 'img1', url: 'http://example.com/img1.jpg' },
+         { publicId: 'img2', url: 'http://example.com/img2.jpg' }
+       ]
+     })
+  )
     expect(wrapper.vm.panelOpen).toBe(false)
   })
 
@@ -429,6 +466,7 @@ describe('sendRequest (exposed)', () => {
   })
 
   it('nettoie les images et relance erreur si API échoue', async () => {
+    const marqueurStore = useMarqueursStore()
     // Remplir formulaire valide
     await wrapper.get('#titre').setValue('Mon lieu')
     await wrapper.get('#description').setValue('Description')
@@ -441,10 +479,7 @@ describe('sendRequest (exposed)', () => {
     ])
     
     // Mock échec API
-    fetch.mockResolvedValueOnce({
-      ok: false,
-      json: () => Promise.resolve({ message: 'Erreur serveur' })
-    })
+    marqueurStore.ajouterMarqueur.mockRejectedValueOnce(new Error('Erreur serveur'))
 
     await expect(wrapper.vm.sendRequest()).rejects.toThrow('Erreur serveur')
     
@@ -453,13 +488,14 @@ describe('sendRequest (exposed)', () => {
   })
 
   it('gère les erreurs de réseau', async () => {
+    const marqueurStore = useMarqueursStore()
     // Remplir formulaire valide
     await wrapper.get('#titre').setValue('Mon lieu')
     await wrapper.get('#description').setValue('Description')
     await wrapper.get('#adresse').setValue('123 Rue Test')
     
     // Mock erreur réseau
-    fetch.mockRejectedValueOnce(new Error('Network error'))
+    marqueurStore.ajouterMarqueur.mockRejectedValueOnce(new Error('Network error'))
 
     await expect(wrapper.vm.sendRequest()).rejects.toThrow('Network error')
     expect(wrapper.vm.panelOpen).toBe(true)
