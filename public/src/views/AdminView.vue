@@ -48,7 +48,7 @@ const accepterMarqueur = (marqueurId) => {
 onMounted(() => {
   getMarqueurs()
   // getMarqueur(marqueurId.value)
-}
+})
 </script>
 
 <template>
