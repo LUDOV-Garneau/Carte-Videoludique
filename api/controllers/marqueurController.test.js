@@ -46,7 +46,6 @@ describe('MarqueurController.createMarqueur', () => {
       image: 'image.png',
       courriel: 'test@example.com',
       location: { type: 'Point', coordinates: [-73.5, 45.5] }
-      status: 'En Attente'
     })
 
     const req = mockReq({
