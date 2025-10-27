@@ -2,8 +2,13 @@
 import LeafletMap from '../components/LeafletMap.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
+import {useRoute} from 'vue-router'
+
 
 const marqueursStore = useMarqueursStore()
+// const route = useRoute()
+// const marqueurId = computed(() => route.params.marqueurId)
+
 const messageErreur = ref('')
 
 const filtreStatus = ref('pending')
@@ -21,9 +26,19 @@ const getMarqueurs = () => {
     messageErreur.value = error.message;
   });
 }
+const getMarqueur = (marqueurId) => {
+  marqueursStore.getMarqueur(marqueurId)
+  console.log(marqueurId)
+}
+
+const accepterMarqueur = (marqueurId) => {
+  marqueursStore.getMarqueur(marqueurId)
+  console.log(marqueurId)
+}
 
 onMounted(() => {
   getMarqueurs()
+  // getMarqueur(marqueurId.value)
 })
 </script>
 
@@ -70,7 +85,7 @@ onMounted(() => {
                     <button class="kebab" aria-label="Modifier" @click="$emit('menu', marqueur)">Modifier</button>
                   </td>
                   <td class="accept-col">
-                    <button class="action-btn accept" @click="$emit('accept', marqueur)">Accepter</button>
+                    <button class="action-btn accept" @click="accepterMarqueur(marqueurId)">Accepter</button>
                   </td>
                   <td class="reject-col">
                     <button class="action-btn reject" @click="$emit('reject', marqueur)">Refuser</button>
