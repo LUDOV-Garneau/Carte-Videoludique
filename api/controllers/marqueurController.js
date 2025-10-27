@@ -23,19 +23,6 @@ exports.createMarqueur = async (req, res, next) => {
   try {
     const form = req.body;
 
-    // 🔹 DEBUG : affichage complet pour vérifier ce que le backend reçoit
-    console.log("=== DEBUG createMarqueur ===");
-    console.log("Requête reçue (req.body) :", form);
-    console.log("Types des champs :",
-      "lng =", typeof form.lng,
-      "lat =", typeof form.lat,
-      "titre =", typeof form.titre,
-      "description =", typeof form.description,
-      "souvenir =", typeof form.souvenir,
-      "type =", typeof form.type
-    );
-    console.log("============================");
-
     // Validation des champs requis
     if (!form.titre || !form.description) {
       return res.status(400).json(formatErrorResponse(
@@ -64,8 +51,8 @@ exports.createMarqueur = async (req, res, next) => {
         adresse: form.adresse,
         description: form.description,
         temoignage: form.souvenir,
-        image: form.image,
         courriel: form.email,
+        images: form.images || [],
         status: "pending",
         createdByName: form.nom || "Anonyme"
       }
