@@ -20,49 +20,72 @@ dotenv.config();
  * @throws {Error} Passe une erreur à `next` en cas de problème lors de l'enregistrement du marqueur.
  */
 exports.createMarqueur = async (req, res, next) => {
-    try {
-        const form = req.body;
+  try {
+    const form = req.body;
 
-        if (!form.titre || !form.description) {
-            return res.status(400).json(formatErrorResponse(
-                400,
-                "Bad Request",
-                "Paramètres manquants : titre, type, adresse, longitude ou latitude",
-                req.originalUrl
-            ));
-        }
+    // 🔹 DEBUG : affichage complet pour vérifier ce que le backend reçoit
+    console.log("=== DEBUG createMarqueur ===");
+    console.log("Requête reçue (req.body) :", form);
+    console.log("Types des champs :",
+      "lng =", typeof form.lng,
+      "lat =", typeof form.lat,
+      "titre =", typeof form.titre,
+      "description =", typeof form.description,
+      "souvenir =", typeof form.souvenir,
+      "type =", typeof form.type
+    );
+    console.log("============================");
 
-        if (form.type == '') {
-            form.type = 'Autres';
-        }
-        
-        const marqueur = new Marqueur({ 
-            titre: form.titre, 
-            type: form.type, 
-            adresse: form.adresse, 
-            description: form.description, 
-            temoignage: form.souvenir, 
-            images: form.images,
-            location: {
-                type: "Point",
-                coordinates: [form.lng, form.lat] 
-            }
-        });
-
-        const result = await marqueur.save();
-
-        res.location(`/marqueurs/${result._id}`);
-        res.status(201).json(formatSuccessResponse(
-            201,
-            "Le marqueur a été créé avec succès !",
-            result,
-            req.originalUrl
-        ));
-
-    } catch (err) {
-        next(err);
+    // Validation des champs requis
+    if (!form.titre || !form.description) {
+      return res.status(400).json(formatErrorResponse(
+        400,
+        "Bad Request",
+        "Paramètres manquants : titre ou description",
+        req.originalUrl
+      ));
     }
+
+    // Défaut pour type
+    if (!form.type || form.type.trim() === '') {
+      form.type = 'Autres';
+    }
+
+    // Création du marqueur conforme au modèle GeoJSON
+    const marqueur = new Marqueur({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [parseFloat(form.lng), parseFloat(form.lat)]
+      },
+      properties: {
+        titre: form.titre,
+        type: form.type,
+        adresse: form.adresse,
+        description: form.description,
+        temoignage: form.souvenir,
+        image: form.image,
+        courriel: form.email,
+        status: "pending",
+        createdByName: form.nom || "Anonyme"
+      }
+    });
+
+    const result = await marqueur.save();
+
+    res.location(`/marqueurs/${result._id}`);
+    res.status(201).json(formatSuccessResponse(
+      201,
+      "Le marqueur a été créé avec succès !",
+      result,
+      req.originalUrl
+    ));
+
+  } catch (err) {
+    next(err);
+  }
 };
+
 
 /**
  * Récupère tous les marqueurs et les renvoie en réponse JSON.
