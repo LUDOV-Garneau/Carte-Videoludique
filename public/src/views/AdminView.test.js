@@ -62,12 +62,11 @@ describe('AdminView.vue', () => {
 
     const marqueurStore = useMarqueursStore()
 
-    // ⬇️ IMPORTANT : Ajouter status: 'En attente'
     marqueurStore.marqueurs = [{
       id: 1, 
       titre: 'Vidéotron', 
       address: '2300 rue X',
-      status: 'En attente'  // ⬅️ ESSENTIEL pour passer le filtre
+      status: 'En attente'  
     }]
 
     await wrapper.vm.$nextTick()
