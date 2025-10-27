@@ -63,10 +63,11 @@ describe('AdminView.vue', () => {
     const marqueurStore = useMarqueursStore()
 
     marqueurStore.marqueurs = [{
-      id: 1, 
-      titre: 'Vidéotron', 
-      address: '2300 rue X',
-      status: 'En attente'  
+      properties: {
+        titre: 'Vidéotron', 
+        adresse: '2300 rue X',
+        status: 'pending'  
+      }
     }]
 
     await wrapper.vm.$nextTick()

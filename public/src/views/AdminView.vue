@@ -6,13 +6,13 @@ import { useMarqueursStore } from '../stores/useMarqueur'
 const marqueursStore = useMarqueursStore()
 const messageErreur = ref('')
 
-const filtreStatus = ref('En attente')
+const filtreStatus = ref('pending')
 
 const marqueursFiltres = computed(() => {
+  console.log(marqueursStore.marqueurs)
   return (marqueursStore.marqueurs ?? []).filter(
-    m => (m.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
+    m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
   )
-  
 })
 
 const getMarqueurs = () => {
@@ -54,8 +54,8 @@ onMounted(() => {
               </thead>
               <tbody>
                 <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id">
-                  <td class="provider">{{ marqueur.titre }}</td>
-                  <td class="address">{{ marqueur.address }}</td>
+                  <td class="provider">{{ marqueur.properties.titre }}</td>
+                  <td class="address">{{ marqueur.properties.adresse }}</td>
                   <td class="info-col">
                     <button class="info-btn" @click="$emit('show-info', marqueur)">
                       <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -170,12 +170,10 @@ th {
   background: transparent; 
 }
 .action-btn.accept:hover { 
-  background: var(--green-strong); 
-  color: #fff; 
+ text-decoration: underline;
 }
 .action-btn.reject:hover { 
-  background: var(--red-strong); 
-  color: #fff; 
+  text-decoration: underline;
 }
 
 
