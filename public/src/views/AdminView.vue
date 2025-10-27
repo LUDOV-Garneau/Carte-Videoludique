@@ -2,9 +2,7 @@
 import LeafletMap from '../components/LeafletMap.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
-import {useRoute} from 'vue-router'
-
-
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -16,7 +14,6 @@ const logout = () => {
   router.push('/connexion')
 }
 
-
 const marqueursStore = useMarqueursStore()
 // const route = useRoute()
 // const marqueurId = computed(() => route.params.marqueurId)
@@ -24,19 +21,13 @@ const marqueursStore = useMarqueursStore()
 const messageErreur = ref('')
 
 const filtreStatus = ref('pending')
+
 const marqueursFiltres = computed(() => {
   console.log(marqueursStore.marqueurs)
   return (marqueursStore.marqueurs ?? []).filter(
     m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
   )
 })
-
-// const marqueursFiltres = computed(() => {
-//   console.log(marqueursStore.marqueurs)
-//   return (marqueursStore.marqueurs ?? []).filter(
-//     m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
-//   )
-// })
 
 const getMarqueurs = () => {
   marqueursStore.getMarqueurs()
@@ -57,7 +48,7 @@ const accepterMarqueur = (marqueurId) => {
 onMounted(() => {
   getMarqueurs()
   // getMarqueur(marqueurId.value)
-})
+}
 </script>
 
 <template>
@@ -67,17 +58,14 @@ onMounted(() => {
     </aside>
 
     <main class="content">
-      <!-- <header class="page-header">
-        <h1>Le jeu vidéo au Québec</h1>
+      <header class="page-header bg-light py-3 text-center">
+        <h1 class="page-title mb-0">Le jeu vidéo au Québec</h1>
       </header>
-      <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">-->
-          <!-- Logo ou titre -->
-    
-      <!-- <h1 class="page-header navbar-brand navbar-title mb-0">Le jeu vidéo au Québec</h1> -->
-    
-          <!-- Bouton pour les écrans petits (hamburger menu) -->
-          <!-- <button
+
+      <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+        <div class="container-fluid">
+          <!-- Bouton hamburger -->
+          <button
             class="navbar-toggler"
             type="button"
             data-bs-toggle="collapse"
@@ -87,72 +75,29 @@ onMounted(() => {
             aria-label="Toggle navigation"
           >
             <span class="navbar-toggler-icon"></span>
-          </button> -->
+          </button>
 
-          <!-- Liens de navigation -->
-          <!-- <div class="collapse navbar-collapse" id="navbarNav">
+          <!-- Liens -->
+          <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
               <template v-if="auth.isAuthenticated">
                 <li class="nav-item">
-                  <router-link to="/profile" class="nav-link">
-                    {{ auth.username }}
-                  </router-link>
+                  <router-link to="/profile" class="nav-link">{{ auth.name }}</router-link>
                 </li>
                 <li class="nav-item">
-                  <router-link to="/accounts" class="nav-link"> Administrateurs </router-link>
+                  <router-link to="/accounts" class="nav-link">Administrateurs</router-link>
                 </li>
                 <li class="nav-item">
-                  <router-link to="/inscription" class="nav-link"> Créer un compte </router-link>
+                  <router-link to="/inscription" class="nav-link">Créer un compte</router-link>
                 </li>
                 <li class="nav-item">
-                  <a href="#" class="nav-link" @click="logout()"> Se déconnecter </a>
+                  <a href="#" class="nav-link" @click="logout()">Se déconnecter</a>
                 </li>
               </template>
             </ul>
           </div>
         </div>
-      </nav> -->
-      <header class="page-header bg-light py-3 text-center">
-  <h1 class="page-title mb-0">Le jeu vidéo au Québec</h1>
-</header>
-
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-  <div class="container-fluid">
-    <!-- Bouton hamburger -->
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarNav"
-      aria-controls="navbarNav"
-      aria-expanded="false"
-      aria-label="Toggle navigation"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <!-- Liens -->
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <template v-if="auth.isAuthenticated">
-          <li class="nav-item">
-            <router-link to="/profile" class="nav-link">{{ auth.name }}</router-link>
-          </li>
-          <li class="nav-item">
-            <router-link to="/accounts" class="nav-link">Administrateurs</router-link>
-          </li>
-          <li class="nav-item">
-            <router-link to="/inscription" class="nav-link">Créer un compte</router-link>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link" @click="logout()">Se déconnecter</a>
-          </li>
-        </template>
-      </ul>
-    </div>
-  </div>
-</nav>
-
+      </nav>
 
       <h2>Notification</h2>
 
@@ -163,17 +108,17 @@ onMounted(() => {
               <th>Lieu</th>
               <th>Adresse</th>
               <th class="info-col">Info</th>
-              <th class="menu-col" aria-label="Plus d'options"></th>
+              <th class="modif-col">Modification</th>
               <th class="accept-col">Accepter</th>
               <th class="reject-col">Refuser</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in rows" :key="row.id">
-              <td class="provider">{{ row.provider }}</td>
-              <td class="address">{{ row.address }}</td>
+            <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id">
+              <td class="provider">{{ marqueur.properties.titre }}</td>
+              <td class="address">{{ marqueur.properties.adresse }}</td>
               <td class="info-col">
-                <button class="info-btn" @click="$emit('show-info', row)">
+                <button class="info-btn" @click="$emit('show-info', marqueur)">
                   <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <circle
                       cx="12"
@@ -197,13 +142,22 @@ onMounted(() => {
                 </button>
               </td>
               <td class="menu-col">
-                <button class="kebab" aria-label="Menu" @click="$emit('menu', row)">⋯</button>
+                <button class="kebab" aria-label="Modifier" @click="$emit('menu', marqueur)">
+                  Modifier
+                </button>
+              </td>
+              <td class="accept-col">
+                <button class="action-btn accept" @click="accepterMarqueur(marqueurId)">
+                  Accepter
+                </button>
               </td>
               <td class="reject-col">
-                <button class="action-btn reject" @click="$emit('reject', row)">Refuser</button>
+                <button class="action-btn reject" @click="$emit('reject', marqueur)">
+                  Refuser
+                </button>
               </td>
             </tr>
-            <tr v-if="!rows || rows.length === 0">
+            <tr v-if="!marqueursFiltres || marqueursFiltres.length === 0">
               <td colspan="6" class="empty">
                 Aucune offre pour le moment.
                 <div class="empty-btn">
@@ -214,6 +168,7 @@ onMounted(() => {
           </tbody>
         </table>
       </div>
+      F
       <section class="map-wrapper">
         <LeafletMap />
       </section>
@@ -253,9 +208,9 @@ th {
 .info-col {
   width: 240px;
 }
-.modif-col { 
-  width: 120px; 
-  text-align: center; 
+.modif-col {
+  width: 120px;
+  text-align: center;
 }
 .accept-col {
   width: 120px;
@@ -284,11 +239,11 @@ th {
   width: 18px;
   height: 18px;
 }
-.kebab { 
-  background: transparent; 
-  border: none; 
-  line-height: 16px;  
-  cursor: pointer; 
+.kebab {
+  background: transparent;
+  border: none;
+  line-height: 16px;
+  cursor: pointer;
 }
 .kebab:hover {
   opacity: 0.7;
@@ -301,10 +256,10 @@ th {
   cursor: pointer;
   background: transparent;
 }
-.action-btn.accept:hover { 
- text-decoration: underline;
+.action-btn.accept:hover {
+  text-decoration: underline;
 }
-.action-btn.reject:hover { 
+.action-btn.reject:hover {
   text-decoration: underline;
 }
 
