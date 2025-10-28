@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { API_URL } from '../config.js'
 
 export const useMarqueursStore = defineStore('marqueurs', () => {
-    const apiUrl = 'https://carte-videoludique.vercel.app'
     const marqueurs = ref([])
     const marqueurActif = ref(null)
 
     function ajouterMarqueur(payload){
-        return fetch(`${apiUrl}/marqueurs`, {
+        return fetch(`${API_URL}/marqueurs`, {
             method: 'POST',
             headers: { 
                 "Content-Type": "application/json" 
@@ -33,7 +33,7 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
     }
 
     function getMarqueurs(){
-        return fetch(`${apiUrl}/marqueurs`, {
+        return fetch(`${API_URL}/marqueurs`, {
             method: 'GET',
             headers: { 
                 "Content-Type": "application/json" 
@@ -54,7 +54,7 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
     }
 
     function getMarqueur(marqueurId) {
-        return fetch(`${apiUrl}/marqueurs/${marqueurId}`, {
+        return fetch(`${API_URL}/marqueurs/${marqueurId}`, {
             method: 'GET',
             headers: { 
                 "Content-Type": "application/json" 
