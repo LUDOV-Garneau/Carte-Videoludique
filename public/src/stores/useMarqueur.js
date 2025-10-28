@@ -1,17 +1,27 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { API_URL } from '../config.js'
+import { useAuthStore } from '../stores/auth'
 
 export const useMarqueursStore = defineStore('marqueurs', () => {
     const marqueurs = ref([])
     const marqueurActif = ref(null)
+    const authStore = useAuthStore();
 
     function ajouterMarqueur(payload){
+        // Construire les headers de base
+        const headers = {
+            "Content-Type": "application/json"
+        };
+
+        // Ajouter l'Authorization si l'admin est connecté
+        if (authStore.isAuthenticated && authStore.token) {
+            headers.Authorization = `Bearer ${authStore.token}`;
+        }
+
         return fetch(`${API_URL}/marqueurs`, {
             method: 'POST',
-            headers: { 
-                "Content-Type": "application/json" 
-            },
+            headers: headers,
             body: JSON.stringify(payload),
         })
         .then(async (response) => {
