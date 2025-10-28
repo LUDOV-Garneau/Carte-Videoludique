@@ -13,8 +13,8 @@ function mockRes() {
     location (path) { this.headers.Location = path; return this }
   }
 }
-function mockReq({body= {}, params = {}, originalUrl = 'api/test'} = {}) {
-  return { body, params, originalUrl, marqueur: undefined }
+function mockReq({body= {}, params = {}, originalUrl = 'api/test', admin = null} = {}) {
+  return { body, params, originalUrl, marqueur: undefined, admin }
 }
 function mockNext() {
   const fn = vi.fn()
@@ -83,6 +83,58 @@ describe('MarqueurController.createMarqueur', () => {
     })
     expect(res.body.path).toBe(req.originalUrl)
     expect(new Date(res.body.timestamp).toISOString()).toBe(res.body.timestamp)
+  })
+
+  it('201 + status approved si admin connecté', async () => {
+    const mockAdmin = { 
+      _id: 'admin123', 
+      nom: 'Admin Test', 
+      courriel: 'admin@test.com' 
+    }
+
+    vi.spyOn(Marqueur.prototype, 'save')
+    .mockResolvedValue({ 
+      _id: 'marqueur123',
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [-73.5, 45.5]
+      },
+      properties: {
+        titre: 'Test Admin',
+        type: 'Autres',
+        adresse: '123 rue Admin',
+        description: 'Description admin',
+        temoignage: 'Témoignage admin',
+        courriel: 'admin@test.com',
+        images: [],
+        status: 'approved',
+        createdByName: 'Anonyme'
+      }
+    })
+
+    const req = mockReq({
+      body: {
+        titre: 'Test Admin',
+        description: 'Description admin',
+        lng: -73.5,
+        lat: 45.5
+      },
+      admin: mockAdmin
+    })
+
+    const res = mockRes()
+    const next = mockNext()
+
+    await marqueurController.createMarqueur(req, res, next)
+
+    expect(res.statusCode).toBe(201)
+    expect(res.body.status).toBe(201)
+    expect(res.body.message).toBe("Le marqueur a été créé avec succès !")
+    
+    // Vérifier que le marqueur est créé avec le statut 'approved'
+    const savedMarqueur = vi.mocked(Marqueur.prototype.save).mock.calls[0][0]
+    expect(res.body.data.properties.status).toBe('approved')
   })
 })
 
