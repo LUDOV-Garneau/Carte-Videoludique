@@ -22,6 +22,8 @@ dotenv.config();
 exports.createMarqueur = async (req, res, next) => {
   try {
     const form = req.body;
+    const isAdmin = req.admin !== null && req.admin !== undefined;
+
 
     // Validation des champs requis
     if (!form.titre || !form.description) {
@@ -53,7 +55,7 @@ exports.createMarqueur = async (req, res, next) => {
         temoignage: form.souvenir,
         courriel: form.email,
         images: form.images || [],
-        status: "pending",
+        status: isAdmin ? "approved" : "pending",
         createdByName: form.nom || "Anonyme"
       }
     });
