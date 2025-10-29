@@ -39,7 +39,7 @@ describe('AdminView.vue', () => {
       global: { stubs: { LeafletMap: LeafletMapStub } }
     })
     expect(wrapper.find('h1').text()).toContain('Le jeu vidéo au Québec')
-    expect(wrapper.find('h2').text()).toBe('Notification')
+    expect(wrapper.find('h2').text()).toBe('Notifications')
   })
 
   it('affiche un message vide si aucune offre', () => {

@@ -33,7 +33,7 @@
 
       <button type="submit" class="btn btn-primary">S'inscrire</button>
       <div v-if="erreurServeur" class="mt-3 text-danger">{{ erreurServeur }}</div>
-       <!-- ✅ Message de succès -->
+      
       <div
         v-if="messageSucces"
         class="alert alert-success mt-3"
@@ -116,8 +116,6 @@ const soumettreFormulaire = async () => {
       router.push('/connexion')
     }, 2000)
 
-    // // Succès → rediriger vers login
-    // router.push('/connexion')
   } catch (err) {
     erreurServeur.value = 'Erreur de connexion au serveur'
   }
