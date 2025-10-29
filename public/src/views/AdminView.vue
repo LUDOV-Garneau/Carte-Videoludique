@@ -35,10 +35,10 @@ const getMarqueurs = () => {
     messageErreur.value = error.message;
   });
 }
-const getMarqueur = (marqueurId) => {
-  marqueursStore.getMarqueur(marqueurId)
-  console.log(marqueurId)
-}
+// const getMarqueur = (marqueurId) => {
+//   marqueursStore.getMarqueur(marqueurId)
+//   console.log(marqueurId)
+// }
 
 const accepterMarqueur = (marqueurId) => {
   marqueursStore.getMarqueur(marqueurId)

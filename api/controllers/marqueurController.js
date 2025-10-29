@@ -22,19 +22,8 @@ dotenv.config();
 exports.createMarqueur = async (req, res, next) => {
   try {
     const form = req.body;
+    const isAdmin = req.admin !== null && req.admin !== undefined;
 
-    // 🔹 DEBUG : affichage complet pour vérifier ce que le backend reçoit
-    console.log("=== DEBUG createMarqueur ===");
-    console.log("Requête reçue (req.body) :", form);
-    console.log("Types des champs :",
-      "lng =", typeof form.lng,
-      "lat =", typeof form.lat,
-      "titre =", typeof form.titre,
-      "description =", typeof form.description,
-      "souvenir =", typeof form.souvenir,
-      "type =", typeof form.type
-    );
-    console.log("============================");
 
     // Validation des champs requis
     if (!form.titre || !form.description) {
@@ -64,9 +53,9 @@ exports.createMarqueur = async (req, res, next) => {
         adresse: form.adresse,
         description: form.description,
         temoignage: form.souvenir,
-        image: form.image,
         courriel: form.email,
-        status: "pending",
+        images: form.images || [],
+        status: isAdmin ? "approved" : "pending",
         createdByName: form.nom || "Anonyme"
       }
     });
