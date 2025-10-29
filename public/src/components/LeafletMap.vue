@@ -398,6 +398,8 @@ function setupMapClickHandler() {
       .bindPopup(`Proposition<br>${lat.toFixed(5)}, ${lng.toFixed(5)}`)
       .openPopup()
 
+    map.setView([lat, lng], 18);
+
     try {
       const { address } = await reverseGeocode(lat, lng)
       const ligne = [
