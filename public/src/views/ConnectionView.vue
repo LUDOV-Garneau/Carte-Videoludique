@@ -27,6 +27,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+import { API_URL } from '@/config'
 
 const email = ref('')
 const password = ref('')
@@ -36,6 +37,7 @@ const errorMessage = ref('')
 const auth = useAuthStore()
 
 const router = useRouter()
+
 
 const validateForm = () => {
   let isValid = true
@@ -62,7 +64,7 @@ const handleSubmit = async () => {
   if (!validateForm()) return
 
   try {
-    const response = await fetch(`https://carte-videoludique.vercel.app/login`, {
+    const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

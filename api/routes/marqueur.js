@@ -7,10 +7,11 @@ const router = express.Router();
 const marqueurController = require("../controllers/marqueurController");
 
 const isAuth = require("../middlewares/isAuth");
+const optionalAuth = require("../middlewares/optionalAuth");
 
 
 // POST => /marqueurs
-router.post("/marqueurs", marqueurController.createMarqueur);
+router.post("/marqueurs", optionalAuth, marqueurController.createMarqueur);
 
 // GET => /marqueurs 
 router.get("/marqueurs", marqueurController.getMarqueurs);

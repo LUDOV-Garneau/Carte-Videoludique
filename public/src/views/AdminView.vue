@@ -2,8 +2,17 @@
 import LeafletMap from '../components/LeafletMap.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
-// import {useRoute} from 'vue-router'
+import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 
+const auth = useAuthStore()
+const router = useRouter()
+
+const logout = () => {
+  auth.logout()
+  router.push('/connexion')
+}
 
 const marqueursStore = useMarqueursStore()
 // const route = useRoute()
@@ -48,62 +57,121 @@ onMounted(() => {
       <span class="brand-vertical">L U D O V</span>
     </aside>
 
-    <main class="content">   
-      <header class="page-header">
-        <h1>Le jeu vidéo au Québec</h1>
-        </header> 
-        
-        <h2>Notification</h2>
-        
-        <div class="offers-wrapper">
-          <table class="offers-table" role="table" aria-label="Offres fournisseur">
-            <thead>
-              <tr>
-                <th>Lieu</th>
-                  <th>Adresse</th>
-                  <th class="info-col">Info</th>
-                  <th class="modif-col">Modification</th>
-                  <th class="accept-col">Accepter</th>
-                  <th class="reject-col">Refuser</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id">
-                  <td class="provider">{{ marqueur.properties.titre }}</td>
-                  <td class="address">{{ marqueur.properties.adresse }}</td>
-                  <td class="info-col">
-                    <button class="info-btn" @click="$emit('show-info', marqueur)">
-                      <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.75" />
-                        <line x1="12" y1="10.5" x2="12" y2="17" stroke="currentColor" stroke-width="1.75"/>
-                        <circle cx="12" cy="7.5" r="1.25" fill="currentColor" />
-                      </svg>
-                      <span>Afficher la description</span>
-                    </button>
-                  </td>
-                  <td class="menu-col">
-                    <button class="kebab" aria-label="Modifier" @click="$emit('menu', marqueur)">Modifier</button>
-                  </td>
-                  <td class="accept-col">
-                    <button class="action-btn accept" @click="accepterMarqueur(marqueurId)">Accepter</button>
-                  </td>
-                  <td class="reject-col">
-                    <button class="action-btn reject" @click="$emit('reject', marqueur)">Refuser</button>
-                  </td>
-                </tr>
-                <tr v-if="!marqueursFiltres || marqueursFiltres.length === 0">
-                  <td colspan="6" class="empty">Aucune offre pour le moment.
-                    <div class="empty-btn">
-                       <button class="clear-btn">Effacer les notifications</button>
-                    </div>     
-                  </td> 
-                </tr>
-              </tbody>
-            </table>
+    <main class="content">
+      <header class="page-header bg-light py-3 text-center">
+        <h1 class="page-title mb-0">Le jeu vidéo au Québec</h1>
+      </header>
+
+      <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+        <div class="container-fluid">
+          <!-- Bouton hamburger -->
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+            aria-controls="navbarNav"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <!-- Liens -->
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+              <template v-if="auth.isAuthenticated">
+                <li class="nav-item">
+                  <router-link to="/profile" class="nav-link">{{ auth.name }}</router-link>
+                </li>
+                <li class="nav-item">
+                  <router-link to="/accounts" class="nav-link">Administrateurs</router-link>
+                </li>
+                <li class="nav-item">
+                  <router-link to="/inscription" class="nav-link">Créer un compte</router-link>
+                </li>
+                <li class="nav-item">
+                  <a href="#" class="nav-link" @click="logout()">Se déconnecter</a>
+                </li>
+              </template>
+            </ul>
+          </div>
         </div>
+      </nav>
+
+      <h2>Notification</h2>
+
+      <div class="offers-wrapper">
+        <table class="offers-table" role="table" aria-label="Offres fournisseur">
+          <thead>
+            <tr>
+              <th>Lieu</th>
+              <th>Adresse</th>
+              <th class="info-col">Info</th>
+              <th class="modif-col">Modification</th>
+              <th class="accept-col">Accepter</th>
+              <th class="reject-col">Refuser</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id">
+              <td class="provider">{{ marqueur.properties.titre }}</td>
+              <td class="address">{{ marqueur.properties.adresse }}</td>
+              <td class="info-col">
+                <button class="info-btn" @click="$emit('show-info', marqueur)">
+                  <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                    />
+                    <line
+                      x1="12"
+                      y1="10.5"
+                      x2="12"
+                      y2="17"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                    />
+                    <circle cx="12" cy="7.5" r="1.25" fill="currentColor" />
+                  </svg>
+                  <span>Afficher la description</span>
+                </button>
+              </td>
+              <td class="menu-col">
+                <button class="kebab" aria-label="Modifier" @click="$emit('menu', marqueur)">
+                  Modifier
+                </button>
+              </td>
+              <td class="accept-col">
+                <button class="action-btn accept" @click="accepterMarqueur(marqueurId)">
+                  Accepter
+                </button>
+              </td>
+              <td class="reject-col">
+                <button class="action-btn reject" @click="$emit('reject', marqueur)">
+                  Refuser
+                </button>
+              </td>
+            </tr>
+            <tr v-if="!marqueursFiltres || marqueursFiltres.length === 0">
+              <td colspan="6" class="empty">
+                Aucune offre pour le moment.
+                <div class="empty-btn">
+                  <button class="clear-btn">Effacer les notifications</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      F
       <section class="map-wrapper">
-        <LeafletMap /> 
-      </section>      
+        <LeafletMap />
+      </section>
     </main>
   </div>
 </template>
@@ -112,93 +180,97 @@ onMounted(() => {
 /*Tableau notifications*/
 .offers-wrapper {
   width: 100%;
-  overflow-x: auto; 
+  overflow-x: auto;
 }
-.offers-table { 
-  width: 100%; 
-  border-collapse: collapse; 
-  table-layout: fixed; 
+.offers-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 thead {
   background: #f3f2f2;
 }
-th, td { 
-  border: 1px solid var(--border); 
-  padding: 10px 12px; 
-  text-align: left; 
+th,
+td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
 }
-th { 
-  font-weight: 600;   
+th {
+  font-weight: 600;
 }
-.provider, .address, .info-col, .menu-col { 
-  background: var(--cell-bg); 
+.provider,
+.address,
+.info-col,
+.menu-col {
+  background: var(--cell-bg);
 }
-.info-col { 
-  width: 240px; 
+.info-col {
+  width: 240px;
 }
-.modif-col { 
-  width: 120px; 
-  text-align: center; 
+.modif-col {
+  width: 120px;
+  text-align: center;
 }
-.accept-col { 
-  width: 120px; 
-  background: var(--green); 
-  text-align: center; 
+.accept-col {
+  width: 120px;
+  background: var(--green);
+  text-align: center;
 }
-.reject-col { 
-  width: 120px; 
-  background: var(--red); 
-  text-align: center; 
+.reject-col {
+  width: 120px;
+  background: var(--red);
+  text-align: center;
 }
-.info-btn { 
-  display: inline-flex; 
-  align-items: center; 
-  gap: 8px; font: inherit; 
-  border: none; 
-  background: transparent; 
-  cursor: pointer; 
-  padding: 0; 
+.info-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
 }
-.info-btn:hover { 
-  text-decoration: underline; 
+.info-btn:hover {
+  text-decoration: underline;
 }
-.info-icon { 
-  width: 18px; 
-  height: 18px; 
+.info-icon {
+  width: 18px;
+  height: 18px;
 }
-.kebab { 
-  background: transparent; 
-  border: none; 
-  line-height: 16px;  
-  cursor: pointer; 
+.kebab {
+  background: transparent;
+  border: none;
+  line-height: 16px;
+  cursor: pointer;
 }
-.kebab:hover { 
-  opacity: 0.7; 
+.kebab:hover {
+  opacity: 0.7;
 }
-.action-btn { 
+.action-btn {
   width: 100%;
-  border: none; 
-  padding: 10px 12px; 
-  font-weight: 600; 
-  cursor: pointer; 
-  background: transparent; 
+  border: none;
+  padding: 10px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
 }
-.action-btn.accept:hover { 
- text-decoration: underline;
+.action-btn.accept:hover {
+  text-decoration: underline;
 }
-.action-btn.reject:hover { 
+.action-btn.reject:hover {
   text-decoration: underline;
 }
 
-
 /* Cellule vide */
-.empty { 
-  text-align: center; 
-  color: #666; 
-  background: #fff; 
+.empty {
+  text-align: center;
+  color: #666;
+  background: #fff;
 }
 .empty-btn {
-  margin:20px;
+  margin: 20px;
 }
 .clear-btn {
   border: 1px solid black;
@@ -215,16 +287,16 @@ th {
   border-radius: 4px;
 }
 h1 {
-  color:black;
+  color: black;
 }
 h2 {
-    color: black;
-    text-decoration: underline;
+  color: black;
+  text-decoration: underline;
 }
 p {
-  color:black
+  color: black;
 }
-table{
+table {
   color: black;
 }
 .layout {
@@ -239,18 +311,18 @@ table{
   justify-content: center;
   align-items: center;
 }
-.brand-vertical{
+.brand-vertical {
   margin-top: 60px;
   writing-mode: vertical-rl;
   text-orientation: upright;
-  height:100%;
-  align-items:center; 
-  font-weight:700; 
-  font-size:1.5rem; 
-  color:#000;
+  height: 100%;
+  align-items: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #000;
 }
 .content {
-  margin:30px;
+  margin: 30px;
   flex: 1;
   padding: 16px 32px;
 }
@@ -262,5 +334,10 @@ table{
   height: 80vh;
   border-radius: 8px;
   overflow: hidden;
+}
+/* Pour personnaliser la couleur des liens actifs dans la navbar */
+.nav-link.active {
+  color: #ec0f0f;
+  font-weight: bold;
 }
 </style>
