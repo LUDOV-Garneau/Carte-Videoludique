@@ -2,7 +2,7 @@
 import LeafletMap from '../components/LeafletMap.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
-import {useRoute} from 'vue-router'
+// import {useRoute} from 'vue-router'
 
 
 const marqueursStore = useMarqueursStore()
@@ -26,10 +26,10 @@ const getMarqueurs = () => {
     messageErreur.value = error.message;
   });
 }
-const getMarqueur = (marqueurId) => {
-  marqueursStore.getMarqueur(marqueurId)
-  console.log(marqueurId)
-}
+// const getMarqueur = (marqueurId) => {
+//   marqueursStore.getMarqueur(marqueurId)
+//   console.log(marqueurId)
+// }
 
 const accepterMarqueur = (marqueurId) => {
   marqueursStore.getMarqueur(marqueurId)
