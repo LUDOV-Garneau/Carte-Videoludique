@@ -38,7 +38,7 @@ describe('router', () => {
 
         const pinia = createPinia()
         const wrapper = mount(App, { global: { plugins: [router, pinia] } })
-        expect(wrapper.find('h2').text()).toBe('Notification')
+        expect(wrapper.find('h2').text()).toBe('Notifications')
     })
 
     it('génère les bonnes URLs par name', async () => {
