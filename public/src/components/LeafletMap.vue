@@ -162,6 +162,7 @@ async function sendRequest() {
       const created = await marqueurStore.ajouterMarqueur(form.value);
 
       console.log("Marqueur ajouté avec succès :", created);
+      await afficherMarqueurs();
       closePanel();
     }
   } catch (err) {
@@ -332,9 +333,7 @@ async function afficherMarqueurs() {
     });
     marqueurs = [];
 
-    console.log("Marqueurs récupérés :", marqueurStore.marqueurs);
     marqueurStore.marqueurs.forEach(marqueurData => {
-      console.log("Traitement du marqueur :", marqueurData);
       if (marqueurData.geometry && marqueurData.geometry.coordinates) {
         const [lng, lat] = marqueurData.geometry.coordinates;
         const properties = marqueurData.properties;
@@ -347,7 +346,7 @@ async function afficherMarqueurs() {
 
         marqueur.on('click', (e) => {
           currentMarker = marqueur;
-
+          console.log('Marqueur cliqué :', currentMarker);
           map.setView([lat, lng], Math.max(map.getZoom(), 15));
         });
 
@@ -512,14 +511,14 @@ function setupKeyboardShortcuts() {
   map.__onKey = onKey
 }
 
-onMounted(() => {
+onMounted(async() => {
   initMap()
   addTileLayer()
   setupMapClickHandler()
   addCustomControl()
   setupKeyboardShortcuts()
-  afficherMarqueurs();
-})
+  await afficherMarqueurs();
+});
 
 onUnmounted(() => {
   if (map) {
@@ -527,7 +526,7 @@ onUnmounted(() => {
     if (map.__onKey) window.removeEventListener('keydown', map.__onKey)
     map.remove()
   }
-})
+});
 </script>
 
 <template>
