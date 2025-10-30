@@ -99,7 +99,7 @@ onMounted(() => {
         </div>
       </nav>
 
-      <h2>Notification</h2>
+      <h2>Notifications</h2>
 
       <div class="offers-wrapper">
         <table class="offers-table" role="table" aria-label="Offres fournisseur">
@@ -168,7 +168,7 @@ onMounted(() => {
           </tbody>
         </table>
       </div>
-      F
+      
       <section class="map-wrapper">
         <LeafletMap />
       </section>
