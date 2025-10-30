@@ -163,35 +163,76 @@ exports.getMarqueur = async (req, res, next) => {
  * @throws {Error} Renvoie une erreur 404 si le marqueur n'existe pas.
  */
 exports.updateMarqueur = async (req, res, next) => {
-    try {
-        const marqueurId = req.params.marqueurId;
-        const { titre, type, adresse, description, temoignage, image } = req.body;
+  try {
+    const marqueurId = req.params.marqueurId;
+    const data = req.body;
 
-        const updatedMarqueur = await Marqueur.findByIdAndUpdate(
-            marqueurId,
-            { titre, type, adresse, description, temoignage, image },
-            { new: true, runValidators: true }
-        );
+    console.log("📦 Données reçues pour mise à jour :", data);
 
-        if (!updatedMarqueur) {
-            return res.status(404).json(formatErrorResponse(
-                404,
-                "Not Found",
-                "Le marqueur à mettre à jour n'existe pas",
-                req.originalUrl
-            ));
-        }
+    const updateFields = {};
 
-        res.status(200).json(formatSuccessResponse(
-            200,
-            "Le marqueur a été mis à jour avec succès!",
-            updatedMarqueur,
-            req.originalUrl
-        ));
-
-    } catch (err) {
-        next(err);
+    if (data.lng && data.lat) {
+      updateFields["geometry.coordinates"] = [
+        parseFloat(data.lng),
+        parseFloat(data.lat),
+      ];
     }
+
+    const props = {};
+    const allowedProps = [
+      "titre",
+      "type",
+      "adresse",
+      "description",
+      "temoignage",
+      "image",
+      "courriel",
+      "images",
+      "status",
+      "tags",
+      "createdByName",
+      "sourceIp",
+    ];
+
+    allowedProps.forEach((key) => {
+      if (data[key] !== undefined && data[key] !== null) {
+        props[`properties.${key}`] = data[key];
+      }
+    });
+
+    Object.assign(updateFields, props);
+
+    console.log("🔧 Champs à mettre à jour :", updateFields);
+
+    const updatedMarqueur = await Marqueur.findByIdAndUpdate(
+      marqueurId,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedMarqueur) {
+      return res.status(404).json(
+        formatErrorResponse(
+          404,
+          "Not Found",
+          "Le marqueur à mettre à jour n'existe pas",
+          req.originalUrl
+        )
+      );
+    }
+
+    res.status(200).json(
+      formatSuccessResponse(
+        200,
+        "Le marqueur a été mis à jour avec succès !",
+        updatedMarqueur,
+        req.originalUrl
+      )
+    );
+  } catch (err) {
+    console.error("❌ Erreur dans updateMarqueur :", err);
+    next(err);
+  }
 };
 
 /**
