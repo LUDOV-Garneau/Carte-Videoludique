@@ -29,8 +29,6 @@ const mapEl = ref(null)
 let map
 let controlAjoutMarqueur
 let btnAjoutMarqueur
-let marqueurs = [];
-let currentMarker = null
 const TYPES = [
   'Écoles et instituts de formation',
   'Développement et édition de jeux',
@@ -46,6 +44,10 @@ const TYPES = [
 const longitude = ref('')
 const latitude = ref('')
 const panelOpen = ref(false)
+const imageWindowOpen = ref(false)
+const marqueurs = ref([]);
+const selectedMarqueur = ref(null);
+const currentMarqueur = ref(null);
 const form = ref({
   lng: '',
   lat: '',
@@ -83,15 +85,23 @@ function closePanel() {
   const container = map?.getContainer?.()
   if (container?.style) container.style.cursor = 'grab'
   if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = ''
-  if (currentMarker) {
-    map.removeLayer(currentMarker)
-    currentMarker = null
+  if (currentMarqueur.value) {
+    map.removeLayer(currentMarqueur.value)
+    currentMarqueur.value = null
   }
   latitude.value = ''
   longitude.value = ''
   form.value.lat = ''
   form.value.lng = ''
   
+}
+
+function openImageWindow() {
+  imageWindowOpen.value = true;
+}
+
+function closeImageWindow() {
+  imageWindowOpen.value = false;
 }
 
 function validateForm() {
@@ -301,13 +311,13 @@ async function locateFromAddress() {
     const pos = await geocodeAddress(q)
     if (!pos) return
 
-    if (currentMarker) {
-      map.removeLayer(currentMarker)
-      currentMarker = null
+    if (currentMarqueur.value) {
+      map.removeLayer(currentMarqueur.value)
+      currentMarqueur.value = null
     }
 
     const { lat, lng } = pos
-    currentMarker = L.marker([lat, lng])
+    currentMarqueur.value = L.marker([lat, lng])
       .addTo(map)
       .bindPopup('Adresse localisée')
       .openPopup()
@@ -328,10 +338,10 @@ async function afficherMarqueurs() {
   try {
     await marqueurStore.getMarqueurs();
 
-    marqueurs.forEach(marqueur => {
+    marqueurs.value.forEach(marqueur => {
       map.removeLayer(marqueur);
     });
-    marqueurs = [];
+    marqueurs.value = [];
 
     marqueurStore.marqueurs.forEach(marqueurData => {
       if (marqueurData.geometry && marqueurData.geometry.coordinates) {
@@ -345,12 +355,16 @@ async function afficherMarqueurs() {
         marqueur.comments = comments;
 
         marqueur.on('click', (e) => {
-          currentMarker = marqueur;
-          console.log('Marqueur cliqué :', currentMarker);
+          selectedMarqueur.value = marqueur;
+          console.log('Marqueur cliqué :', selectedMarqueur.value);
+          console.log("properties: ", selectedMarqueur.value.properties.titre);
+
+          openImageWindow();
+          
           map.setView([lat, lng], Math.max(map.getZoom(), 15));
         });
 
-        marqueurs.push(marqueur);
+        marqueurs.value.push(marqueur);
       }
     });
   } catch (err) {
@@ -364,13 +378,17 @@ defineExpose({
   locateFromAddress,
   sendRequest,
   validateForm,
+  openImageWindow,
+  closeImageWindow,
 
   form,
   formErrors,
   latitude,
   longitude,
   marqueurs,
-  currentMarker,
+  currentMarqueur,
+  selectedMarqueur,
+  imageWindowOpen,
   map,
   files,
 })
@@ -423,14 +441,14 @@ function setupMapClickHandler() {
     if (!panelOpen.value) return
 
     const { lat, lng } = e.latlng
-    if (currentMarker) map.removeLayer(currentMarker)
+    if (currentMarqueur.value) map.removeLayer(currentMarqueur.value)
 
     latitude.value = lat.toFixed(5)
     longitude.value = lng.toFixed(5)
     form.value.lat = Number(latitude.value)
     form.value.lng = Number(longitude.value)
 
-    currentMarker = L.marker([lat, lng])
+    currentMarqueur.value = L.marker([lat, lng])
       .addTo(map)
       .bindPopup(`Proposition<br>${lat.toFixed(5)}, ${lng.toFixed(5)}`)
       .openPopup()
@@ -531,6 +549,48 @@ onUnmounted(() => {
 
 <template>
   <div class="map" ref="mapEl"></div>
+  
+  <!-- Petite fenêtre d'image -->
+  <transition name="image-window-fade">
+    <div
+      v-if="imageWindowOpen"
+      class="image-window"
+      @click.self="closeImageWindow"
+    >
+      <div class="image-window__content">
+        <button class="image-window__close" @click="closeImageWindow" aria-label="Fermer">
+          ×
+        </button>
+        
+        <div v-if="selectedMarqueur && selectedMarqueur.properties">
+          <div class="image-window__header">
+            <h4>{{ selectedMarqueur.properties.titre }}</h4>
+            <p class="image-window__type">{{ selectedMarqueur.properties.type }}</p>
+          </div>
+
+          <div class="image-window__images" v-if="selectedMarqueur.properties.images && selectedMarqueur.properties.images.length > 0">
+            <img
+              v-for="(image, index) in selectedMarqueur.properties.images"
+              :key="index"
+              :src="image.url"
+              :alt="`Image ${index + 1} de ${selectedMarqueur.properties.titre}`"
+              class="image-window__image"
+              @load="$event.target.style.opacity = '1'"
+            />
+          </div>
+          
+          <div v-else class="image-window__no-image">
+            <p>Aucune image disponible pour ce marqueur</p>
+          </div>
+        </div>
+        
+        <div v-else class="image-window__no-image">
+          <p>Données du marqueur non disponibles</p>
+        </div>
+      </div>
+    </div>
+  </transition>
+  
   <!-- Panneau overlay -->
   <transition name="panel-fade">
     <aside
@@ -617,6 +677,127 @@ onUnmounted(() => {
 .map {
   position: absolute;
   inset: 0;
+}
+
+/* ---------- Petite fenêtre d'image ---------- */
+.image-window {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.image-window__content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: auto;
+  position: relative;
+  padding: 20px;
+}
+
+.image-window__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f44336;
+  color: white;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-window__close:hover {
+  background: #d32f2f;
+}
+
+.image-window__header {
+  margin-bottom: 15px;
+  padding-right: 40px;
+}
+
+.image-window__header h4 {
+  margin: 0 0 5px 0;
+  color: #4CAF50;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.image-window__type {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.image-window__images {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.image-window__image {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  cursor: zoom-in;
+}
+
+.image-window__image:hover {
+  transform: scale(1.02);
+  transition: transform 0.2s ease;
+}
+
+.image-window__no-image {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.image-window__no-image p {
+  margin: 0;
+  font-style: italic;
+}
+
+/* Transition pour la fenêtre d'image */
+.image-window-fade-enter-active,
+.image-window-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.image-window-fade-enter-from,
+.image-window-fade-leave-to {
+  opacity: 0;
+}
+
+.image-window-fade-enter-active .image-window__content,
+.image-window-fade-leave-active .image-window__content {
+  transition: transform 0.3s ease;
+}
+
+.image-window-fade-enter-from .image-window__content,
+.image-window-fade-leave-to .image-window__content {
+  transform: scale(0.8);
 }
 
 /* ---------- Panneau ---------- */
