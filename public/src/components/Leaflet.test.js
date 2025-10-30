@@ -29,6 +29,7 @@ vi.mock('leaflet', () => {
     removeLayer: vi.fn(() => map),
     remove: vi.fn(),
     getContainer: vi.fn(() => ({ style: {} })),
+    getZoom: vi.fn(() => 13),
   }
 
   const tileLayerChain = { addTo: vi.fn(() => tileLayerChain) }
@@ -355,6 +356,17 @@ vi.mock('../utils.js', () => ({
   cleanupImages: vi.fn(() => Promise.resolve())
 }))
 
+// Mock du store
+const mockMarqueurStore = {
+  marqueurs: [],
+  getMarqueurs: vi.fn(() => Promise.resolve()),
+  ajouterMarqueur: vi.fn(() => Promise.resolve({ id: 1, message: 'Marqueur créé' }))
+}
+
+vi.mock('../stores/useMarqueur.js', () => ({
+  useMarqueursStore: vi.fn(() => mockMarqueurStore)
+}))
+
 import { uploadMultipleImages, cleanupImages } from '../utils.js'
 import { createPinia } from 'pinia'
 import { useMarqueursStore } from '../stores/useMarqueur'
@@ -392,21 +404,12 @@ describe('sendRequest (exposed)', () => {
   it('envoie avec succès un formulaire valide sans images', async () => {
     const marqueurStore = useMarqueursStore()
   
-    // await wrapper.get('#titre').setValue('Mon lieu')
-    // await wrapper.get('#description').setValue('Description du lieu')
-    // await wrapper.get('#adresse').setValue('123 Rue Test, Québec')
-    wrapper.vm.form = {
-    titre: 'Mon lieu',
-    description: 'Description du lieu',
-    adresse: '123 Rue Test, Québec',
-    email: '',
-    type: '',
-    lat: '',
-    lng: '',
-    nom: '',
-    souvenir: '',
-    images: []
-  }
+    // Remplir le formulaire correctement
+    await wrapper.get('#titre').setValue('Mon lieu')
+    await wrapper.get('#description').setValue('Description du lieu')
+    await wrapper.get('#adresse').setValue('123 Rue Test, Québec')
+    await wrapper.get('#lat').setValue('46.8139')
+    await wrapper.get('#lng').setValue('-71.2082')
 
     await wrapper.vm.$nextTick()
     
@@ -471,6 +474,8 @@ describe('sendRequest (exposed)', () => {
     await wrapper.get('#titre').setValue('Mon lieu')
     await wrapper.get('#description').setValue('Description')
     await wrapper.get('#adresse').setValue('123 Rue Test')
+    await wrapper.get('#lat').setValue('46.8139')
+    await wrapper.get('#lng').setValue('-71.2082')
     
     // Simuler upload d'images réussi
     wrapper.vm.files = [new File([''], 'test.jpg')]
@@ -493,11 +498,176 @@ describe('sendRequest (exposed)', () => {
     await wrapper.get('#titre').setValue('Mon lieu')
     await wrapper.get('#description').setValue('Description')
     await wrapper.get('#adresse').setValue('123 Rue Test')
+    await wrapper.get('#lat').setValue('46.8139')
+    await wrapper.get('#lng').setValue('-71.2082')
     
     // Mock erreur réseau
     marqueurStore.ajouterMarqueur.mockRejectedValueOnce(new Error('Network error'))
 
     await expect(wrapper.vm.sendRequest()).rejects.toThrow('Network error')
     expect(wrapper.vm.panelOpen).toBe(true)
+  })
+})
+
+/* ----------------------------------------- */
+/* Tests de afficherMarqueurs (exposed)      */
+/* ----------------------------------------- */
+
+describe('afficherMarqueurs (exposed)', () => {
+  let wrapper
+  let defaultMarkerChain
+
+  beforeEach(() => {
+    // Créer un mock de marqueur standard
+    defaultMarkerChain = {
+      addTo: vi.fn(() => defaultMarkerChain),
+      bindPopup: vi.fn(() => defaultMarkerChain),
+      openPopup: vi.fn(() => defaultMarkerChain),
+      on: vi.fn(() => defaultMarkerChain),
+      properties: {},
+      comments: []
+    }
+    
+    // S'assurer que L.marker retourne toujours notre mock
+    L.marker.mockImplementation(() => defaultMarkerChain)
+    
+    // Reset the mock store data
+    mockMarqueurStore.marqueurs = [
+      {
+        geometry: { coordinates: [-73.56, 45.5] },
+        properties: { 
+          titre: 'Marqueur 1', 
+          type: 'Boutiques spécialisées',
+          description: 'Description 1',
+          images: [{ url: 'http://example.com/img1.jpg' }]
+        },
+        comments: []
+      },
+      {
+        geometry: { coordinates: [-73.57, 45.51] },
+        properties: { 
+          titre: 'Marqueur 2', 
+          type: 'Arcades et salles de jeux',
+          description: 'Description 2'
+        },
+        comments: ['Commentaire test']
+      }
+    ]
+    
+    // Reset mocks
+    mockMarqueurStore.getMarqueurs.mockResolvedValue()
+    vi.clearAllMocks()
+    
+    globalThis.fetch = vi.fn()
+    
+    const pinia = createPinia()
+    wrapper = mount(LeafletMap, {
+      global: { plugins: [pinia] },
+    })
+  })
+
+  afterEach(() => {
+    wrapper.unmount()
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+  })
+
+  it('charge et affiche tous les marqueurs depuis le store', async () => {
+    // Réinitialiser les mocks car afficherMarqueurs est appelé au montage
+    vi.clearAllMocks()
+    L.marker.mockImplementation(() => defaultMarkerChain)
+    
+    await wrapper.vm.afficherMarqueurs()
+
+    expect(mockMarqueurStore.getMarqueurs).toHaveBeenCalledTimes(1)
+    expect(L.marker).toHaveBeenCalledTimes(2)
+    expect(L.marker).toHaveBeenCalledWith([45.5, -73.56])
+    expect(L.marker).toHaveBeenCalledWith([45.51, -73.57])
+    
+    expect(wrapper.vm.marqueurs).toHaveLength(2)
+  })
+
+  it('nettoie les anciens marqueurs avant d\'ajouter les nouveaux', async () => {
+    // Réinitialiser les mocks car afficherMarqueurs est appelé au montage
+    vi.clearAllMocks()
+    L.marker.mockImplementation(() => defaultMarkerChain)
+    
+    // Ajouter des marqueurs existants
+    const oldMarker = { properties: { titre: 'Ancien' } }
+    wrapper.vm.marqueurs.push(oldMarker)
+
+    await wrapper.vm.afficherMarqueurs()
+
+    expect(mapApi.removeLayer).toHaveBeenCalledWith(oldMarker)
+    expect(wrapper.vm.marqueurs).toHaveLength(2) // Nouveaux marqueurs seulement
+  })
+
+  it('configure les événements click sur chaque marqueur', async () => {
+    // Réinitialiser les mocks car afficherMarqueurs est appelé au montage
+    vi.clearAllMocks()
+    
+    const markerChain = {
+      addTo: vi.fn(() => markerChain),
+      bindPopup: vi.fn(() => markerChain),
+      openPopup: vi.fn(() => markerChain),
+      on: vi.fn((event, callback) => {
+        if (event === 'click') {
+          markerChain.clickHandler = callback
+        }
+        return markerChain
+      }),
+      properties: {},
+      comments: []
+    }
+    
+    L.marker.mockImplementation(() => markerChain)
+
+    await wrapper.vm.afficherMarqueurs()
+
+    expect(markerChain.on).toHaveBeenCalledWith('click', expect.any(Function))
+    
+    // Simuler un clic sur le marqueur (assigner les propriétés d'abord)
+    markerChain.properties = { titre: 'Test' }
+    markerChain.clickHandler()
+    
+    expect(wrapper.vm.selectedMarqueur).toStrictEqual(markerChain)
+    expect(wrapper.vm.imageWindowOpen).toBe(true)
+  })
+
+  it('ignore les marqueurs sans coordonnées', async () => {
+    // Réinitialiser les mocks car afficherMarqueurs est appelé au montage
+    vi.clearAllMocks()
+    L.marker.mockImplementation(() => defaultMarkerChain)
+    
+    mockMarqueurStore.marqueurs = [
+      {
+        // Pas de geometry
+        properties: { titre: 'Marqueur invalide' }
+      },
+      {
+        geometry: { coordinates: [-73.56, 45.5] },
+        properties: { titre: 'Marqueur valide' }
+      }
+    ]
+
+    await wrapper.vm.afficherMarqueurs()
+
+    expect(L.marker).toHaveBeenCalledTimes(1)
+    expect(wrapper.vm.marqueurs).toHaveLength(1)
+  })
+
+  it('gère les erreurs du store gracieusement', async () => {
+    // Vider la liste de marqueurs d'abord
+    wrapper.vm.marqueurs.splice(0)
+    
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockMarqueurStore.getMarqueurs.mockRejectedValueOnce(new Error('Erreur réseau'))
+
+    await wrapper.vm.afficherMarqueurs()
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith('afficherMarqueurs error:', expect.any(Error))
+    expect(wrapper.vm.marqueurs).toHaveLength(0)
+    
+    consoleErrorSpy.mockRestore()
   })
 })
