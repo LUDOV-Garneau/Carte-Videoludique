@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 const Admin = require("../models/admin");
 
+
 /** Vérifie si la requête a un token JWT valide (Bearer obligatoire) */
 module.exports = async (req, res, next) => {
   const authHeader = req.get("Authorization");
@@ -20,7 +21,7 @@ module.exports = async (req, res, next) => {
 
   // 2) Extraire le token après "Bearer "
   const token = authHeader.split(" ")[1];
-  console.log(token.value)
+  
   if (!token) {
     return res
       .status(401)
