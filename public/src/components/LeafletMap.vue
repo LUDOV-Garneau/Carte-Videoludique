@@ -404,7 +404,7 @@ defineExpose({
  * @returns {void}
  */
 function initMap() {
-  map = L.map(mapEl.value, { zoomControl: true }).setView([45.5017, -73.5673], 12)
+  map = L.map(mapEl.value, { zoomControl: true, zoomAnimation: false }).setView([45.5017, -73.5673], 12)
 }
 
 /**
