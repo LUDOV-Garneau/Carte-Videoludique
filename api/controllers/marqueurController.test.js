@@ -211,87 +211,100 @@ describe('MarqueurController.updateMarqueur', () => {
   it('200 + payload mis à jour quand OK', async () => {
     const updated = {
       _id: 'abc123',
-      titre: 'Nouveau titre',
-      type: 'Lieu',
-      adresse: '123 rue Exemple',
-      description: 'Desc',
-      temoignage: 'Tem',
-      image: 'img.png'
-    }
-    vi.spyOn(Marqueur, 'findByIdAndUpdate').mockResolvedValue(updated)
+      properties: {
+        titre: 'Nouveau titre',
+        type: 'Développement et édition de jeux',
+        adresse: '123 rue Exemple',
+        description: 'Desc',
+        temoignage: 'Tem',
+        image: 'img.png'
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [-73.56, 45.5]
+      }
+    };
+
+    vi.spyOn(Marqueur, 'findByIdAndUpdate').mockResolvedValue(updated);
 
     const req = mockReq({
       params: { marqueurId: 'abc123' },
       originalUrl: '/api/marqueurs/abc123',
       body: {
-        titre: 'Nouveau titre',
-        description: 'Desc'
+        properties: {
+          titre: 'Nouveau titre',
+          description: 'Desc'
+        }
       }
-    })
-    const res = mockRes()
-    const next = mockNext()
+    });
+    const res = mockRes();
+    const next = mockNext();
 
-    await marqueurController.updateMarqueur(req, res, next)
+    await marqueurController.updateMarqueur(req, res, next);
 
     expect(Marqueur.findByIdAndUpdate).toHaveBeenCalledWith(
       'abc123',
-      expect.objectContaining({ titre: 'Nouveau titre', description: 'Desc' }),
+      expect.objectContaining({
+        'properties.titre': 'Nouveau titre',
+        'properties.description': 'Desc'
+      }),
       { new: true, runValidators: true }
-    )
+    );
 
-    expect(next).not.toHaveBeenCalled()
-    expect(res.statusCode).toBe(200)
+    expect(next).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
       status: 200,
       message: 'Le marqueur a été mis à jour avec succès!',
       data: updated,
       path: '/api/marqueurs/abc123'
-    })
-  })
+    });
+  });
 
-  it('404 si le marqueur n\'existe pas', async () => {
-    vi.spyOn(Marqueur, 'findByIdAndUpdate').mockResolvedValue(null)
+  it("404 si le marqueur n'existe pas", async () => {
+    vi.spyOn(Marqueur, 'findByIdAndUpdate').mockResolvedValue(null);
 
     const req = mockReq({
-      params: { marqueurId: 'nope'},
+      params: { marqueurId: 'nope' },
       originalUrl: '/api/marqueurs/nope',
-      body: { titre: 'X' }
-    })
-    const res = mockRes()
-    const next = mockNext()
+      body: { properties: { titre: 'X' } }
+    });
+    const res = mockRes();
+    const next = mockNext();
 
-    await marqueurController.updateMarqueur(req, res, next)
+    await marqueurController.updateMarqueur(req, res, next);
 
-    expect(Marqueur.findByIdAndUpdate).toHaveBeenCalled()
-    expect(next).not.toHaveBeenCalled()
-    expect(res.statusCode).toBe(404)
+    expect(Marqueur.findByIdAndUpdate).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(404);
     expect(res.body).toMatchObject({
       status: 404,
       error: 'Not Found',
       message: "Le marqueur à mettre à jour n'existe pas",
       path: '/api/marqueurs/nope'
-    })
-  })
+    });
+  });
 
   it('next(err) si Mongoose jette une erreur (ex: ValidationError)', async () => {
-    const boom = Object.assign(new Error('ValidationError'), { name: 'ValidationError' })
-    vi.spyOn(Marqueur, 'findByIdAndUpdate').mockRejectedValue(boom)
+    const boom = Object.assign(new Error('ValidationError'), { name: 'ValidationError' });
+    vi.spyOn(Marqueur, 'findByIdAndUpdate').mockRejectedValue(boom);
 
     const req = mockReq({
       params: { marqueurId: 'abc123' },
       originalUrl: '/api/marqueurs/abc123',
-      body: { titre: '' }
-    })
-    const res = mockRes()
-    const next = mockNext()
+      body: { properties: { titre: '' } }
+    });
+    const res = mockRes();
+    const next = mockNext();
 
-    await marqueurController.updateMarqueur(req, res, next)
+    await marqueurController.updateMarqueur(req, res, next);
 
-    expect(Marqueur.findByIdAndUpdate).toHaveBeenCalled()
-    expect(next).toHaveBeenCalledTimes(1)
-    expect(next).toHaveBeenCalledWith(boom)
-  })
-})
+    expect(Marqueur.findByIdAndUpdate).toHaveBeenCalled();
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledWith(boom);
+  });
+});
+
 
 
 /* -------------------- deleteMarqueur -------------------- */
