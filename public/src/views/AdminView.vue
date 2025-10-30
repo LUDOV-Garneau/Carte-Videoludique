@@ -99,7 +99,7 @@ onMounted(() => {
         </div>
       </nav>
 
-      <h2>Notifications</h2>
+      <h2 class="section-title">Notifications</h2>
 
       <div class="offers-wrapper">
         <table class="offers-table" role="table" aria-label="Offres fournisseur">
@@ -160,9 +160,11 @@ onMounted(() => {
             <tr v-if="!marqueursFiltres || marqueursFiltres.length === 0">
               <td colspan="6" class="empty">
                 Aucune offre pour le moment.
-                <div class="empty-btn">
-                  <button class="clear-btn">Effacer les notifications</button>
-                </div>
+              </td>
+            </tr>
+            <tr v-if="marqueursFiltres && marqueursFiltres.length > 0">
+              <td colspan="6" class="empty-btn">
+                <button class="clear-btn">Effacer les notifications</button>
               </td>
             </tr>
           </tbody>
@@ -178,50 +180,62 @@ onMounted(() => {
 
 <style scoped>
 /*Tableau notifications*/
+
+/* Titre */
+.section-title {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+/* Conteneur */
 .offers-wrapper {
   width: 100%;
   overflow-x: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
 }
+/* Table */
 .offers-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
+  color: var(--text);
+  background: var(--bg);
+  border-radius: 16px;
+  overflow: hidden;
 }
-thead {
+
+thead th{
   background: #f3f2f2;
 }
 th,
 td {
-  border: 1px solid var(--border);
-  padding: 10px 12px;
+  padding: 14px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
   text-align: left;
 }
 th {
   font-weight: 600;
 }
+
+tbody tr:last-child td{ border-bottom: none; }
+
 .provider,
 .address,
 .info-col,
 .menu-col {
   background: var(--cell-bg);
 }
-.info-col {
-  width: 240px;
-}
-.modif-col {
-  width: 120px;
-  text-align: center;
-}
-.accept-col {
-  width: 120px;
-  background: var(--green);
-  text-align: center;
-}
-.reject-col {
-  width: 120px;
-  background: var(--red);
-  text-align: center;
-}
+
+.info-col{ width: 220px; }
+.modif-col{ width: 140px; text-align: center; }
+.accept-col{ width: 140px; text-align: center; }
+.reject-col{ width: 140px; text-align: center; }
 .info-btn {
   display: inline-flex;
   align-items: center;
@@ -270,7 +284,8 @@ th {
   background: #fff;
 }
 .empty-btn {
-  margin: 20px;
+  text-align: center;
+  padding: 16px 0;
 }
 .clear-btn {
   border: 1px solid black;
