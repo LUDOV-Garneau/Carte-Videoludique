@@ -41,6 +41,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { API_URL } from '@/config'
+import { useAuthStore } from '@/stores/auth'
 
 const nom = ref('')
 const prenom = ref('')
@@ -84,7 +85,10 @@ const soumettreFormulaire = async () => {
   try {
     const res = await fetch(API_URL+`/signup`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${useAuthStore().token}`
+  },
       body: JSON.stringify({
         nom: nom.value,
         prenom: prenom.value,
