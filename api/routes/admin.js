@@ -11,7 +11,7 @@ const isAuth = require("../middlewares/isAuth");
 
 
 // POST => /signup
-router.post("/signup", adminController.signup);
+router.post("/signup",isAuth, adminController.signup);
 
 // POST => /login
 router.post("/login", adminController.login);

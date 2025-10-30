@@ -48,6 +48,14 @@ const router = createRouter({
       path: '/inscription',
       name: 'Signup',
       component: InscriptionView,
+      beforeEnter: (to, from, next) => {
+        const auth = useAuthStore()
+        if (auth.isAuthenticated) {
+          next()
+        } else {
+          next('/connexion')
+        }
+      },
     },
     {
       path: '/profile',
