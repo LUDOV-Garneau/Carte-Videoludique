@@ -33,6 +33,14 @@
 
       <button type="submit" class="btn btn-primary">S'inscrire</button>
       <div v-if="erreurServeur" class="mt-3 text-danger">{{ erreurServeur }}</div>
+      
+      <div
+        v-if="messageSucces"
+        class="alert alert-success mt-3"
+        role="alert"
+      >
+        {{ messageSucces }}
+      </div>
     </form>
   </div>
 </template>
@@ -51,6 +59,7 @@ const confirmation = ref('')
 
 const erreurs = ref({})
 const erreurServeur = ref('')
+const messageSucces = ref('')
 const router = useRouter()
 
 const soumettreFormulaire = async () => {
@@ -104,9 +113,13 @@ const soumettreFormulaire = async () => {
       erreurServeur.value = data.message || 'Erreur serveur'
       return
     }
+    // Affichage du méssage de succès → afficher notif + redirection après délai
+    messageSucces.value = 'Compte créé avec succès ! Redirection en cours...'
 
-    // Succès → rediriger vers login
-    router.push('/connexion')
+    setTimeout(() => {
+      router.push('/connexion')
+    }, 2000)
+
   } catch (err) {
     erreurServeur.value = 'Erreur de connexion au serveur'
   }

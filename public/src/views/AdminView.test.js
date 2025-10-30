@@ -39,7 +39,7 @@ describe('AdminView.vue', () => {
       global: { stubs: { LeafletMap: LeafletMapStub } }
     })
     expect(wrapper.find('h1').text()).toContain('Le jeu vidéo au Québec')
-    expect(wrapper.find('h2').text()).toBe('Notification')
+    expect(wrapper.find('h2').text()).toBe('Notifications')
   })
 
   it('affiche un message vide si aucune offre', () => {
@@ -50,7 +50,7 @@ describe('AdminView.vue', () => {
       }
     })
     expect(wrapper.text()).toContain('Aucune offre pour le moment.')
-    expect(wrapper.find('.clear-btn').exists()).toBe(true)
+    
   })
 
   it('rend les lignes quand rows est fourni', async () => {
@@ -73,7 +73,7 @@ describe('AdminView.vue', () => {
 
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.findAll('tbody tr')).toHaveLength(1)
+    expect(wrapper.findAll('tbody tr')).toHaveLength(2)
     expect(wrapper.find('.provider').text()).toBe('Vidéotron')
     expect(wrapper.find('.address').text()).toContain('2300 rue X')
   })

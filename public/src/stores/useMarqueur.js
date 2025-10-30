@@ -4,8 +4,8 @@ import { API_URL } from '../config.js'
 import { useAuthStore } from '../stores/auth'
 
 export const useMarqueursStore = defineStore('marqueurs', () => {
-    const marqueurs = ref([])
-    const marqueurActif = ref(null)
+    const marqueurs = ref([]);
+    const marqueurActif = ref(null);
     const authStore = useAuthStore();
 
     function ajouterMarqueur(payload){
@@ -82,7 +82,6 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
         .catch(error => {
             throw error
         })
-
     }
 
     return {
