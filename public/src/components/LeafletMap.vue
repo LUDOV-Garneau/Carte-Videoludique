@@ -380,6 +380,7 @@ defineExpose({
   validateForm,
   openImageWindow,
   closeImageWindow,
+  afficherMarqueurs,
 
   form,
   formErrors,
