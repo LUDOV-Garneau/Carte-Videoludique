@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, isRef } from 'vue'
 import { isValidEmail, uploadMultipleImages, cleanupImages } from '../utils.js'
 import AddImage from './AddImage.vue'
 import L from 'leaflet'
@@ -29,6 +29,7 @@ const mapEl = ref(null)
 let map
 let controlAjoutMarqueur
 let btnAjoutMarqueur
+let marqueurs = [];
 let currentMarker = null
 const TYPES = [
   'Écoles et instituts de formation',
@@ -322,6 +323,42 @@ async function locateFromAddress() {
   }
 }
 
+async function afficherMarqueurs() {
+  try {
+    await marqueurStore.getMarqueurs();
+
+    marqueurs.forEach(marqueur => {
+      map.removeLayer(marqueur);
+    });
+    marqueurs = [];
+
+    console.log("Marqueurs récupérés :", marqueurStore.marqueurs);
+    marqueurStore.marqueurs.forEach(marqueurData => {
+      console.log("Traitement du marqueur :", marqueurData);
+      if (marqueurData.geometry && marqueurData.geometry.coordinates) {
+        const [lng, lat] = marqueurData.geometry.coordinates;
+        const properties = marqueurData.properties;
+        const comments = marqueurData.comments || [];
+
+        const marqueur = L.marker([lat, lng]).addTo(map);
+
+        marqueur.properties = properties;
+        marqueur.comments = comments;
+
+        marqueur.on('click', (e) => {
+          currentMarker = marqueur;
+
+          map.setView([lat, lng], Math.max(map.getZoom(), 15));
+        });
+
+        marqueurs.push(marqueur);
+      }
+    });
+  } catch (err) {
+    console.error('afficherMarqueurs error:', err);
+  }
+}
+
 defineExpose({
   reverseGeocode,
   geocodeAddress,
@@ -333,6 +370,7 @@ defineExpose({
   formErrors,
   latitude,
   longitude,
+  marqueurs,
   currentMarker,
   map,
   files,
@@ -480,6 +518,7 @@ onMounted(() => {
   setupMapClickHandler()
   addCustomControl()
   setupKeyboardShortcuts()
+  afficherMarqueurs();
 })
 
 onUnmounted(() => {
