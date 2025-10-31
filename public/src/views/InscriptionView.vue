@@ -8,8 +8,8 @@
         <div v-if="erreurs.nom" class="text-danger">{{ erreurs.nom }}</div>
       </div>
       <div class="mb-3">
-        <label for="nom" class="form-label">Prénom</label>
-        <input v-model="prenom" type="text" class="form-control" id="nom" required/>
+        <label for="prenom" class="form-label">Prénom</label>
+        <input v-model="prenom" type="text" class="form-control" id="prenom" required/>
         <div v-if="erreurs.prenom" class="text-danger">{{ erreurs.prenom }}</div>
       </div>
 
@@ -49,6 +49,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { API_URL } from '@/config'
+import { useAuthStore } from '@/stores/auth'
 
 const nom = ref('')
 const prenom = ref('')
@@ -93,7 +94,10 @@ const soumettreFormulaire = async () => {
   try {
     const res = await fetch(API_URL+`/signup`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${useAuthStore().token}`
+  },
       body: JSON.stringify({
         nom: nom.value,
         prenom: prenom.value,

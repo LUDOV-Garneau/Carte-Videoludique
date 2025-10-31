@@ -1,6 +1,7 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createRouter, createWebHistory } from 'vue-router'
+import { nextTick } from 'vue'
 import InscriptionView from '@/views/InscriptionView.vue'
 
 // Création d'un faux router pour tester la redirection
@@ -8,6 +9,10 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [{ path: '/connexion', name: 'Connexion' }],
 })
+
+vi.mock('@/stores/auth', () => ({
+  useAuthStore: () => ({ token: 'FAKE_TOKEN_FOR_TEST' }),
+}))
 
 // Mock global de fetch
 global.fetch = vi.fn()
@@ -54,21 +59,29 @@ describe('Inscription.vue', () => {
       ok: true,
       json: async () => ({ message: 'Compte créé avec succès' })
     })
+    
+    await router.push('/')
+    await router.isReady()
 
     const wrapper = mount(InscriptionView, {
       global: { plugins: [router] }
     })
 
-    wrapper.vm.nom = 'Dupont'
-    wrapper.vm.prenom = 'Marie'
-    wrapper.vm.email = 'marie@example.com'
-    wrapper.vm.motdepasse = 'abcdef'
-    wrapper.vm.confirmation = 'abcdef'
+    await wrapper.find('#nom').setValue('Dupont')
+    await wrapper.find('#prenom').setValue('Marie')   // <-- existe maintenant
+    await wrapper.find('#email').setValue('marie@example.com')
+    await wrapper.find('#motdepasse').setValue('abcdef')
+    await wrapper.find('#confirmation').setValue('abcdef')
 
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
+    await nextTick()
 
-    expect(wrapper.vm.messageSucces).toBe('Compte créé avec succès ! Redirection en cours...')
+    const msg = wrapper.find('.alert.alert-success')
+    console.log('msg.exists():', msg.exists())
+    expect(msg.exists()).toBe(true)
+    expect(msg.text()).toBe('Compte créé avec succès ! Redirection en cours...')
+
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
@@ -82,16 +95,16 @@ describe('Inscription.vue', () => {
       global: { plugins: [router] }
     })
 
-    wrapper.vm.nom = 'Dupont'
-    wrapper.vm.prenom = 'Marie'
-    wrapper.vm.email = 'marie@example.com'
-    wrapper.vm.motdepasse = 'abcdef'
-    wrapper.vm.confirmation = 'abcdef'
+    await wrapper.find('#nom').setValue('Dupont')
+    await wrapper.find('#prenom').setValue('Marie')   // <-- existe maintenant
+    await wrapper.find('#email').setValue('marie@example.com')
+    await wrapper.find('#motdepasse').setValue('abcdef')
+    await wrapper.find('#confirmation').setValue('abcdef')
 
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
     expect(wrapper.vm.erreurServeur).toBe('Erreur serveur')
-    expect(fetch).toHaveBeenCalled()
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 })
