@@ -92,6 +92,6 @@ describe('Inscription.vue', () => {
     await flushPromises()
 
     expect(wrapper.vm.erreurServeur).toBe('Erreur de connexion au serveur')
-    expect(fetch).toHaveBeenCalled()
+    expect(fetch).toHaveBeenCalled(1)
   })
 })
