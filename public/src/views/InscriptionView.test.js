@@ -75,8 +75,6 @@ describe('Inscription.vue', () => {
 
     const msg = wrapper.find('.alert.alert-success')
     console.log('msg.exists():', msg.exists())
-    console.log('msg.html():', msg.html())
-    console.log('wrapper.html():', wrapper.html())
     expect(msg.exists()).toBe(true)
     expect(msg.text()).toBe('Compte créé avec succès ! Redirection en cours...')
 
