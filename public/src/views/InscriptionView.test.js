@@ -10,6 +10,10 @@ const router = createRouter({
   routes: [{ path: '/connexion', name: 'Connexion' }],
 })
 
+vi.mock('@/stores/auth', () => ({
+  useAuthStore: () => ({ token: 'FAKE_TOKEN_FOR_TEST' }),
+}))
+
 // Mock global de fetch
 global.fetch = vi.fn()
 
