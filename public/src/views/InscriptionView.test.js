@@ -91,7 +91,7 @@ describe('Inscription.vue', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(wrapper.vm.erreurServeur).toBe('Erreur de connexion au serveur')
-    expect(fetch).toHaveBeenCalled(1)
+    expect(wrapper.vm.erreurServeur).toBe('Erreur serveur')
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 })
