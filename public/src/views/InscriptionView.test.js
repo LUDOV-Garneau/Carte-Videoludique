@@ -70,7 +70,10 @@ describe('Inscription.vue', () => {
     await flushPromises()
     await nextTick()
 
-    expect(wrapper.vm.messageSucces).toBe('Compte créé avec succès ! Redirection en cours...')
+    const msg = wrapper.find('.alert.alert-success')
+    expect(msg.exists()).toBe(true)
+    expect(msg.text()).toBe('Compte créé avec succès ! Redirection en cours...')
+
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
