@@ -60,11 +60,11 @@ describe('Inscription.vue', () => {
       global: { plugins: [router] }
     })
 
-    wrapper.vm.nom = 'Dupont'
-    wrapper.vm.prenom = 'Marie'
-    wrapper.vm.email = 'marie@example.com'
-    wrapper.vm.motdepasse = 'abcdef'
-    wrapper.vm.confirmation = 'abcdef'
+    await wrapper.find('#nom').setValue('Dupont')
+    await wrapper.find('#prenom').setValue('Marie')   // <-- existe maintenant
+    await wrapper.find('#email').setValue('marie@example.com')
+    await wrapper.find('#motdepasse').setValue('abcdef')
+    await wrapper.find('#confirmation').setValue('abcdef')
 
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
@@ -84,11 +84,11 @@ describe('Inscription.vue', () => {
       global: { plugins: [router] }
     })
 
-    wrapper.vm.nom = 'Dupont'
-    wrapper.vm.prenom = 'Marie'
-    wrapper.vm.email = 'marie@example.com'
-    wrapper.vm.motdepasse = 'abcdef'
-    wrapper.vm.confirmation = 'abcdef'
+    await wrapper.find('#nom').setValue('Dupont')
+    await wrapper.find('#prenom').setValue('Marie')   // <-- existe maintenant
+    await wrapper.find('#email').setValue('marie@example.com')
+    await wrapper.find('#motdepasse').setValue('abcdef')
+    await wrapper.find('#confirmation').setValue('abcdef')
 
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
