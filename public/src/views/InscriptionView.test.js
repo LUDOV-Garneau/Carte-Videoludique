@@ -1,6 +1,7 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createRouter, createWebHistory } from 'vue-router'
+import { nextTick } from 'vue'
 import InscriptionView from '@/views/InscriptionView.vue'
 
 // Création d'un faux router pour tester la redirection
@@ -67,6 +68,7 @@ describe('Inscription.vue', () => {
 
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
+    await nextTick()
 
     expect(wrapper.vm.messageSucces).toBe('Compte créé avec succès ! Redirection en cours...')
     expect(fetch).toHaveBeenCalledTimes(1)
@@ -91,7 +93,7 @@ describe('Inscription.vue', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(wrapper.vm.erreurServeur).toBe('Erreur serveur')
+    expect(wrapper.vm.erreurServeur).toBe('Erreur de connexion au serveur')
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 })
