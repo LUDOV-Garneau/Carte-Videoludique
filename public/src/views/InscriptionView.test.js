@@ -55,6 +55,9 @@ describe('Inscription.vue', () => {
       ok: true,
       json: async () => ({ message: 'Compte créé avec succès' })
     })
+    
+    await router.push('/')
+    await router.isReady()
 
     const wrapper = mount(InscriptionView, {
       global: { plugins: [router] }
