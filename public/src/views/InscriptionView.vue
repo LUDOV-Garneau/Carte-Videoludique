@@ -9,7 +9,7 @@
       </div>
       <div class="mb-3">
         <label for="prenom" class="form-label">Prénom</label>
-        <input v-model="prenom" type="text" class="form-control" id="nom" required/>
+        <input v-model="prenom" type="text" class="form-control" id="prenom" required/>
         <div v-if="erreurs.prenom" class="text-danger">{{ erreurs.prenom }}</div>
       </div>
 
