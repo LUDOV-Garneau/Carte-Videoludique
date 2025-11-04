@@ -347,14 +347,16 @@ describe('locateFromAddress (exposed)', () => {
 /* ----------------------------------------- */
 
 // Mock des fonctions utils
-vi.mock('../utils.js', () => ({
-  isValidEmail: vi.fn((email) => email.includes('@')),
+vi.mock('../utils/utils.js', () => ({
+  isValidEmail: vi.fn((email) => email.includes('@'))
+}));
+vi.mock('../utils/cloudinary.js', () => ({
   uploadMultipleImages: vi.fn(() => Promise.resolve([
     { publicId: 'img1', url: 'http://example.com/img1.jpg' },
     { publicId: 'img2', url: 'http://example.com/img2.jpg' }
   ])),
   cleanupImages: vi.fn(() => Promise.resolve())
-}))
+}));
 
 // Mock du store
 const mockMarqueurStore = {
@@ -367,7 +369,7 @@ vi.mock('../stores/useMarqueur.js', () => ({
   useMarqueursStore: vi.fn(() => mockMarqueurStore)
 }))
 
-import { uploadMultipleImages, cleanupImages } from '../utils.js'
+import { uploadMultipleImages, cleanupImages } from '../utils/cloudinary.js'
 import { createPinia } from 'pinia'
 import { useMarqueursStore } from '../stores/useMarqueur'
 

@@ -1,11 +1,6 @@
-'use strict';
+"use strict";
 
-const CLOUD_NAME = "drlryvrl2";
-
-function isValidEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-}
+import { CLOUD_NAME } from '../config.js';
 
 async function uploadOneImage(file) {
     try {
@@ -73,4 +68,4 @@ async function cleanupImages(publicIds) {
     }
 }
 
-export { isValidEmail, uploadOneImage, uploadMultipleImages, cleanupImages };
+export { uploadOneImage, uploadMultipleImages, cleanupImages };

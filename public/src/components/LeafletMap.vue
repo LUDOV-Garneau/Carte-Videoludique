@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted, ref, isRef } from 'vue'
-import { isValidEmail, uploadMultipleImages, cleanupImages } from '../utils.js'
+import * as utils from '../utils/utils.js'
+import * as cloudinary from '../utils/cloudinary.js'
 import AddImage from './AddImage.vue'
 import L from 'leaflet'
 import { useMarqueursStore } from '../stores/useMarqueur.js'
@@ -140,7 +141,7 @@ function validateForm() {
     isValid = false
   }
   // Vérif email si rempli
-  if (form.value.email && !isValidEmail(form.value.email)) {
+  if (form.value.email && !utils.isValidEmail(form.value.email)) {
     formErrors.value.email = 'Le courriel n’est pas valide.'
     isValid = false
   }
@@ -165,7 +166,7 @@ async function sendRequest() {
   try {
     if (validateForm()) {
       if (files.value.length > 0) {
-        form.value.images = await uploadMultipleImages(files.value);
+        form.value.images = await cloudinary.uploadMultipleImages(files.value);
         console.log("images uploadées :", JSON.parse(JSON.stringify(form.value.images)));
       }
       
@@ -177,7 +178,7 @@ async function sendRequest() {
     }
   } catch (err) {
      if (form.value.images.length) {
-      try { await cleanupImages(form.value.images.map(img => img.publicId)); }
+      try { await cloudinary.cleanupImages(form.value.images.map(img => img.publicId)); }
       catch (e) { console.warn('Rollback Cloudinary a échoué :', e); }
     }
     console.error('sendRequest error:', err);
