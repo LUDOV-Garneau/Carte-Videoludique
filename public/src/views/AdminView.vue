@@ -2,7 +2,6 @@
 import LeafletMap from '../components/LeafletMap.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
-import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -15,8 +14,7 @@ const logout = () => {
 }
 
 const marqueursStore = useMarqueursStore()
-// const route = useRoute()
-// const marqueurId = computed(() => route.params.marqueurId)
+const authStore = useAuthStore()
 
 const messageErreur = ref('')
 
@@ -35,19 +33,36 @@ const getMarqueurs = () => {
     messageErreur.value = error.message;
   });
 }
-// const getMarqueur = (marqueurId) => {
-//   marqueursStore.getMarqueur(marqueurId)
-//   console.log(marqueurId)
-// }
 
-const accepterMarqueur = (marqueurId) => {
-  marqueursStore.getMarqueur(marqueurId)
-  console.log(marqueurId)
-}
+const accepterMarqueur = async (marqueur) => {
+  const id = marqueur?.properties?.id;
+  if (!id) return;
+
+  try {
+    if (!authStore.token) throw new Error('Non authentifié: token absent');
+
+    const res = await marqueursStore.modifierMarqueur(
+      id,
+      authStore.token,
+      {'properties.status': 'accepted'}
+    )
+
+    console.log('✅ Code HTTP:', res.status)
+    console.log('📦 Réponse:', res.body)
+    console.log('🔑 Token:', authStore.token)
+    console.log('🆔 Marqueur mis à jour:', id)
+   
+
+    
+  } catch (err) {
+    console.error(err);
+    messageErreur.value = err.message; 
+  }
+};
 
 onMounted(() => {
   getMarqueurs()
-  // getMarqueur(marqueurId.value)
+  
 })
 </script>
 
@@ -147,7 +162,7 @@ onMounted(() => {
                 </button>
               </td>
               <td class="accept-col">
-                <button class="action-btn accept" @click="accepterMarqueur(marqueurId)">
+                <button class="action-btn accept" @click="accepterMarqueur(marqueur)">
                   Accepter
                 </button>
               </td>
@@ -162,11 +177,6 @@ onMounted(() => {
                 Aucune offre pour le moment.
               </td>
             </tr>
-            <tr v-if="marqueursFiltres && marqueursFiltres.length > 0">
-              <td colspan="6" class="empty-btn">
-                <button class="clear-btn">Effacer les notifications</button>
-              </td>
-            </tr>
           </tbody>
         </table>
       </div>
@@ -179,7 +189,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-Tableau notifications
+/* Tableau de notification */
 
 /* Titre */
 /* ---------- Typo & couleurs locales (sans :root) ---------- */
@@ -202,8 +212,8 @@ h1, h2, p, table { color: #111827; }
   width: 96px;
   background: linear-gradient(
    180deg,
-   #e5e7eb 0%,   /* gris clair haut */
-   #f3f4f6 100%  /* gris très pâle bas */
+   #e5e7eb 0%, 
+   #f3f4f6 100% 
   );
   border-right: 1px solid #d1d5db; /* bordure gris moyen */
   display: flex;

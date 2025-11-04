@@ -82,4 +82,26 @@ const router = createRouter({
   ],
 })
 
+router.beforeEach((to, from, next) => {
+  const auth = useAuthStore()
+  // hydrate si vide
+  if (!auth.token) {
+    const t = localStorage.getItem('token')
+    console.log(t)
+    if (t) auth.setToken(t)
+  }
+
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    // garde la page demandée pour y revenir après login
+    next({ path: '/connexion', query: { redirect: to.fullPath } })
+  } else {
+    next()
+  }
+})
+
+router.afterEach((to, from) => {
+  console.log('router.afterEach', to, from);
+});
+
+
 export default router

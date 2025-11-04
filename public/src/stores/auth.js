@@ -2,11 +2,16 @@ import { defineStore,acceptHMRUpdate } from 'pinia'
 import { jwtDecode } from "jwt-decode";
 import { ref, computed } from 'vue'
 
-
 export const useAuthStore = defineStore('auth', () => {
   //récupérer le token depuis localStorage si on l'utilise
   const token = ref(localStorage.getItem('jwt') || null);
+  console.log(token.value)
 
+  function setToken(newToken) {
+    token.value = newToken
+    localStorage.setItem('jwt', newToken)
+  }
+ 
   // Décode les infos utilisateur à partir du token
   const decodedToken = computed(() => {
     if (token.value) {
@@ -31,11 +36,6 @@ export const useAuthStore = defineStore('auth', () => {
     const now = Date.now() / 1000
     return decoded.exp >= now
   });
-
-  function setToken(newToken) {
-    token.value = newToken
-    localStorage.setItem('jwt', newToken)
-  }
 
   function logout() {
     token.value = null
