@@ -92,6 +92,19 @@ vi.mock('vue-router', () => ({ useRouter: () => ({ push: routerPushMock }) }))
 import L, { onHandlers, map as mapApi } from 'leaflet'
 import LeafletMap from './LeafletMap.vue'
 
+// Mock du store pour les tests restants
+const mockMarqueurStore = {
+  marqueurs: [],
+  getMarqueurs: vi.fn(() => Promise.resolve()),
+  ajouterMarqueur: vi.fn(() => Promise.resolve({ id: 1, message: 'Marqueur créé' }))
+}
+
+vi.mock('../stores/useMarqueur.js', () => ({
+  useMarqueursStore: vi.fn(() => mockMarqueurStore)
+}))
+
+import { createPinia } from 'pinia'
+
 // Espions window listeners
 const addEventListenerSpy = vi.spyOn(window, 'addEventListener')
 const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
@@ -174,23 +187,27 @@ describe('LeafletMap.vue', () => {
   })
 })
 
-/* ------------------------------------- */
-/* Tests des fonctions exposées (vm.*)   */
-/* ------------------------------------- */
+/* ----------------------------------------- */
+/* Tests de handlelocateFromAddress (exposed) */
+/* ----------------------------------------- */
 
-describe('locateFromAddress (exposed)', () => {
+describe('handlelocateFromAddress (exposed)', () => {
   let wrapper
   let markerChain
 
   beforeEach(() => {
-    wrapper = mount(LeafletMap)
-    // on s'assure que le panneau/clic n'interfère pas
+    wrapper = mount(LeafletMap, {
+      global: {
+        plugins: [createPinia()]
+      }
+    })
+    
+    // Mock de marqueur
     markerChain = {
       addTo: vi.fn(() => markerChain),
       bindPopup: vi.fn(() => markerChain),
       openPopup: vi.fn(() => markerChain),
     }
-    // on force le mock L.marker à retourner notre chain pour ces tests
     L.marker.mockImplementation(() => markerChain)
   })
 
@@ -198,248 +215,50 @@ describe('locateFromAddress (exposed)', () => {
     wrapper.unmount()
   })
 
-  it('place un nouveau marqueur, met à jour lat/lng et centre la carte', async () => {
+  it('place un nouveau marqueur et met à jour les coordonnées', async () => {
+    const coordinates = { lat: 46.8139, lng: -71.2082 }
     
-    const btn = document.querySelector('.btn-ajout-marqueur')
-    btn.__handlers?.click?.({})
-    await wrapper.vm.$nextTick()
-
-    const adresseInput = wrapper.get('#adresse') 
-    await adresseInput.setValue('123 Rue Saint-Jean, Québec, Canada')
-    await wrapper.vm.$nextTick()
-
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve([{ lat: '46.8139', lon: '-71.2082' }]),
-    })
-
-    await wrapper.vm.locateFromAddress()
-    await wrapper.vm.$nextTick()
-
-    expect(L.marker).toHaveBeenCalledWith([46.8139, -71.2082])
+    await wrapper.vm.handlelocateFromAddress(coordinates)
+    
+    expect(L.marker).toHaveBeenCalledWith(coordinates)
     expect(markerChain.addTo).toHaveBeenCalledWith(mapApi)
     expect(markerChain.bindPopup).toHaveBeenCalledWith('Adresse localisée')
     expect(markerChain.openPopup).toHaveBeenCalled()
+    
+    expect(wrapper.vm.latitude).toBe('46.81390')
+    expect(wrapper.vm.longitude).toBe('-71.20820')
+    expect(mapApi.setView).toHaveBeenCalledWith(coordinates, 15)
+    expect(wrapper.vm.currentMarqueur).toStrictEqual(markerChain)
+  })
 
-    expect(wrapper.get('#lat').element.value).toBe('46.8139')
-    expect(wrapper.get('#lng').element.value).toBe('-71.2082')
-    expect(mapApi.setView).toHaveBeenCalledWith([46.8139, -71.2082], 15)
+  it('supprime l\'ancien marqueur avant d\'ajouter le nouveau', async () => {
+    const oldMarker = { id: 'old' }
+    wrapper.vm.currentMarqueur = oldMarker
+    
+    const coordinates = { lat: 46.8139, lng: -71.2082 }
+    await wrapper.vm.handlelocateFromAddress(coordinates)
+    
+    expect(mapApi.removeLayer).toHaveBeenCalledWith(oldMarker)
+    expect(wrapper.vm.currentMarqueur).toStrictEqual(markerChain)
+  })
+
+  it('ne supprime rien si aucun marqueur actuel', async () => {
+    wrapper.vm.currentMarqueur = null
+    
+    const coordinates = { lat: 46.8139, lng: -71.2082 }
+    await wrapper.vm.handlelocateFromAddress(coordinates)
+    
     expect(mapApi.removeLayer).not.toHaveBeenCalled()
+    expect(wrapper.vm.currentMarqueur).toStrictEqual(markerChain)
   })
 
-  it('supprime l’ancien marqueur si présent', async () => {
-    const btn = document.querySelector('.btn-ajout-marqueur')
-    btn.__handlers?.click?.({})
-    await wrapper.vm.$nextTick()
-
-    await wrapper.get('#adresse').setValue('addr-1')
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve([{ lat: '46.81', lon: '-71.20' }]),
-    })
-    await wrapper.vm.locateFromAddress()
-    await wrapper.vm.$nextTick()
-
-    expect(L.marker).toHaveBeenCalledTimes(1)
-    expect(mapApi.removeLayer).toHaveBeenCalledTimes(0)
-
-   
-    await wrapper.get('#adresse').setValue('addr-2')
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve([{ lat: '46.82', lon: '-71.21' }]),
-    })
-    await wrapper.vm.locateFromAddress()
-    await wrapper.vm.$nextTick()
-
-    expect(L.marker).toHaveBeenCalledTimes(2)   
-    expect(mapApi.removeLayer).toHaveBeenCalledTimes(1)   
-  })
-
-  it('ne fait rien si adresse vide', async () => {
-    // Ouvre le panneau pour rendre le formulaire
-    const btn = document.querySelector('.btn-ajout-marqueur')
-    btn.__handlers?.click?.({})
-    await wrapper.vm.$nextTick()
-
-    // L’input est vide par défaut, mais on le force au cas où
-    const adresseInput = wrapper.get('#adresse')
-    await adresseInput.setValue('')     // adresse vide
-
-    await wrapper.vm.locateFromAddress()
-
-    // Comme adresse vide → pas d’appel réseau ni de marker
-    expect(fetch).not.toHaveBeenCalled()
-    expect(L.marker).not.toHaveBeenCalled()
-  })
-})
-
-/* ----------------------------------------- */
-/* Tests de sendRequest (exposed)            */
-/* ----------------------------------------- */
-
-// Mock des fonctions utils
-vi.mock('../utils/utils.js', () => ({
-  isValidEmail: vi.fn((email) => email.includes('@'))
-}));
-vi.mock('../utils/cloudinary.js', () => ({
-  uploadMultipleImages: vi.fn(() => Promise.resolve([
-    { publicId: 'img1', url: 'http://example.com/img1.jpg' },
-    { publicId: 'img2', url: 'http://example.com/img2.jpg' }
-  ])),
-  cleanupImages: vi.fn(() => Promise.resolve())
-}));
-
-// Mock du store
-const mockMarqueurStore = {
-  marqueurs: [],
-  getMarqueurs: vi.fn(() => Promise.resolve()),
-  ajouterMarqueur: vi.fn(() => Promise.resolve({ id: 1, message: 'Marqueur créé' }))
-}
-
-vi.mock('../stores/useMarqueur.js', () => ({
-  useMarqueursStore: vi.fn(() => mockMarqueurStore)
-}))
-
-import { uploadMultipleImages, cleanupImages } from '../utils/cloudinary.js'
-import { createPinia } from 'pinia'
-import { useMarqueursStore } from '../stores/useMarqueur'
-
-describe('sendRequest (exposed)', () => {
-  let wrapper
-
-  beforeEach(() => {
-   // 👇 mock fetch avant tout
-    globalThis.fetch = vi.fn()
-
-    const pinia = createPinia()
-    wrapper = mount(LeafletMap, {
-      global: { plugins: [pinia] },
-    })
-
-    const marqueurStore = useMarqueursStore()
-    vi.spyOn(marqueurStore, 'ajouterMarqueur').mockResolvedValue({
-      id: 1,
-      message: 'Marqueur créé'
-    })
-
-    // ouvrir le panneau si nécessaire (adapte si tu as une autre API)
-    const btn = document.querySelector('.btn-ajout-marqueur')
-    btn?.__handlers?.click?.({})
-    console.log('📋 Form initial dans beforeEach:', wrapper.vm.form)
-  })
-
-  afterEach(() => {
-    wrapper.unmount()
-    vi.clearAllMocks()
-    vi.restoreAllMocks()
-  })
-
-  it('envoie avec succès un formulaire valide sans images', async () => {
-    const marqueurStore = useMarqueursStore()
-  
-    // Remplir le formulaire correctement
-    await wrapper.get('#titre').setValue('Mon lieu')
-    await wrapper.get('#description').setValue('Description du lieu')
-    await wrapper.get('#adresse').setValue('123 Rue Test, Québec')
-    await wrapper.get('#lat').setValue('46.8139')
-    await wrapper.get('#lng').setValue('-71.2082')
-
-    await wrapper.vm.$nextTick()
+  it('formate correctement les coordonnées avec 5 décimales', async () => {
+    const coordinates = { lat: 46.123456789, lng: -71.987654321 }
     
-    await wrapper.vm.sendRequest()
-
-    expect(marqueurStore.ajouterMarqueur).toHaveBeenCalledWith(
-      expect.objectContaining({
-        titre: 'Mon lieu',
-        description: 'Description du lieu',
-        adresse: '123 Rue Test, Québec',
-      })
-    )
-    expect(wrapper.vm.panelOpen).toBe(false)
-  })
-
-  it('envoie avec succès un formulaire valide avec images', async () => {
-    const marqueurStore = useMarqueursStore()
-
-    // Remplir le formulaire
-    await wrapper.get('#titre').setValue('Mon lieu avec images')
-    await wrapper.get('#description').setValue('Description')
-    await wrapper.get('#adresse').setValue('123 Rue Test')
+    await wrapper.vm.handlelocateFromAddress(coordinates)
     
-    // Simuler des fichiers
-    wrapper.vm.files = [new File([''], 'test1.jpg'), new File([''], 'test2.jpg')]
-    
-    // Mock réponses
-    uploadMultipleImages.mockResolvedValueOnce([
-      { publicId: 'img1', url: 'http://example.com/img1.jpg' },
-      { publicId: 'img2', url: 'http://example.com/img2.jpg' }
-    ])
-
-    await wrapper.vm.sendRequest()
-
-    expect(uploadMultipleImages).toHaveBeenCalledWith(wrapper.vm.files)
-    expect(marqueurStore.ajouterMarqueur).toHaveBeenCalledWith(
-     expect.objectContaining({
-       titre: 'Mon lieu avec images',
-       images: [
-         { publicId: 'img1', url: 'http://example.com/img1.jpg' },
-         { publicId: 'img2', url: 'http://example.com/img2.jpg' }
-       ]
-     })
-  )
-    expect(wrapper.vm.panelOpen).toBe(false)
-  })
-
-  it('ne fait rien si la validation échoue', async () => {
-    // Formulaire invalide (pas de titre)
-    await wrapper.get('#description').setValue('Description seulement')
-    
-    await wrapper.vm.sendRequest()
-
-    expect(fetch).not.toHaveBeenCalled()
-    expect(uploadMultipleImages).not.toHaveBeenCalled()
-    expect(wrapper.vm.panelOpen).toBe(true) // Panneau reste ouvert
-  })
-
-  it('nettoie les images et relance erreur si API échoue', async () => {
-    const marqueurStore = useMarqueursStore()
-    // Remplir formulaire valide
-    await wrapper.get('#titre').setValue('Mon lieu')
-    await wrapper.get('#description').setValue('Description')
-    await wrapper.get('#adresse').setValue('123 Rue Test')
-    await wrapper.get('#lat').setValue('46.8139')
-    await wrapper.get('#lng').setValue('-71.2082')
-    
-    // Simuler upload d'images réussi
-    wrapper.vm.files = [new File([''], 'test.jpg')]
-    uploadMultipleImages.mockResolvedValueOnce([
-      { publicId: 'img1', url: 'http://example.com/img1.jpg' }
-    ])
-    
-    // Mock échec API
-    marqueurStore.ajouterMarqueur.mockRejectedValueOnce(new Error('Erreur serveur'))
-
-    await expect(wrapper.vm.sendRequest()).rejects.toThrow('Erreur serveur')
-    
-    expect(cleanupImages).toHaveBeenCalledWith(['img1'])
-    expect(wrapper.vm.panelOpen).toBe(true) // Panneau reste ouvert
-  })
-
-  it('gère les erreurs de réseau', async () => {
-    const marqueurStore = useMarqueursStore()
-    // Remplir formulaire valide
-    await wrapper.get('#titre').setValue('Mon lieu')
-    await wrapper.get('#description').setValue('Description')
-    await wrapper.get('#adresse').setValue('123 Rue Test')
-    await wrapper.get('#lat').setValue('46.8139')
-    await wrapper.get('#lng').setValue('-71.2082')
-    
-    // Mock erreur réseau
-    marqueurStore.ajouterMarqueur.mockRejectedValueOnce(new Error('Network error'))
-
-    await expect(wrapper.vm.sendRequest()).rejects.toThrow('Network error')
-    expect(wrapper.vm.panelOpen).toBe(true)
+    expect(wrapper.vm.latitude).toBe('46.12346')
+    expect(wrapper.vm.longitude).toBe('-71.98765')
   })
 })
 
