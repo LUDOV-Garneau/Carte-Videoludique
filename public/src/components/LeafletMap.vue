@@ -103,7 +103,9 @@ async function afficherMarqueurs() {
         const properties = marqueurData.properties;
         const comments = marqueurData.comments || [];
 
-        const marqueur = L.marker([lat, lng]).addTo(map);
+        const marqueur = L.marker([lat, lng]);
+        if (properties.status === 'pending') marqueur.setOpacity(0.5);
+        marqueur.addTo(map);
 
         marqueur.properties = properties;
         marqueur.comments = comments;
