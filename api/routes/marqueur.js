@@ -22,6 +22,9 @@ router.get("/marqueurs/:marqueurId", marqueurController.getMarqueur);
 // PUT => /marqueurs/:marqueurId
 router.put("/marqueurs/:marqueurId", isAuth, marqueurController.updateMarqueur);
 
+// PUT => /marqueurs/:marqueurId/status
+router.put("/marqueurs/:marqueurId/status", isAuth, marqueurController.updateStatusMarqueur);
+
 // DELETE => /marqueurs/:marqueurId
 router.delete("/marqueurs/:marqueurId", isAuth, marqueurController.deleteMarqueur);
 

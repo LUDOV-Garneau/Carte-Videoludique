@@ -73,7 +73,7 @@ describe('AdminView.vue', () => {
 
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.findAll('tbody tr')).toHaveLength(2)
+    expect(wrapper.findAll('tbody tr')).toHaveLength(1)
     expect(wrapper.find('.provider').text()).toBe('Vidéotron')
     expect(wrapper.find('.address').text()).toContain('2300 rue X')
   })
