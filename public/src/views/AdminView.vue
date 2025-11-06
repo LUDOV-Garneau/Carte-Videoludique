@@ -41,21 +41,18 @@ const accepterMarqueur = async (marqueur) => {
   try {
     if (!authStore.token) throw new Error('Non authentifié: token absent');
 
-    const res = await marqueursStore.modifierMarqueur(
-      id,
-      authStore.token,
-      {'properties.status': 'accepted'}
-    )
+    console.log('ancien status:', marqueur.properties.status); // <-- AVANT
 
-    console.log('✅ Code HTTP:', res.status)
-    console.log('📦 Réponse:', res.body)
-    console.log('🔑 Token:', authStore.token)
-    console.log('🆔 Marqueur mis à jour:', id)
-   
+    const payload = { status: 'approved' };
+    const updated = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload);
 
-    
+    console.log('status renvoyé par le serveur:', updated?.properties?.status); // <-- RÉPONSE
+
+    marqueur.properties.status = updated.properties.status;
+
+    console.log('nouveau status local:', marqueur.properties.status); // <-- APRÈS
   } catch (err) {
-    console.error(err);
+   
     messageErreur.value = err.message; 
   }
 };

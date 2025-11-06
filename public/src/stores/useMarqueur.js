@@ -92,50 +92,80 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
         })
     }
     function modifierMarqueur(marqueurId, token, payload){
-            return fetch(`${API_URL}/marqueurs/${marqueurId}`, {
-                method: 'PUT',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + token
-                },
-                body: JSON.stringify(payload)
-            })
-            .then( async (response) => {
-                let body = null
-                try { body = await response.json() } catch { body = null }
-
-                if (response.ok) {
-                    return { status: response.status, body } // 👈 renvoie le code HTTP
-                } else {
-                    const errorMessage = body?.message || 'Erreur inconnue'
-                    throw new Error(`${response.status} - ${errorMessage}`)
+        return fetch(`${API_URL}/marqueurs/${marqueurId}`, {
+            method: 'PUT',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(async (response) => {
+            if(response.ok) {
+                return response.json();
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Erreur inconnue');
+            }
+        })
+        .then((result) => {
+            // MAJ locale optionnelle si tu as un "marqueurActif"
+            if (marqueurActif.value) {
+                marqueurActif.value.properties.titre = result.data.titre;
+                marqueurActif.value.properties.type = result.data.type;
+                marqueurActif.value.properties.adresse = result.data.adresse;
+                marqueurActif.value.properties.description = result.data.description;
+                marqueurActif.value.properties.temoignage = result.data.temoignage;
+                marqueurActif.value.properties.image = result.data.image;
+                return result.data;
+            } 
+            return result; // 👈 pour que le composant puisse lire res.status / res.body
+        })
+        .catch(error => {
+            throw error
+        })
+    }
+    function modifierMarqueurStatus(marqueurId, token, status){
+        return fetch(`${API_URL}/marqueurs/${marqueurId}/status`, {
+            method: 'PUT',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+             body: JSON.stringify(status) 
+        })
+        .then((response) => {
+            return response.json().then((data) => {
+                if (!response.ok) {
+                    throw new Error(data.message || 'Erreur inconnue');
                 }
-            })
-            .then((result) => {
-                // Normaliser le statut renvoyé (supporte 200 JSON et 204 No Content)
-                const serverStatus = result.body?.data?.status
-                                  ?? result.body?.status
-                                  ?? payload?.status
-                                  ?? null;
+                return data;
+            });
+        })
+        .then((data) => {
+            const updated = data.data;
+            const newStatus = updated?.properties?.status;
 
-                // MAJ locale optionnelle si tu as un "marqueurActif"
-                if (marqueurActif.value && serverStatus) {
-                  marqueurActif.value.properties.status = serverStatus;
-                }
-            
-                return result; // 👈 pour que le composant puisse lire res.status / res.body
-            })
-            .catch(error => {
-                throw error
-            })
-        }
+            if (marqueurActif.value && newStatus) {
+                marqueurActif.value.properties.status = newStatus;
+            }
+
+            return updated;
+        })
+        .catch((error) => {
+            console.error('Erreur lors de la mise à jour du marqueur :', error.message);
+            throw error;
+        });
+    }
 
     return {
         marqueurs,
+        marqueurActif,
         ajouterMarqueur,
         getMarqueurs,
         getMarqueur,
         modifierMarqueur,
+        modifierMarqueurStatus
     }
 
 }, {

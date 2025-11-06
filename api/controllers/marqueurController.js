@@ -185,29 +185,33 @@ exports.updateMarqueur = async (req, res, next) => {
 
 exports.updateStatusMarqueur = async(req, res, next) => {
     try {
+        
         const marqueurId = req.params.marqueurId;
         const { status } = req.body;
 
-        const updated = await Marqueur.findByIdAndUpdate(
+        console.log('[REQ]', { params: req.params, body: req.body });
+
+        const updatedMarqueur = await Marqueur.findByIdAndUpdate(
             marqueurId,
-            {$set: {'properties.status': status}},
-            {new: true}
+            { $set: { 'properties.status': status } },
+            { new: true, runValidators: true, context: 'query' }
         )
-        if (!updated) {
+        console.log('[UPDATE RESULT]', updatedMarqueur);
+        if (!updatedMarqueur) {
             return res.status(404).json({
             message: "Le marqueur à mettre à jour n'existe pas",
         });
         }
-        res.status(200).json({
-        message: "Marqueur mis à jour avec succès",
-        data: updated,
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: "Erreur serveur",
-      error: err.message,
-    });
-  }
+        res.status(200).json(formatSuccessResponse(
+            200,
+            "Le marqueur a été mis à jour avec succès!",
+            updatedMarqueur,
+            req.originalUrl
+        ));
+    
+    } catch (err) {
+        next(err);
+    }
 }
 /**
  * Supprime un marqueur en fonction de son identifiant.
