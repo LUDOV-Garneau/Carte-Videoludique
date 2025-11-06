@@ -1,7 +1,7 @@
 <script setup>
 import LeafletMap from '../components/LeafletMap.vue'
 import { ref, onMounted, computed } from 'vue'
-import { useMarqueursStore } from '../stores/useMarqueur'
+import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -13,7 +13,7 @@ const logout = () => {
   router.push('/connexion')
 }
 
-const marqueursStore = useMarqueursStore()
+const marqueurStore = useMarqueurStore()
 const authStore = useAuthStore()
 
 const messageErreur = ref('')
@@ -21,14 +21,14 @@ const messageErreur = ref('')
 const filtreStatus = ref('pending')
 
 const marqueursFiltres = computed(() => {
-  console.log(marqueursStore.marqueurs)
-  return (marqueursStore.marqueurs ?? []).filter(
+  console.log(marqueurStore.marqueurs)
+  return (marqueurStore.marqueurs ?? []).filter(
     m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
   )
 })
 
 const getMarqueurs = () => {
-  marqueursStore.getMarqueurs()
+  marqueurStore.getMarqueurs()
   .catch(error => {
     messageErreur.value = error.message;
   });
@@ -44,7 +44,7 @@ const accepterMarqueur = async (marqueur) => {
     console.log('ancien status:', marqueur.properties.status); // <-- AVANT
 
     const payload = { status: 'approved' };
-    const updated = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload);
+    const updated = await marqueurStore.modifierMarqueurStatus(id, authStore.token, payload);
 
     console.log('status renvoyé par le serveur:', updated?.properties?.status); // <-- RÉPONSE
 

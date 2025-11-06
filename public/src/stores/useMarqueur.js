@@ -4,7 +4,7 @@ import { API_URL } from '../config.js'
 import { useAuthStore } from '../stores/auth'
 
 
-export const useMarqueursStore = defineStore('marqueurs', () => {
+export const useMarqueurStore = defineStore('marqueur', () => {
     const marqueurs = ref([]);
     const marqueurActif = ref(null);
     const authStore = useAuthStore();
