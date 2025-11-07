@@ -84,7 +84,6 @@ export const useMarqueurStore = defineStore('marqueur', () => {
         })
         .then(data => {
             marqueurActif.value = data.data
-            console.log(marqueurActif)
             return marqueurActif
         })
         .catch(error => {
