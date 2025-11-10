@@ -363,7 +363,7 @@ describe('MarqueurController.deleteMarqueur', () => {
 })
 
 /* -------------------- addComment -------------------- */
-describe('MarqueurController.addComment', () => {
+describe('MarqueurController.addCommentMarqueur', () => {
   it('404 si le marqueur n’existe pas', async () => {
     vi.spyOn(Marqueur, 'findById').mockResolvedValue(null)
 
@@ -375,7 +375,7 @@ describe('MarqueurController.addComment', () => {
     const res = mockRes()
     const next = mockNext()
 
-    await marqueurController.addComment(req, res, next)
+    await marqueurController.addCommentMarqueur(req, res, next)
 
     expect(Marqueur.findById).toHaveBeenCalledWith('nope')
     expect(res.statusCode).toBe(404)
@@ -404,7 +404,7 @@ describe('MarqueurController.addComment', () => {
     const res = mockRes()
     const next = mockNext()
 
-    await marqueurController.addComment(req, res, next)
+    await marqueurController.addCommentMarqueur(req, res, next)
 
     expect(Marqueur.findById).toHaveBeenCalledWith('abc123')
     expect(marqueur.save).toHaveBeenCalled()
@@ -422,14 +422,14 @@ describe('MarqueurController.addComment', () => {
     const res = mockRes()
     const next = mockNext()
 
-    await marqueurController.addComment(req, res, next)
+    await marqueurController.addCommentMarqueur(req, res, next)
 
     expect(next).toHaveBeenCalledWith(boom)
   })
 })
 
 /* -------------------- deleteComment -------------------- */
-describe('MarqueurController.deleteComment', () => {
+describe('MarqueurController.deleteCommentMarqueur', () => {
   it('404 si le marqueur n’existe pas', async () => {
     vi.spyOn(Marqueur, 'findById').mockResolvedValue(null)
 
@@ -440,7 +440,7 @@ describe('MarqueurController.deleteComment', () => {
     const res = mockRes()
     const next = mockNext()
 
-    await marqueurController.deleteComment(req, res, next)
+    await marqueurController.deleteCommentMarqueur(req, res, next)
 
     expect(Marqueur.findById).toHaveBeenCalledWith('nope')
     expect(res.statusCode).toBe(404)
@@ -468,7 +468,7 @@ describe('MarqueurController.deleteComment', () => {
     const res = mockRes()
     const next = mockNext()
 
-    await marqueurController.deleteComment(req, res, next)
+    await marqueurController.deleteCommentMarqueur(req, res, next)
 
     expect(res.statusCode).toBe(404)
     expect(res.body).toMatchObject({
@@ -495,7 +495,7 @@ describe('MarqueurController.deleteComment', () => {
     const res = mockRes()
     const next = mockNext()
 
-    await marqueurController.deleteComment(req, res, next)
+    await marqueurController.deleteCommentMarqueur(req, res, next)
 
     expect(Marqueur.findById).toHaveBeenCalledWith('abc123')
     expect(marqueur.save).toHaveBeenCalled()
@@ -514,7 +514,7 @@ describe('MarqueurController.deleteComment', () => {
     const res = mockRes()
     const next = mockNext()
 
-    await marqueurController.deleteComment(req, res, next)
+    await marqueurController.deleteCommentMarqueur(req, res, next)
 
     expect(next).toHaveBeenCalledWith(boom)
   })
