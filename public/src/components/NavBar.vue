@@ -14,17 +14,17 @@
             <li class="nav-item">
                   <router-link to="/profile" class="nav-link">
                     {{ auth.username }}
-                  </router-link>      
+                  </router-link>
             </li>
             <li class="nav-item">
                   <router-link to="/accounts" class="nav-link">
                     Administrateurs
-                  </router-link>      
+                  </router-link>
             </li>
             <li class="nav-item">
                   <router-link to="/inscription" class="nav-link">
                     Créer un compte
-                  </router-link>      
+                  </router-link>
             </li>
             <li  class="nav-item">
                 <a href="#" class="nav-link" @click="logout()">
@@ -49,7 +49,7 @@ const router = useRouter()
 const logout = () => {
   auth.logout()
   router.push("/connexion")
-  
+
 }
 </script>
 

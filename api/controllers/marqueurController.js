@@ -183,36 +183,65 @@ exports.updateMarqueur = async (req, res, next) => {
     }
 };
 
-exports.updateStatusMarqueur = async(req, res, next) => {
-    try {
-        
-        const marqueurId = req.params.marqueurId;
-        const { status } = req.body;
+/**
+ * Met à jour le statut d’un marqueur (approved, pending, rejected).
+ * Accessible uniquement aux administrateurs.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+exports.updateStatusMarqueur = async (req, res, next) => {
+  try {
+    const marqueurId = req.params.marqueurId;
+    const { status } = req.body;
 
-        console.log('[REQ]', { params: req.params, body: req.body });
-
-        const updatedMarqueur = await Marqueur.findByIdAndUpdate(
-            marqueurId,
-            { $set: { 'properties.status': status } },
-            { new: true, runValidators: true, context: 'query' }
-        )
-        console.log('[UPDATE RESULT]', updatedMarqueur);
-        if (!updatedMarqueur) {
-            return res.status(404).json({
-            message: "Le marqueur à mettre à jour n'existe pas",
-        });
-        }
-        res.status(200).json(formatSuccessResponse(
-            200,
-            "Le marqueur a été mis à jour avec succès!",
-            updatedMarqueur,
-            req.originalUrl
-        ));
-    
-    } catch (err) {
-        next(err);
+    const allowedStatuses = ["approved", "pending", "rejected"];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json(formatErrorResponse(
+        400,
+        "Bad Request",
+        "Statut invalide. Valeurs acceptées : 'approved', 'pending' ou 'rejected'.",
+        req.originalUrl
+      ));
     }
-}
+
+    if (!req.admin) {
+      return res.status(403).json(formatErrorResponse(
+        403,
+        "Forbidden",
+        "Seul un administrateur peut modifier le statut d’un marqueur.",
+        req.originalUrl
+      ));
+    }
+
+    const updatedMarqueur = await Marqueur.findByIdAndUpdate(
+      marqueurId,
+      { $set: { "properties.status": status } },
+      { new: true, runValidators: true, context: "query" }
+    );
+
+    if (!updatedMarqueur) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "Le marqueur à mettre à jour n'existe pas.",
+        req.originalUrl
+      ));
+    }
+
+    res.status(200).json(formatSuccessResponse(
+      200,
+      `Le statut du marqueur a été mis à jour vers '${status}'.`,
+      updatedMarqueur,
+      req.originalUrl
+    ));
+
+  } catch (err) {
+    next(err);
+  }
+};
+
 /**
  * Supprime un marqueur en fonction de son identifiant.
  * 
