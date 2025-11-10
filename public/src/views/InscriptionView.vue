@@ -49,7 +49,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { API_URL } from '@/config'
-import { useAuthStore } from '@/stores/useAuth'
+import { useAuthStore } from '@/stores/auth'
 
 const nom = ref('')
 const prenom = ref('')

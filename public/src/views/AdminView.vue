@@ -2,7 +2,7 @@
 import LeafletMap from '../components/LeafletMap.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
-import { useAuthStore } from '@/stores/useAuth'
+import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
 const auth = useAuthStore()

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { API_URL } from '../config.js'
-import { useAuthStore } from './useAuth.js'
+import { useAuthStore } from './auth.js'
 
 
 export const useMarqueursStore = defineStore('marqueurs', () => {

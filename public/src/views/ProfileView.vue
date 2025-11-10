@@ -39,7 +39,7 @@
 <script setup>
 import { ref,onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/useAuth'
+import { useAuthStore } from '@/stores/auth'
 import { API_URL } from '@/config'
 
 const router = useRouter()

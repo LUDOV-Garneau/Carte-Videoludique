@@ -4,7 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { defineComponent } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
-import { useAuthStore } from '../stores/useAuth'
+import { useAuthStore } from '../stores/auth'
 
 const LeafletMapStub = defineComponent({
   name: 'LeafletMap',
