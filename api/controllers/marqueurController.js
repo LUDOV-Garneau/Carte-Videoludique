@@ -214,20 +214,12 @@ exports.updateStatusMarqueur = async(req, res, next) => {
     }
 }
 
-/**
- * Ajoute un commentaire (témoignage) à un marqueur existant.
- * 
- * @param {import('express').Request} req - Objet de requête Express contenant l'ID du marqueur et les données du commentaire.
- * @param {import('express').Response} res - Objet de réponse Express utilisé pour renvoyer le marqueur mis à jour.
- * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
- */
 exports.addCommentMarqueur = async (req, res, next) => {
   try {
     const { marqueurId } = req.params;
-    const { auteur, contenu } = req.body;
+    const { auteur, texte } = req.body; // <-- correction ici
 
-    // Validation basique
-    if (!contenu || contenu.trim() === "") {
+    if (!texte || texte.trim() === "") {
       return res.status(400).json(formatErrorResponse(
         400,
         "Bad Request",
@@ -246,14 +238,13 @@ exports.addCommentMarqueur = async (req, res, next) => {
       ));
     }
 
-    // Création du commentaire
-    const newComment = { auteur: auteur || "Anonyme", contenu };
+    const newComment = { auteur: auteur || "Anonyme", texte }; 
     marqueur.comments.push(newComment);
     await marqueur.save();
 
-    res.status(201).json(formatSuccessResponse(
-      201,
-      "Témoignage ajouté avec succès!",
+    res.status(200).json(formatSuccessResponse( 
+      200,
+      "Témoignage ajouté avec succès.",
       marqueur,
       req.originalUrl
     ));
