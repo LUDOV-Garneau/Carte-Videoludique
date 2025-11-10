@@ -246,18 +246,11 @@ exports.updateStatusMarqueur = async (req, res, next) => {
 exports.addCommentMarqueur = async (req, res, next) => {
   try {
     const { marqueurId } = req.params;
-    const { auteur, texte } = req.body; // <-- correction ici
+    const { auteur, texte } = req.body;
 
-    if (!texte || texte.trim() === "") {
-      return res.status(400).json(formatErrorResponse(
-        400,
-        "Bad Request",
-        "Le contenu du témoignage est requis.",
-        req.originalUrl
-      ));
-    }
-
+    // On cherche le marqueur en premier
     const marqueur = await Marqueur.findById(marqueurId);
+
     if (!marqueur) {
       return res.status(404).json(formatErrorResponse(
         404,
@@ -267,20 +260,31 @@ exports.addCommentMarqueur = async (req, res, next) => {
       ));
     }
 
-    const newComment = { auteur: auteur || "Anonyme", texte }; 
+    // Ensuite on valide le texte
+    if (!texte || texte.trim() === "") {
+      return res.status(400).json(formatErrorResponse(
+        400,
+        "Bad Request",
+        "Le contenu du témoignage est requis.",
+        req.originalUrl
+      ));
+    }
+
+    const newComment = { auteur: auteur || "Anonyme", texte };
     marqueur.comments.push(newComment);
     await marqueur.save();
 
-    res.status(200).json(formatSuccessResponse( 
+    res.status(200).json(formatSuccessResponse(
       200,
       "Témoignage ajouté avec succès.",
       marqueur,
       req.originalUrl
     ));
   } catch (err) {
-    next(err);
+    next(err); // <---- ce que le test vérifie
   }
 };
+
 
 /**
  * Supprime un commentaire spécifique d’un marqueur existant.
