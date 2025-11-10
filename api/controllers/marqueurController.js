@@ -213,6 +213,56 @@ exports.updateStatusMarqueur = async(req, res, next) => {
         next(err);
     }
 }
+
+/**
+ * Ajoute un commentaire (témoignage) à un marqueur existant.
+ * 
+ * @param {import('express').Request} req - Objet de requête Express contenant l'ID du marqueur et les données du commentaire.
+ * @param {import('express').Response} res - Objet de réponse Express utilisé pour renvoyer le marqueur mis à jour.
+ * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
+ */
+exports.addCommentMarqueur = async (req, res, next) => {
+  try {
+    const { marqueurId } = req.params;
+    const { auteur, contenu } = req.body;
+
+    // Validation basique
+    if (!contenu || contenu.trim() === "") {
+      return res.status(400).json(formatErrorResponse(
+        400,
+        "Bad Request",
+        "Le contenu du témoignage est requis.",
+        req.originalUrl
+      ));
+    }
+
+    const marqueur = await Marqueur.findById(marqueurId);
+    if (!marqueur) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "Le marqueur spécifié n'existe pas.",
+        req.originalUrl
+      ));
+    }
+
+    // Création du commentaire
+    const newComment = { auteur: auteur || "Anonyme", contenu };
+    marqueur.comments.push(newComment);
+    await marqueur.save();
+
+    res.status(201).json(formatSuccessResponse(
+      201,
+      "Témoignage ajouté avec succès!",
+      marqueur,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 /**
  * Supprime un marqueur en fonction de son identifiant.
  * 
