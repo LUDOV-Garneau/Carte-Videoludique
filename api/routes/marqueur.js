@@ -28,6 +28,9 @@ router.put("/marqueurs/:marqueurId/status", isAuth, marqueurController.updateSta
 // POST => /marqueurs/:marqueurId/commentaires
 router.post("/marqueurs/:marqueurId/commentaires", marqueurController.addCommentMarqueur);
 
+// DELETE => /marqueurs/:marqueurId/commentaires/commentsId
+router.delete("/marqueurs/:marqueurId/commentaires/:commentId", marqueurController.deleteCommentMarqueur);
+
 // DELETE => /marqueurs/:marqueurId
 router.delete("/marqueurs/:marqueurId", isAuth, marqueurController.deleteMarqueur);
 
