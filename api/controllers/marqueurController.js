@@ -269,7 +269,7 @@ exports.addCommentMarqueur = async (req, res, next) => {
  * @param {import('express').Response} res - Objet de réponse Express utilisé pour renvoyer le marqueur mis à jour.
  * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
  */
-exports.deleteComment = async (req, res, next) => {
+exports.deleteCommentMarqueur = async (req, res, next) => {
   try {
     const { marqueurId, commentId } = req.params;
 
