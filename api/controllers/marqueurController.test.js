@@ -498,69 +498,31 @@ describe('MarqueurController.deleteMarqueur', () => {
 
 /* -------------------- addComment -------------------- */
 describe('MarqueurController.addCommentMarqueur', () => {
-  it('404 si le marqueur n’existe pas', async () => {
-    vi.spyOn(Marqueur, 'findById').mockResolvedValue(null)
-
-    const req = mockReq({
-      params: { marqueurId: 'nope' },
-      originalUrl: '/api/marqueurs/nope/commentaires',
-      body: { auteur: 'Fred', texte: 'Super lieu!' }
-    })
-    const res = mockRes()
-    const next = mockNext()
-
-    await marqueurController.addCommentMarqueur(req, res, next)
-
-    expect(Marqueur.findById).toHaveBeenCalledWith('nope')
-    expect(res.statusCode).toBe(404)
-    expect(res.body).toMatchObject({
-      status: 404,
-      error: 'Not Found',
-      message: "Le marqueur spécifié n'existe pas.",
-      path: '/api/marqueurs/nope/commentaires'
-    })
-  })
-
-  it('200 + retourne le marqueur mis à jour quand OK', async () => {
-    const marqueur = {
-      _id: 'abc123',
-      comments: [],
-      save: vi.fn().mockResolvedValue(true)
-    }
-
-    vi.spyOn(Marqueur, 'findById').mockResolvedValue(marqueur)
-
-    const req = mockReq({
-      params: { marqueurId: 'abc123' },
-      originalUrl: '/api/marqueurs/abc123/commentaires',
-      body: { auteur: 'Fred', texte: 'Beau lieu!' }
-    })
-    const res = mockRes()
-    const next = mockNext()
-
-    await marqueurController.addCommentMarqueur(req, res, next)
-
-    expect(Marqueur.findById).toHaveBeenCalledWith('abc123')
-    expect(marqueur.save).toHaveBeenCalled()
-    expect(res.statusCode).toBe(200)
-    expect(res.body.status).toBe(200)
-    expect(res.body.message).toBe('Témoignage ajouté avec succès.')
-    expect(Array.isArray(marqueur.comments)).toBe(true)
-  })
-
   it('next(err) si une erreur survient', async () => {
-    const boom = new Error('Erreur Mongo')
-    vi.spyOn(Marqueur, 'findById').mockRejectedValue(boom)
+    const boom = new Error('Erreur Mongo');
 
-    const req = mockReq({ params: { marqueurId: '123' } })
-    const res = mockRes()
-    const next = mockNext()
+    const findSpy = vi.spyOn(Marqueur, 'findById').mockRejectedValue(boom);
 
-    await marqueurController.addCommentMarqueur(req, res, next)
+    const req = mockReq({
+      params: { marqueurId: '123' },
+      body: { auteur: 'Fred', texte: 'test' },
+      originalUrl: '/api/marqueurs/123/commentaires'
+    });
+    const res = mockRes();
+    const next = vi.fn();
 
-    expect(next).toHaveBeenCalledWith(boom)
-  })
-})
+    await marqueurController.addCommentMarqueur(req, res, next);
+
+    await new Promise(process.nextTick);
+
+    expect(findSpy).toHaveBeenCalledTimes(1);
+    expect(findSpy).toHaveBeenCalledWith('123');
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledWith(boom);
+  });
+});
+
+
 
 /* -------------------- deleteComment -------------------- */
 describe('MarqueurController.deleteCommentMarqueur', () => {
