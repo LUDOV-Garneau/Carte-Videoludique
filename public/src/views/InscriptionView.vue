@@ -33,7 +33,7 @@
 
       <button type="submit" class="btn btn-primary">S'inscrire</button>
       <div v-if="erreurServeur" class="mt-3 text-danger">{{ erreurServeur }}</div>
-      
+
       <div
         v-if="messageSucces"
         class="alert alert-success mt-3"
@@ -49,7 +49,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { API_URL } from '@/config'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/useAuth'
 
 const nom = ref('')
 const prenom = ref('')
@@ -67,13 +67,13 @@ const soumettreFormulaire = async () => {
 
   // Validation côté client
     //Validation du nom
-  if (!nom.value) erreurs.value.nom = 'Le nom est requis.';  
+  if (!nom.value) erreurs.value.nom = 'Le nom est requis.';
   else if (nom.value.length > 50) erreurs.value.nom  = 'Le nom ne peut pas dépasser 50 caractères';
 
     //Validation du prénom
-  if (!prenom.value) erreurs.value.prenom = 'Le prénom est requis.';  
+  if (!prenom.value) erreurs.value.prenom = 'Le prénom est requis.';
   else if (prenom.value.length > 50) erreurs.value.prenom  = 'Le prénom ne peut pas dépasser 50 caractères';
-  
+
   //Validation du courriel
   if (!email.value) erreurs.value.email = 'Le courriel est requis.';
   else if (!/\S+@\S+\.\S+/.test(email.value)) erreurs.value.email = 'Courriel invalide.';

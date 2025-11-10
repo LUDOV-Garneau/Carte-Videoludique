@@ -26,7 +26,7 @@
         <p class="text-muted">{{ user.courriel }}</p>
         <p><strong>Créé le :</strong> {{ formatDate(user.createdAt) }}</p>
         <p><strong>Mis à jour le :</strong> {{ formatDate(user.updatedAt) }}</p>
-        
+
 
         <!-- <router-link to="/profil/modifier" class="btn btn-outline-primary mt-3">
           Modifier le profil
@@ -39,7 +39,7 @@
 <script setup>
 import { ref,onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/useAuth'
 import { API_URL } from '@/config'
 
 const router = useRouter()

@@ -26,7 +26,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth.js'
+import { useAuthStore } from '../stores/useAuth.js'
 import { API_URL } from '@/config'
 
 const email = ref('')
@@ -78,8 +78,8 @@ const handleSubmit = async () => {
     if (response.ok) {
       const data = await response.json()
       auth.setToken(data.data.token)
-      
-      router.push('/admin') 
+
+      router.push('/admin')
     } else {
       if (response.status == 401) {
         errorMessage.value = 'Mot de passe ou courriel invalide'

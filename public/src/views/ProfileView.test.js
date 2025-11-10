@@ -30,7 +30,7 @@ describe('ProfileView.vue', () => {
       },
     }
 
-    const { useAuthStore } = await import('@/stores/auth')
+    const { useAuthStore } = await import('@/stores/useAuth')
     useAuthStore.mockReturnValue(mockAuthStore)
 
     global.fetch = vi.fn(() =>
@@ -51,7 +51,7 @@ describe('ProfileView.vue', () => {
 
   // --- 2️⃣ Cas : Aucun utilisateur connecté ---
   it("affiche un message quand aucun utilisateur n'est connecté", async () => {
-    const { useAuthStore } = await import('@/stores/auth')
+    const { useAuthStore } = await import('@/stores/useAuth')
     useAuthStore.mockReturnValue({
       token: null,
       decodedToken: null,
@@ -69,7 +69,7 @@ describe('ProfileView.vue', () => {
 
   // --- 3️⃣ Cas : Erreur API ---
   it("affiche une erreur quand l'API renvoie une erreur", async () => {
-    const { useAuthStore } = await import('@/stores/auth')
+    const { useAuthStore } = await import('@/stores/useAuth')
     useAuthStore.mockReturnValue(mockAuthStore)
 
     global.fetch = vi.fn(() =>

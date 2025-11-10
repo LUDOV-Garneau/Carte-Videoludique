@@ -14,17 +14,17 @@
             <li class="nav-item">
                   <router-link to="/profile" class="nav-link">
                     {{ auth.username }}
-                  </router-link>      
+                  </router-link>
             </li>
             <li class="nav-item">
                   <router-link to="/accounts" class="nav-link">
                     Administrateurs
-                  </router-link>      
+                  </router-link>
             </li>
             <li class="nav-item">
                   <router-link to="/inscription" class="nav-link">
                     Créer un compte
-                  </router-link>      
+                  </router-link>
             </li>
             <li  class="nav-item">
                 <a href="#" class="nav-link" @click="logout()">
@@ -39,7 +39,7 @@
 </template>
 
 <script setup>
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/useAuth'
 import { useRouter } from 'vue-router'
 
 const auth= useAuthStore()
@@ -49,7 +49,7 @@ const router = useRouter()
 const logout = () => {
   auth.logout()
   router.push("/connexion")
-  
+
 }
 </script>
 
