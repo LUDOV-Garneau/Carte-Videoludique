@@ -52,14 +52,37 @@ const accepterMarqueur = async (marqueur) => {
 
     console.log('nouveau status local:', marqueur.properties.status); // <-- APRÈS
   } catch (err) {
-   
-    messageErreur.value = err.message; 
+
+    messageErreur.value = err.message;
   }
 };
 
+const refuserMarqueur = async (marqueur) => {
+  const id = marqueur?.properties?.id;
+  if (!id) return;
+
+  try {
+    if (!authStore.token) throw new Error('Non authentifié: token absent');
+
+    console.log('ancien status:', marqueur.properties.status); // <-- AVANT
+
+    const payload = { status: 'rejected' };
+    const updated = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload);
+
+    console.log('status renvoyé par le serveur:', updated?.properties?.status); // <-- RÉPONSE
+
+    marqueur.properties.status = updated.properties.status;
+
+    console.log('nouveau status local:', marqueur.properties.status); // <-- APRÈS
+  } catch (err) {
+    messageErreur.value = err.message;
+  }
+};
+
+
 onMounted(() => {
   getMarqueurs()
-  
+
 })
 </script>
 
@@ -164,7 +187,7 @@ onMounted(() => {
                 </button>
               </td>
               <td class="reject-col">
-                <button class="action-btn reject" @click="$emit('reject', marqueur)">
+                <button class="action-btn reject" @click="refuserMarqueur(marqueur)">
                   Refuser
                 </button>
               </td>
@@ -177,7 +200,7 @@ onMounted(() => {
           </tbody>
         </table>
       </div>
-      
+
       <section class="map-wrapper">
         <LeafletMap />
       </section>
@@ -209,8 +232,8 @@ h1, h2, p, table { color: #111827; }
   width: 96px;
   background: linear-gradient(
    180deg,
-   #e5e7eb 0%, 
-   #f3f4f6 100% 
+   #e5e7eb 0%,
+   #f3f4f6 100%
   );
   border-right: 1px solid #d1d5db; /* bordure gris moyen */
   display: flex;
@@ -231,7 +254,7 @@ h1, h2, p, table { color: #111827; }
   user-select: none;
   padding: 18px 6px;
   border-radius: 12px;
-  
+
 }
 
 /* ---------- Contenu & header ---------- */
