@@ -60,6 +60,7 @@ function closeCreatePanel() {
 }
 
 function openInfoPanel() {
+  if (createPanelOpen.value) closeCreatePanel();
   infoPanelOpen.value = true;
   if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none';
 }
