@@ -1,9 +1,17 @@
 <script setup>
 import LeafletMap from '../components/LeafletMap.vue'
+import MarqueurModal from '../components/MarqueurModalComponent.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+
+const props = defineProps({
+  marqueur: {
+    type: Object,
+    required: true
+  }
+})
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -19,6 +27,8 @@ const authStore = useAuthStore()
 const messageErreur = ref('')
 
 const filtreStatus = ref('pending')
+const modalVisible = ref(false)
+const selectedMarqueur = ref(null)
 
 const marqueursFiltres = computed(() => {
   console.log(marqueursStore.marqueurs)
@@ -32,6 +42,11 @@ const getMarqueurs = () => {
   .catch(error => {
     messageErreur.value = error.message;
   });
+}
+
+const ouvrirModal = (marqueur) => {
+  selectedMarqueur.value = marqueur
+  modalVisible.value = true
 }
 
 const accepterMarqueur = async (marqueur) => {
@@ -56,6 +71,13 @@ const accepterMarqueur = async (marqueur) => {
     messageErreur.value = err.message; 
   }
 };
+
+const validerModification = (marqueurModifie) => {
+  marqueursStore.modifierMarqueurLocal(marqueurModifie)
+  modalVisible.value = false
+}
+
+const showInfo = (marqueur) => { selectedMarqueur.value = marqueur; modalVisible.value = true }
 
 onMounted(() => {
   getMarqueurs()
@@ -154,9 +176,10 @@ onMounted(() => {
                 </button>
               </td>
               <td class="menu-col">
-                <button class="kebab" aria-label="Modifier" @click="$emit('menu', marqueur)">
+                <button class="kebab" aria-label="Modifier" @click="ouvrirModal(marqueur)">
                   Modifier
                 </button>
+                
               </td>
               <td class="accept-col">
                 <button class="action-btn accept" @click="accepterMarqueur(marqueur)">
@@ -177,6 +200,13 @@ onMounted(() => {
           </tbody>
         </table>
       </div>
+
+      <MarqueurModal
+        v-if="modalVisible && selectedMarqueur"
+        :marqueur="selectedMarqueur"
+        @fermer="modalVisible = false; selectedMarqueur = null"
+        @valider="validerModification"
+      />
       
       <section class="map-wrapper">
         <LeafletMap />
