@@ -23,10 +23,10 @@ function closePanel() {
 <template>
     <transition name="panel-fade">
         <aside v-if="canDisplayPanel" class="panel" role="dialog" aria-label="information du marqueur">
+			<img v-if="marqueurStore.marqueurActif.properties.images.length > 0" class="panel__thumbnail" :src="marqueurStore.marqueurActif.properties.images[0].url" :alt="'image d\'entré d\'un marqueur'" />
+			<button class="panel__close" @click="closePanel" aria-label="Fermer">×</button>
             <header class="panel__header">
-				<img :src="marqueurStore.marqueurActif.properties.images[0].url" :alt="'image d\'entré d\'un marqueur'" />
                 <h3>{{ marqueurStore.marqueurActif.properties.titre }}</h3>
-                <button class="panel__close" @click="closePanel" aria-label="Fermer">×</button>
             </header>
             <div class="panel__body">
 				
@@ -52,30 +52,9 @@ function closePanel() {
 	right: 12px;
 }
 
-.panel__header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 10px 12px;
-	font-weight: 700;
-	border-bottom: 1px solid #ddd;
-}
-.panel__header img {
-	width: 40px;
-	height: 40px;
-	object-fit: cover;
-	border-radius: 4px;
-	margin-right: 8px;
-}
-
-.panel__header h3 {
-	margin: 0;
-	font-size: 16px;
-}
-
 .panel__close {
 	width: 28px;
-	height: 28px;
+	height: 28px;;
 	border-radius: 4px;
 	border: 2px solid #4CAF50;
 	background: white;
@@ -84,11 +63,36 @@ function closePanel() {
 	font-size: 18px;
 	cursor: pointer;
 	transition: all 0.3s ease;
+	position: absolute;
+	right: 12px;
+	top: 12px;
 }
 
 .panel__close:hover {
 	background: #4CAF50;
 	color: white;
+}
+
+.panel__thumbnail {
+	object-fit: cover;
+	border-radius: 4px 4px 0 0;
+	margin-right: 8px;
+	position: relative;
+	width: 100%;
+	height: 180px;
+}
+
+.panel__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 12px;
+	font-weight: 700;
+}
+
+.panel__header h3 {
+	margin: 0;
+	font-size: 16px;
 }
 
 .panel__body {
