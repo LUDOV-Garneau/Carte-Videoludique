@@ -19,6 +19,15 @@ const canDisplayPanel = computed(() => {
 function closePanel() {
     emits('close');
 }
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Optionnel : ajouter une notification de succès
+        console.log('Adresse copiée dans le presse-papiers');
+    }).catch(err => {
+        console.error('Erreur lors de la copie :', err);
+    });
+}
 </script>
 <template>
     <transition name="panel-fade">
@@ -27,9 +36,26 @@ function closePanel() {
 			<button class="panel__close" @click="closePanel" aria-label="Fermer">×</button>
             <header class="panel__header">
                 <h3>{{ marqueurStore.marqueurActif.properties.titre }}</h3>
+				<p>Catégorie : {{ marqueurStore.marqueurActif.properties.type }}</p>
             </header>
             <div class="panel__body">
-				
+				<div id="description">
+					<h5>Description</h5>
+					<p>{{ marqueurStore.marqueurActif.properties.description }}</p>
+				</div>
+				<div id="info-list">
+					<div v-if="marqueurStore.marqueurActif.properties.adresse" class="info-item">
+						<svg class="info-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
+						</svg>
+						<span class="info-text">{{ marqueurStore.marqueurActif.properties.adresse }}</span>
+						<button class="info-copy-button" @click="copyToClipboard(marqueurStore.marqueurActif.properties.adresse)" title="Copier l'adresse">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="currentColor"/>
+							</svg>
+						</button>
+					</div>
+				</div>
             </div>
         </aside>
     </transition>
@@ -83,24 +109,114 @@ function closePanel() {
 }
 
 .panel__header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
+	display: block;
 	padding: 10px 12px;
 	font-weight: 700;
+	max-width: 90%;
 }
-
 .panel__header h3 {
 	margin: 0;
-	font-size: 16px;
+	font-size: 24px;
+	padding-bottom: 5px;
+}
+.panel__header p {
+	font-weight: 500;
+	opacity: 0.5;
+	margin: 0;
 }
 
 .panel__body {
-	padding: 12px 12px 0 12px;
 	overflow: auto;
 	flex: 1;
 	display: flex;
 	flex-direction: column;
+	border-top: gray 1px solid;
+}
+
+#description {
+	padding: 12px 12px 0 12px;
+}
+
+/* ---------- Info list ---------- */
+#info-list {
+	
+}
+
+.info-item {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	margin: 0;
+	padding: 8px 12px;
+	position: relative;
+	transition: background-color 0.2s ease;
+	cursor: default;
+}
+.info-item:hover {
+	background: rgba(76, 175, 80, 0.1);
+}
+
+.info-icon {
+	width: 20px;
+	height: 20px;
+	margin: 0 12px 0 12px;
+	flex-shrink: 0;
+	color: #4CAF50;
+}
+
+.info-text {
+	font-size: 14px;
+	color: #333;
+	line-height: 1.4;
+	flex: 1;
+}
+
+.info-copy-button {
+	width: 24px;
+	height: 24px;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	border-radius: 4px;
+	padding: 0;
+	opacity: 0;
+	color: #666;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: absolute;
+	right: 12px;
+	z-index: 2;
+}
+
+.info-item::after {
+	content: '';
+	position: absolute;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 100px;
+	background: linear-gradient(to right, transparent, white 60%);
+	pointer-events: none;
+	opacity: 0;
+	z-index: 1;
+}
+
+.info-item:hover .info-copy-button {
+	opacity: 1;
+}
+
+.info-item:hover::after {
+	opacity: 1;
+}
+
+.info-copy-button:hover {
+	color: #4CAF50;
+}
+
+.info-copy-button svg {
+	width: 100%;
+	height: 100%;
 }
 
 /* Transition simple (fade + léger slide) */
