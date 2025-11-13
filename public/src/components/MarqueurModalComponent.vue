@@ -17,7 +17,6 @@ const image = ref('')
 
 // pour AddImage
 const files = ref([])    
-const imagePreview = ref('')  
 
 const descCount = ref(0)
 function updateDescCount() {
@@ -100,14 +99,11 @@ function onImagesChange(allFiles) {
   files.value = allFiles
 
   if (!allFiles.length) {
-    // aucun fichier choisi → garder l’URL existante
-    imagePreview.value = image.value || ''
     return
   }
-
+ 
   const file = allFiles[0]
-  const url = URL.createObjectURL(file)
-  imagePreview.value = url
+  image.value = allFiles[0]
 
   // ici tu peux éventuellement mettre juste le nom dans le champ readonly :
   image.value = file.name
@@ -237,7 +233,6 @@ onMounted(async () => {
         <div class="form-control form-col-2">
           <label>Image</label>
           <div class="image-row">
-            <input type="text" v-model.trim="image" placeholder="URL de l'image (optionnel)" class="flex-1" readonly />
             <AddImage
               v-model="files"
               :initial-urls="initialImageUrls"
