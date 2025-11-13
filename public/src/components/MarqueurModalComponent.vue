@@ -1,5 +1,7 @@
 <script setup>
-import { defineProps, defineEmits, ref, watch, onMounted, nextTick } from 'vue'
+import { defineProps, defineEmits, ref, watch, onMounted, nextTick, computed} from 'vue'
+import AddImage from './AddImage.vue'
+
 
 const props = defineProps({
   marqueur: { type: Object, required: true }
@@ -12,6 +14,15 @@ const adresse = ref('')
 const description = ref('')
 const temoignage = ref('')
 const image = ref('')
+
+// pour AddImage
+const files = ref([])    
+const imagePreview = ref('')  
+
+const descCount = ref(0)
+function updateDescCount() {
+  descCount.value = description.value.length
+}
 
 // Refs pour focus
 const titreEl = ref(null)
@@ -30,6 +41,13 @@ const typeMessage = ref('')
 const adresseMessage = ref('')
 const descriptionMessage = ref('')
 
+const initialImageUrls = computed(() => {
+  const images = props.marqueur?.properties?.images ?? []
+  return images
+    .filter(img => img && img.url)
+    .map(img => img.url)
+})
+
 // Remplit les champs depuis le props en restant défensif
 const hydrateFromProps = () => {
   const p = props.marqueur?.properties ?? {}
@@ -38,7 +56,9 @@ const hydrateFromProps = () => {
   adresse.value = p.adresse ?? ''
   description.value = p.description ?? ''
   temoignage.value = p.temoignage ?? ''
-  image.value = p.image ?? ''
+
+  image.value = p.images?.[0]?.url ?? ''
+
 }
 hydrateFromProps()
 
@@ -62,6 +82,35 @@ function resetErrors() {
 function close() {
   resetErrors()
   emit('fermer')
+}
+
+/**
+ * Gère le changement des images sélectionnées dans le composant.
+ *
+ * - Met à jour la liste des fichiers sélectionnés (`files`).
+ * - Si aucun fichier n'est choisi, conserve l'aperçu existant.
+ * - Sinon, génère une URL temporaire avec `URL.createObjectURL`
+ *   pour afficher un aperçu de l'image.
+ * - Met également à jour le champ `image` avec le nom du fichier choisi.
+ *
+ * @param allFiles Liste de fichiers sélectionnés (généralement depuis <input type="file">)
+ * 
+ */
+function onImagesChange(allFiles) {
+  files.value = allFiles
+
+  if (!allFiles.length) {
+    // aucun fichier choisi → garder l’URL existante
+    imagePreview.value = image.value || ''
+    return
+  }
+
+  const file = allFiles[0]
+  const url = URL.createObjectURL(file)
+  imagePreview.value = url
+
+  // ici tu peux éventuellement mettre juste le nom dans le champ readonly :
+  image.value = file.name
 }
 
 // Valide tout d’un coup et focus le premier invalide
@@ -96,7 +145,6 @@ async function valider() {
     return
   }
 
-  // ⚠️ Préserver id/geometry/status/tags/etc.
   const original = props.marqueur ?? {}
   const originalProps = original.properties ?? {}
 
@@ -110,11 +158,21 @@ async function valider() {
       description: description.value.trim(),
       temoignage: temoignage.value.trim(),
       image: image.value.trim()
-    }
+    },
+
+    files: files.value
   })
 }
 
-// Accessibilité clavier: ESC pour fermer
+/**
+ * Ferme la fenêtre modale lorsqu'une touche du clavier est pressée.
+ *
+ * - Vérifie si la touche pressée est `Escape`.
+ * - Si oui, déclenche la fonction `close()` pour fermer la modale.
+ *
+ * @param e Événement clavier déclenché lors de l'appui d'une touche
+ * 
+ */
 function onKeydown(e) {
   if (e.key === 'Escape') close()
 }
@@ -129,70 +187,77 @@ onMounted(async () => {
 <template>
   <div class="overlay" @click.self="close" @keydown="onKeydown" tabindex="-1" role="dialog" aria-modal="true">
     <div class="modal-box" role="document" aria-labelledby="dlg-title">
-  <header class="modal-header">
-    <h2 id="dlg-title">Modifier le marqueur</h2>
-  </header>
+      <header class="modal-header">
+        <h2 id="dlg-title">Modifier le marqueur</h2>
+      </header>
 
-  <form class="modal-body" @submit.prevent="valider" novalidate>
-    <div class="form-grid">
-      <div class="form-control" :class="{ invalid: titreValidation }">
-        <label for="titreMarqueur">Titre</label>
-        <input id="titreMarqueur" v-model.trim="titre" type="text" placeholder="Ex: Badibadibibu"
+      <form class="modal-body" @submit.prevent="valider" novalidate>
+        <div class="form-grid">
+          <div class="form-control" :class="{ invalid: titreValidation }">
+            <label for="titreMarqueur">Titre</label>
+            <input id="titreMarqueur" v-model.trim="titre" type="text" placeholder="Ex: Badibadibibu"
                :aria-invalid="titreValidation ? 'true':'false'"
                @input="titreValidation=false" />
-        <p v-if="titreValidation" class="error-message">{{ titreMessage }}</p>
-      </div>
+            <p v-if="titreValidation" class="error-message">{{ titreMessage }}</p>
+          </div>
 
-      <div class="form-control" :class="{ invalid: typeValidation }">
-        <label for="typeMarqueur">Type</label>
-        <input id="typeMarqueur" v-model.trim="type" type="text" placeholder="Ex: Clubs vidéo"
-               :aria-invalid="typeValidation ? 'true':'false'"
-               @input="typeValidation=false" />
-        <p v-if="typeValidation" class="error-message">{{ typeMessage }}</p>
-      </div>
+          <div class="form-control" :class="{ invalid: typeValidation }">
+            <label for="typeMarqueur">Type</label>
+              <input id="typeMarqueur" v-model.trim="type" type="text" placeholder="Ex: Clubs vidéo"
+                :aria-invalid="typeValidation ? 'true':'false'"
+                @input="typeValidation=false" />
+            <p v-if="typeValidation" class="error-message">{{ typeMessage }}</p>
+          </div>
 
-      <div class="form-control form-col-2" :class="{ invalid: adresseValidation }">
-        <label for="adresseMarqueur">Adresse</label>
-        <input id="adresseMarqueur" v-model.trim="adresse" type="text" placeholder="Ex: 897 Avenue Painchaud"
-               :aria-invalid="adresseValidation ? 'true':'false'"
-               @input="adresseValidation=false" />
-        <p v-if="adresseValidation" class="error-message">{{ adresseMessage }}</p>
-      </div>
+          <div class="form-control form-col-2" :class="{ invalid: adresseValidation }">
+            <label for="adresseMarqueur">Adresse</label>
+              <input id="adresseMarqueur" v-model.trim="adresse" type="text" placeholder="Ex: 897 Avenue Painchaud"
+                :aria-invalid="adresseValidation ? 'true':'false'"
+                @input="adresseValidation=false" />
+            <p v-if="adresseValidation" class="error-message">{{ adresseMessage }}</p>
+          </div>
 
-      <div class="form-control form-col-2" :class="{ invalid: descriptionValidation }">
-        <label for="descriptionMarqueur">Description</label>
-        <textarea id="descriptionMarqueur" v-model.trim="description" rows="4"
+          <div class="form-control form-col-2" :class="{ invalid: descriptionValidation }">
+            <label for="descriptionMarqueur">Description</label>
+              <textarea id="descriptionMarqueur" v-model.trim="description" rows="4"
                   placeholder="Décris le point d’intérêt…"
                   :aria-invalid="descriptionValidation ? 'true':'false'"
                   @input="descriptionValidation=false; updateDescCount()"></textarea>
-        <div class="help-row">
-          <p v-if="descriptionValidation" class="error-message">{{ descriptionMessage }}</p>
-          <span class="char-count">{{ descCount }}/280</span>
+            <div class="help-row">
+              <p v-if="descriptionValidation" class="error-message">{{ descriptionMessage }}</p>
+              <span class="char-count">{{ descCount }}/280</span>
+            </div>
         </div>
-      </div>
 
-      <div class="form-control form-col-2">
-        <label for="temoignageMarqueur">Témoignage</label>
-        <textarea id="temoignageMarqueur" v-model.trim="temoignage" rows="3" placeholder="Témoignage (optionnel)"></textarea>
-      </div>
-
-      <!-- Image: URL ou fichier + aperçu -->
-      <div class="form-control form-col-2">
-        <label>Image</label>
-        <div class="image-row">
-          <input type="text" v-model.trim="image" placeholder="URL de l'image (optionnel)" class="flex-1" readonly />
-          <input type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.svg,image/*" @change="onFileChange" class="input-file" />
+        <div class="form-control form-col-2">
+          <label for="temoignageMarqueur">Témoignage</label>
+          <textarea id="temoignageMarqueur" v-model.trim="temoignage" rows="3" placeholder="Témoignage (optionnel)"></textarea>
         </div>
-        <img v-if="imagePreview" :src="imagePreview" alt="Aperçu" class="image-preview" />
-      </div>
+
+        <div class="form-control form-col-2">
+          <label>Image</label>
+          <div class="image-row">
+            <input type="text" v-model.trim="image" placeholder="URL de l'image (optionnel)" class="flex-1" readonly />
+            <AddImage
+              v-model="files"
+              :initial-urls="initialImageUrls"
+              @change="onImagesChange"
+            />
+          </div>
+          <img
+            v-if="imagePreview"
+            :src="imagePreview"
+            alt="Aperçu"
+            class="image-preview"/>
+          </div>
+        </div>
+
+        <footer class="modal-actions">
+          <button type="button" class="btn btn-muted" @click="close">Annuler</button>
+          <button type="submit" class="btn btn-primary">Valider</button>
+        </footer>
+      </form>
     </div>
-
-    <footer class="modal-actions">
-      <button type="button" class="btn btn-muted" @click="close">Annuler</button>
-      <button type="submit" class="btn btn-primary">Valider</button>
-    </footer>
-  </form>
-</div>
   </div>
 </template>
 
