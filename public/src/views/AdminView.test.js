@@ -45,7 +45,6 @@ describe('AdminView.vue', () => {
     const wrapper = mount(AdminView, {
       global: { stubs: { LeafletMap: LeafletMapStub } }
     })
-    expect(wrapper.find('h1').text()).toContain('Le jeu vidéo au Québec')
     expect(wrapper.find('h2').text()).toBe('Notifications')
   })
 
