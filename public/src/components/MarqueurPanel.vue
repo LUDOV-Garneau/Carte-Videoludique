@@ -16,9 +16,15 @@ const marqueurStore = useMarqueurStore();
 const canDisplayPanel = computed(() => {
     return props.isOpen && marqueurStore.marqueurActif !== null;
 });
+const isCommenting = ref(false);
 
 function closePanel() {
     emits('close');
+}
+
+function toggleCommenting() {
+	isCommenting.value = !isCommenting.value;
+	console.log('isCommenting:', isCommenting.value);
 }
 
 function copyToClipboard(text) {
@@ -33,8 +39,10 @@ function copyToClipboard(text) {
 <template>
     <transition name="panel-fade">
         <aside v-if="canDisplayPanel" class="panel" role="dialog" aria-label="information du marqueur">
+			<div class="panel__close-wrapper">
+				<button class="panel__close" @click="closePanel" aria-label="Fermer">×</button>
+			</div>
 			<img v-if="marqueurStore.marqueurActif.properties.images.length > 0" class="panel__thumbnail" :src="marqueurStore.marqueurActif.properties.images[0].url" :alt="'image d\'entré d\'un marqueur'" />
-			<button class="panel__close" @click="closePanel" aria-label="Fermer">×</button>
             <header class="panel__header">
                 <h3>{{ marqueurStore.marqueurActif.properties.titre }}</h3>
 				<p>Catégorie : {{ marqueurStore.marqueurActif.properties.type }}</p>
@@ -69,6 +77,11 @@ function copyToClipboard(text) {
 						</button>
 					</div>
 				</div>
+				<div class="panel__section">
+					<h5>Témoignages</h5>
+					<button class="btn-add-comment" @click="toggleCommenting">Ajouter un témoignage</button>
+					<span class="no-comments" v-if="!marqueurStore.marqueurActif.comments">Aucun témoignage</span>
+				</div>
             </div>
         </aside>
     </transition>
@@ -89,6 +102,17 @@ function copyToClipboard(text) {
 	flex-direction: column;
 	box-shadow: 0 8px 24px rgba(0,0,0,0.25);
 	right: 12px;
+	overflow: auto;
+
+}
+
+.panel__close-wrapper {
+	position: sticky;
+	top: 0;
+	right: 0;
+	height: 0;
+	background: #f2f2f2;
+	z-index: 1;
 }
 
 .panel__close {
@@ -115,7 +139,6 @@ function copyToClipboard(text) {
 .panel__thumbnail {
 	object-fit: cover;
 	border-radius: 4px 4px 0 0;
-	margin-right: 8px;
 	position: relative;
 	width: 100%;
 	height: 180px;
@@ -139,7 +162,6 @@ function copyToClipboard(text) {
 }
 
 .panel__body {
-	overflow: auto;
 	flex: 1;
 	display: flex;
 	flex-direction: column;
@@ -158,9 +180,6 @@ function copyToClipboard(text) {
 }
 
 /* ---------- Info list ---------- */
-.panel__info-list {
-	
-}
 .info-item {
 	display: flex;
 	align-items: center;
@@ -230,6 +249,29 @@ function copyToClipboard(text) {
 	height: 100%;
 }
 
+.btn-add-comment {
+	display: block;
+	width: auto;
+	height: 40px;
+	border-radius: 25px;
+	padding: 0 16px;
+	margin: 16px auto;
+	border: 2px solid #4CAF50;
+	color: #4CAF50;
+	cursor: default;
+	font-weight: 600;
+	transition: all 0.3s ease;
+}
+.btn-add-comment:hover {
+	background: #4CAF50;
+	color: white;
+}
+
+.no-comments {
+	display: block;
+	text-align: center;
+}
+
 /* Transition simple (fade + léger slide) */
 .panel-fade-enter-active,
 .panel-fade-leave-active { 
@@ -245,5 +287,27 @@ function copyToClipboard(text) {
 .panel.left.panel-fade-enter-from,
 .panel.left.panel-fade-leave-to { 
   	transform: translateX(-8px); 
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+ 
+/* Fond de la track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+ 
+/* La barre (thumb) */
+::-webkit-scrollbar-thumb {
+  background: #cfcfcf;
+  border-radius: 8px;
+  border: 2px solid #f1f1f1; /* pour créer un espace visuel */
+}
+ 
+/* Effet au hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #b6b6b6;
 }
 </style>
