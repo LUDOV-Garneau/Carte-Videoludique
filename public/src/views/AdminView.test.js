@@ -41,12 +41,25 @@ describe('AdminView.vue', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
+  // it('affiche le titre et la section notification', () => {
+  //   const wrapper = mount(AdminView, {
+  //     global: { stubs: { LeafletMap: LeafletMapStub } }
+  //   })
+  //   expect(wrapper.find('h2').text()).toBe('Notifications')
+  // })
   it('affiche le titre et la section notification', () => {
     const wrapper = mount(AdminView, {
-      global: { stubs: { LeafletMap: LeafletMapStub } }
+      global: {
+        plugins: [createPinia()],
+        stubs: { LeafletMap: LeafletMapStub }
+      }
     })
-    expect(wrapper.find('h2').text()).toBe('Notifications')
+    
+    const h2 = wrapper.find('h2')
+    expect(h2.exists()).toBe(true)
+    expect(h2.text()).toBe('Notifications')
   })
+})
 
   it('affiche un message vide si aucune offre', () => {
     const wrapper = mount(AdminView, {
