@@ -1,35 +1,44 @@
 <script setup>
 import { defineProps, defineEmits, ref, watch, onMounted, nextTick, computed} from 'vue'
 import AddImage from './AddImage.vue'
+import { fetchAdresseSuggestions } from '../utils/geocode'
 
-
+//#region Props & Emits
 const props = defineProps({
   marqueur: { type: Object, required: true }
 })
-const emit = defineEmits(['fermer', 'valider'])
 
+const emit = defineEmits(['fermer', 'valider'])
+//#endregion
+
+//#region Champs du formulaire
 const titre = ref('')
 const type = ref('')
 const adresse = ref('')
+const suggestions = ref([])
+const showSuggestions = ref(false)
 const description = ref('')
 const temoignage = ref('')
 const image = ref('')
+//#endregion
 
-// pour AddImage
+//#region Images (AddImage) et compteurs
 const files = ref([])    
 
 const descCount = ref(0)
 function updateDescCount() {
   descCount.value = description.value.length
 }
+//#endregion
 
-// Refs pour focus
+//#region Refs pour focus
 const titreEl = ref(null)
 const typeEl = ref(null)
 const adresseEl = ref(null)
 const descriptionEl = ref(null)
+//#endregion
 
-// États de validation
+//#region États de validation & messages
 const titreValidation = ref(false)
 const typeValidation = ref(false)
 const adresseValidation = ref(false)
@@ -39,6 +48,9 @@ const titreMessage = ref('')
 const typeMessage = ref('')
 const adresseMessage = ref('')
 const descriptionMessage = ref('')
+//#endregion
+
+//#region Images initiales
 
 const initialImageUrls = computed(() => {
   const images = props.marqueur?.properties?.images ?? []
@@ -46,8 +58,9 @@ const initialImageUrls = computed(() => {
     .filter(img => img && img.url)
     .map(img => img.url)
 })
+//#endregion
 
-// Remplit les champs depuis le props en restant défensif
+//#region Hydratation des props
 const hydrateFromProps = () => {
   const p = props.marqueur?.properties ?? {}
   titre.value = p.titre ?? ''
@@ -61,12 +74,17 @@ const hydrateFromProps = () => {
 }
 hydrateFromProps()
 
+//#endregion
+
+//#region Watchers
 watch(
   () => props.marqueur,
   () => { hydrateFromProps(); resetErrors(); },
   { immediate: true }
 )
+//#endregion
 
+//#region Helpers erreurs & fermeture
 function resetErrors() {
   titreValidation.value = false
   typeValidation.value = false
@@ -82,7 +100,7 @@ function close() {
   resetErrors()
   emit('fermer')
 }
-
+//#endregion
 /**
  * Gère le changement des images sélectionnées dans le composant.
  *
@@ -95,20 +113,27 @@ function close() {
  * @param allFiles Liste de fichiers sélectionnés (généralement depuis <input type="file">)
  * 
  */
-function onImagesChange(allFiles) {
-  files.value = allFiles
 
-  if (!allFiles.length) {
-    return
-  }
- 
-  const file = allFiles[0]
+ //#region Gestion des images
+
+ /**
+ * Gère le changement des images sélectionnées dans le composant.
+ *
+ * - Met à jour la liste des fichiers sélectionnés (`files`).
+ * - Si aucun fichier n'est choisi, conserve l’URL existante.
+ * - Met également à jour le champ `image` avec le nom du fichier choisi.
+ *
+ * @param allFiles Liste de fichiers sélectionnés (généralement depuis <input type="file">)
+ */
+ function onImagesChange(allFiles) {
+  files.value = allFiles
+  if (!allFiles.length) { return;} 
   image.value = allFiles[0]
 
-  // ici tu peux éventuellement mettre juste le nom dans le champ readonly :
-  image.value = file.name
 }
+//#endregion
 
+//#region Validation & submit
 // Valide tout d’un coup et focus le premier invalide
 async function valider() {
   resetErrors()
@@ -159,7 +184,46 @@ async function valider() {
     files: files.value
   })
 }
+//#endregion
 
+async function onAdresseInput(value) {
+  adresse.value = value
+
+  if (!value || value.length < 3) {
+    suggestions.value = []
+    showSuggestions.value = false
+    return
+  }
+
+  await fetchAdresseSuggestions(suggestions, showSuggestions, adresse.value)
+}
+
+function selectSuggestion(item) {
+  adresse.value = item.display_name
+  showSuggestions.value = false
+  suggestions.value = []
+}
+
+function formatSuggestion(item) {
+  const a = item.address || {}
+
+  const ligne1 = [
+    a.house_number,
+    a.road
+  ].filter(Boolean).join(' ')
+
+  const ville = a.city || a.town || a.village || a.municipality
+  const ligne2 = [
+    ville,
+    a.state,
+    a.postcode,
+    a.country
+  ].filter(Boolean).join(', ')
+
+  return [ligne1, ligne2].filter(Boolean).join(' – ')
+}
+
+//#region Gestion clavier & focus
 /**
  * Ferme la fenêtre modale lorsqu'une touche du clavier est pressée.
  *
@@ -178,6 +242,7 @@ onMounted(async () => {
   await nextTick()
   titreEl.value?.focus?.()
 })
+//#endregion
 </script>
 
 <template>
@@ -206,10 +271,33 @@ onMounted(async () => {
           </div>
 
           <div class="form-control form-col-2" :class="{ invalid: adresseValidation }">
-            <label for="adresseMarqueur">Adresse</label>
-              <input id="adresseMarqueur" v-model.trim="adresse" type="text" placeholder="Ex: 897 Avenue Painchaud"
+            <div class="adresse-wrapper" @mousedown.stop>
+              <label for="adresseMarqueur">Adresse</label>
+
+              <input
+                id="adresseMarqueur"
+                v-model.trim="adresse"
+                type="text"
+                placeholder="Ex: 897 Avenue Painchaud"
                 :aria-invalid="adresseValidation ? 'true':'false'"
-                @input="adresseValidation=false" />
+                @input="adresseValidation=false; onAdresseInput($event.target.value)"
+                @focus="adresse && suggestions.length && (showSuggestions = true)"
+                @blur="hideSuggestions"
+              />
+
+              <ul
+                v-if="showSuggestions && suggestions.length"
+                class="adresse-suggestions"
+              >
+                <li
+                  v-for="item in suggestions"
+                  :key="item.place_id"
+                  @mousedown.prevent="selectSuggestion(item)"
+                >
+                  {{ formatSuggestion(item) }}
+                </li>
+              </ul>
+            </div>
             <p v-if="adresseValidation" class="error-message">{{ adresseMessage }}</p>
           </div>
 
@@ -450,6 +538,36 @@ input[type="file"]::file-selector-button:hover {
   background: var(--accent-dark);
 }
 
+.adresse-wrapper {
+  position: relative;
+}
+
+.adresse-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  list-style: none;
+  padding: 4px 0;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.adresse-suggestions li {
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.adresse-suggestions li:hover {
+  background: #f3f4f6;
+}
 
 
 /* SCROLLBAR */
