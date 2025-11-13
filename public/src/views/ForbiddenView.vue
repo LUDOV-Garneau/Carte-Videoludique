@@ -10,7 +10,7 @@
 </template>
 
 <script setup>
-// Ici, tu n’as pas besoin de script à moins que tu veuilles récupérer auth ou rediriger automatiquement.
+
 </script>
 
 <style scoped>
