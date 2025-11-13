@@ -18,7 +18,6 @@ describe('AdminView.vue', () => {
   let authStore
 
   beforeEach(() => {
-    // Nouvelle instance propre de Pinia à chaque test
     pinia = createPinia()
     setActivePinia(pinia)
     marqueurStore = useMarqueursStore()
@@ -32,7 +31,7 @@ describe('AdminView.vue', () => {
   })
 
   it('se monte sans erreur', () => {
-    const wrapper = mount(AdminView, {
+    wrapper = mount(AdminView, {
       global: {
         plugins: [pinia],
         stubs: { LeafletMap: LeafletMapStub }
@@ -41,28 +40,20 @@ describe('AdminView.vue', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
-  // it('affiche le titre et la section notification', () => {
-  //   const wrapper = mount(AdminView, {
-  //     global: { stubs: { LeafletMap: LeafletMapStub } }
-  //   })
-  //   expect(wrapper.find('h2').text()).toBe('Notifications')
-  // })
   it('affiche le titre et la section notification', () => {
-    const wrapper = mount(AdminView, {
+    wrapper = mount(AdminView, {
       global: {
         plugins: [createPinia()],
         stubs: { LeafletMap: LeafletMapStub }
       }
     })
-    
     const h2 = wrapper.find('h2')
     expect(h2.exists()).toBe(true)
     expect(h2.text()).toBe('Notifications')
   })
-})
 
   it('affiche un message vide si aucune offre', () => {
-    const wrapper = mount(AdminView, {
+    wrapper = mount(AdminView, {
       global: { stubs: { LeafletMap: LeafletMapStub } },
       data() {
         return { rows: [] }
@@ -96,13 +87,12 @@ describe('AdminView.vue', () => {
   })
 
   it('affiche la carte (stub)', () => {
-    const wrapper = mount(AdminView, {
+    wrapper = mount(AdminView, {
       global: { stubs: { LeafletMap: LeafletMapStub } }
     })
     expect(wrapper.get('[data-testid="map"]').exists()).toBe(true)
   })
 
-  // --- Test changer statut marqueur ---
   it('met à jour le statut du marqueur en "approved" quand accepterMarqueur() est appelé', async () => {
     wrapper = mount(AdminView, {
       global: { plugins: [pinia], stubs: { LeafletMap: LeafletMapStub } }
@@ -124,7 +114,6 @@ describe('AdminView.vue', () => {
     expect(marqueur.properties.status).toBe('approved')
   })
 
-  // 🔹 Nouveau test : refuserMarqueur()
   it('met à jour le statut du marqueur en "rejected" quand refuserMarqueur() est appelé', async () => {
     wrapper = mount(AdminView, {
       global: { plugins: [pinia], stubs: { LeafletMap: LeafletMapStub } }
@@ -146,7 +135,6 @@ describe('AdminView.vue', () => {
     expect(marqueur.properties.status).toBe('rejected')
   })
 
-  // 🔹 Test d’erreur : token manquant
   it('affiche une erreur si aucun token n’est disponible', async () => {
     authStore.token = null
     wrapper = mount(AdminView, {
