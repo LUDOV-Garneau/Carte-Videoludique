@@ -73,7 +73,7 @@ const accepterMarqueur = async (marqueur) => {
 };
 
 const validerModification = (marqueurModifie) => {
-  marqueursStore.modifierMarqueurLocal(marqueurModifie)
+  marqueursStore.modifierMarqueur(marqueurModifie)
   modalVisible.value = false
 }
 
