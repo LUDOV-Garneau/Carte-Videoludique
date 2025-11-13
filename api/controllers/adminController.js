@@ -149,6 +149,7 @@ exports.login = async (req, res, next) => {
       {
         courriel: admin.courriel,
         nom: admin.nom,
+        role: admin.role,
         prenom: admin.prenom,
         id: admin.id,
       },
