@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
+import { createPinia } from 'pinia'
 import App from './App.vue'
 import { describe, it, expect } from 'vitest'
 
@@ -14,12 +15,13 @@ describe('App.vue', () => {
     router.push('/')
     await router.isReady()
 
+    const pinia = createPinia()
+
     const wrapper = mount(App, {
       global: {
-        plugins: [router]
+        plugins: [router, pinia]
       }
     })
-
     expect(wrapper.findComponent({ name: 'RouterView' }).exists()).toBe(true)
   })
 })
