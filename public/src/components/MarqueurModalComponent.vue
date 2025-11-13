@@ -19,7 +19,7 @@ const suggestions = ref([])
 const showSuggestions = ref(false)
 const description = ref('')
 const temoignage = ref('')
-const image = ref('')
+
 //#endregion
 
 //#region Images (AddImage) et compteurs
@@ -68,9 +68,6 @@ const hydrateFromProps = () => {
   adresse.value = p.adresse ?? ''
   description.value = p.description ?? ''
   temoignage.value = p.temoignage ?? ''
-
-  image.value = p.images?.[0]?.url ?? ''
-
 }
 hydrateFromProps()
 
@@ -101,36 +98,22 @@ function close() {
   emit('fermer')
 }
 //#endregion
+
+//#region Gestion des images
 /**
- * Gère le changement des images sélectionnées dans le composant.
- *
- * - Met à jour la liste des fichiers sélectionnés (`files`).
- * - Si aucun fichier n'est choisi, conserve l'aperçu existant.
- * - Sinon, génère une URL temporaire avec `URL.createObjectURL`
- *   pour afficher un aperçu de l'image.
- * - Met également à jour le champ `image` avec le nom du fichier choisi.
- *
- * @param allFiles Liste de fichiers sélectionnés (généralement depuis <input type="file">)
- * 
- */
-
- //#region Gestion des images
-
- /**
- * Gère le changement des images sélectionnées dans le composant.
- *
- * - Met à jour la liste des fichiers sélectionnés (`files`).
- * - Si aucun fichier n'est choisi, conserve l’URL existante.
- * - Met également à jour le champ `image` avec le nom du fichier choisi.
- *
- * @param allFiles Liste de fichiers sélectionnés (généralement depuis <input type="file">)
- */
- function onImagesChange(allFiles) {
+* Gère le changement des images sélectionnées dans le composant.
+*
+* - Met à jour la liste des fichiers sélectionnés (`files`).
+* - Si aucun fichier n'est choisi, conserve l’URL existante.
+* - Met également à jour le champ `image` avec le nom du fichier choisi.
+*
+* @param allFiles Liste de fichiers sélectionnés (généralement depuis <input type="file">)
+*/
+function onImagesChange(allFiles) {
   files.value = allFiles
-  if (!allFiles.length) { return;} 
-  image.value = allFiles[0]
 
 }
+
 //#endregion
 
 //#region Validation & submit
@@ -169,8 +152,10 @@ async function valider() {
   const original = props.marqueur ?? {}
   const originalProps = original.properties ?? {}
 
+  // Sécuriser la valeur d'image : peut être une string (url) ou un objet
+
   emit('valider', {
-    ...original,
+    _id: original._id,
     properties: {
       ...originalProps,
       titre: titre.value.trim(),
@@ -178,7 +163,7 @@ async function valider() {
       adresse: adresse.value.trim(),
       description: description.value.trim(),
       temoignage: temoignage.value.trim(),
-      image: image.value.trim()
+      
     },
 
     files: files.value

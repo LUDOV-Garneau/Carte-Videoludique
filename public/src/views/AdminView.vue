@@ -4,7 +4,8 @@ import MarqueurModal from '../components/MarqueurModalComponent.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import { useRouter , useRoute} from 'vue-router'
+import * as cloudinary from '../utils/cloudinary.js'
 
 const props = defineProps({
   marqueur: {
@@ -15,6 +16,9 @@ const props = defineProps({
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+
+const marqueurId = computed(() => route.params.id) 
 
 const logout = () => {
   auth.logout()
@@ -29,6 +33,7 @@ const messageErreur = ref('')
 const filtreStatus = ref('pending')
 const modalVisible = ref(false)
 const selectedMarqueur = ref(null)
+
 
 const marqueursFiltres = computed(() => {
   console.log(marqueursStore.marqueurs)
@@ -96,8 +101,48 @@ const refuserMarqueur = async (marqueur) => {
 };
 
 const validerModification = async (marqueurModifie) => {
-  marqueursStore.modifierMarqueur(marqueurModifie)
-  modalVisible.value = false
+  try {
+    const id = marqueurModifie?.properties?.id || marqueurModifie?._id
+    if (!id) throw new Error('Identifiant du marqueur manquant');
+
+    // Extraire les données depuis properties (imbriquées dans GeoJSON)
+    const props = marqueurModifie?.properties ?? {}
+    
+    // Construire un payload aplati, compatible avec le backend updateMarqueur
+    const payload = {
+      titre: props.titre,
+      type: props.type,
+      adresse: props.adresse,
+      description: props.description,
+      temoignage: props.temoignage,
+      // image: props.image || ''
+    }
+
+    let imagesPayload = Array.isArray(props.image) ? props.images : []
+    // Si le modal a fourni des fichiers (nouvelles images), uploader sur Cloudinary
+    if (marqueurModifie.files && marqueurModifie.files.length > 0) {
+      try {
+        const uploaded = await cloudinary.uploadMultipleImages(marqueurModifie.files)
+        
+        if(Array.isArray(uploaded) && uploaded.length > 0) {
+          imagesPayload = uploaded
+        }
+      } catch (uploadErr) {
+        console.warn('Erreur upload image:', uploadErr)
+      }
+    }
+    
+     payload.images = imagesPayload
+     
+    // Appel de la store pour mettre à jour avec le payload aplati
+    await marqueursStore.modifierMarqueur(id, authStore.token, payload)
+    modalVisible.value = false
+    messageErreur.value = ''
+    await getMarqueurs()
+  } catch (err) {
+    messageErreur.value = err.message || String(err)
+    console.error('Erreur lors de la modification:', err)
+  }
 }
 
 const showInfo = (marqueur) => { selectedMarqueur.value = marqueur; modalVisible.value = true }
