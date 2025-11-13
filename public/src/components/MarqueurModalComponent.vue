@@ -314,30 +314,27 @@ textarea{
 
 /* image */
 .image-row{ 
-  display:flex; 
+  /* display:flex;  */
   gap:10px; 
   align-items:center 
 }
 .image-row .flex-1{ 
-  flex:1;
-  border:none; 
+  flex:1; 
+  margin-bottom: 10px;
   border-radius:999px; 
   padding:12px 18px; 
-  font-weight:700; 
   cursor:pointer;
   font-size: 0.95rem;
 
 }
 .image-preview{
-  margin-top:10px; 
+  margin-top:10px;
   width:100%; 
   max-height:220px; 
   object-fit:cover; 
   border-radius:10px; 
-  border:1px solid #e5e7eb
-}
-.input-file {
-  
+  /* border:1px solid #e5e7eb; */
+  padding: 5px;
 }
 
 /* barre d’actions collée en bas */
