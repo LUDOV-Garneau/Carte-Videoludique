@@ -33,6 +33,7 @@ describe('Inscription.vue', () => {
     expect(wrapper.text()).toContain('Le nom est requis.')
     expect(wrapper.text()).toContain('Le prénom est requis.')
     expect(wrapper.text()).toContain('Le courriel est requis.')
+    expect(wrapper.text()).toContain('Le rôle est requis.')
     expect(wrapper.text()).toContain('Mot de passe requis.')
     expect(wrapper.text()).toContain('Une confirmation de mot de passe est requise.')
   })
@@ -45,6 +46,7 @@ describe('Inscription.vue', () => {
     wrapper.vm.nom = 'Dupont'
     wrapper.vm.prenom = 'Marie'
     wrapper.vm.email = 'test@example.com'
+    wrapper.vm.role = 'Gestionnaire'
     wrapper.vm.motdepasse = '123456'
     wrapper.vm.confirmation = '654321'
 
@@ -70,6 +72,7 @@ describe('Inscription.vue', () => {
     await wrapper.find('#nom').setValue('Dupont')
     await wrapper.find('#prenom').setValue('Marie')   // <-- existe maintenant
     await wrapper.find('#email').setValue('marie@example.com')
+    await wrapper.find('#role').setValue('Gestionnaire')
     await wrapper.find('#motdepasse').setValue('abcdef')
     await wrapper.find('#confirmation').setValue('abcdef')
 
@@ -98,6 +101,7 @@ describe('Inscription.vue', () => {
     await wrapper.find('#nom').setValue('Dupont')
     await wrapper.find('#prenom').setValue('Marie')   // <-- existe maintenant
     await wrapper.find('#email').setValue('marie@example.com')
+    await wrapper.find('#role').setValue('Gestionnaire')
     await wrapper.find('#motdepasse').setValue('abcdef')
     await wrapper.find('#confirmation').setValue('abcdef')
 
