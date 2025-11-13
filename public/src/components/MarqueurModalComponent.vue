@@ -180,7 +180,7 @@ onMounted(async () => {
       <div class="form-control form-col-2">
         <label>Image</label>
         <div class="image-row">
-          <input type="text" v-model.trim="image" placeholder="URL de l'image (optionnel)" class="flex-1" />
+          <input type="text" v-model.trim="image" placeholder="URL de l'image (optionnel)" class="flex-1" readonly />
           <input type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.svg,image/*" @change="onFileChange" class="input-file" />
         </div>
         <img v-if="imagePreview" :src="imagePreview" alt="Aperçu" class="image-preview" />
@@ -314,14 +314,13 @@ textarea{
 
 /* image */
 .image-row{ 
-  /* display:flex;  */
   gap:10px; 
   align-items:center 
 }
 .image-row .flex-1{ 
   flex:1; 
   margin-bottom: 10px;
-  border-radius:999px; 
+  border: none;
   padding:12px 18px; 
   cursor:pointer;
   font-size: 0.95rem;
