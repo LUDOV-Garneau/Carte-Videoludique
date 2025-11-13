@@ -37,6 +37,7 @@ const marqueursFiltres = computed(() => {
   )
 })
 
+
 const getMarqueurs = () => {
   marqueursStore.getMarqueurs()
   .catch(error => {
@@ -94,7 +95,7 @@ const refuserMarqueur = async (marqueur) => {
   }
 };
 
-const validerModification = (marqueurModifie) => {
+const validerModification = async (marqueurModifie) => {
   marqueursStore.modifierMarqueur(marqueurModifie)
   modalVisible.value = false
 }
