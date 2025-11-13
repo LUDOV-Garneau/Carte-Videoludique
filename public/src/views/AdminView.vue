@@ -105,36 +105,35 @@ const validerModification = async (marqueurModifie) => {
     const id = marqueurModifie?.properties?.id || marqueurModifie?._id
     if (!id) throw new Error('Identifiant du marqueur manquant');
 
-    // Extraire les données depuis properties (imbriquées dans GeoJSON)
     const props = marqueurModifie?.properties ?? {}
-    
-    // Construire un payload aplati, compatible avec le backend updateMarqueur
+
     const payload = {
       titre: props.titre,
       type: props.type,
       adresse: props.adresse,
       description: props.description,
       temoignage: props.temoignage,
-      // image: props.image || ''
     }
 
-    let imagesPayload = Array.isArray(props.image) ? props.images : []
-    // Si le modal a fourni des fichiers (nouvelles images), uploader sur Cloudinary
+    let imagesPayload = Array.isArray(props.images) ? [...props.images] : []
+
     if (marqueurModifie.files && marqueurModifie.files.length > 0) {
       try {
         const uploaded = await cloudinary.uploadMultipleImages(marqueurModifie.files)
-        
-        if(Array.isArray(uploaded) && uploaded.length > 0) {
-          imagesPayload = uploaded
+        // uploaded devrait ressembler à [{ publicId, url, width, height, ... }, ...]
+
+        if (Array.isArray(uploaded) && uploaded.length > 0) {
+          // 🔥 Ici on AJOUTE les nouvelles images aux anciennes
+          imagesPayload = [...imagesPayload, ...uploaded]
         }
       } catch (uploadErr) {
         console.warn('Erreur upload image:', uploadErr)
+        
       }
     }
-    
-     payload.images = imagesPayload
-     
-    // Appel de la store pour mettre à jour avec le payload aplati
+
+    payload.images = imagesPayload
+
     await marqueursStore.modifierMarqueur(id, authStore.token, payload)
     modalVisible.value = false
     messageErreur.value = ''
