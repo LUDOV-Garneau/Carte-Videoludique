@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { API_URL } from '../config.js'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore } from './auth.js'
 
 
 export const useMarqueurStore = defineStore('marqueur', () => {
@@ -46,8 +46,8 @@ export const useMarqueurStore = defineStore('marqueur', () => {
     function getMarqueurs(){
         return fetch(`${API_URL}/marqueurs`, {
             method: 'GET',
-            headers: { 
-                "Content-Type": "application/json" 
+            headers: {
+                "Content-Type": "application/json"
             }
         })
         .then(async (response) => {
@@ -70,8 +70,8 @@ export const useMarqueurStore = defineStore('marqueur', () => {
     function getMarqueur(marqueurId) {
         return fetch(`${API_URL}/marqueurs/${marqueurId}`, {
             method: 'GET',
-            headers: { 
-                "Content-Type": "application/json" 
+            headers: {
+                "Content-Type": "application/json"
             }
         })
         .then(async (response) => {
@@ -117,7 +117,7 @@ export const useMarqueurStore = defineStore('marqueur', () => {
                 marqueurActif.value.properties.temoignage = result.data.temoignage;
                 marqueurActif.value.properties.image = result.data.image;
                 return result.data;
-            } 
+            }
             return result; // 👈 pour que le composant puisse lire res.status / res.body
         })
         .catch(error => {
@@ -131,7 +131,7 @@ export const useMarqueurStore = defineStore('marqueur', () => {
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + token
             },
-             body: JSON.stringify(status) 
+             body: JSON.stringify(status)
         })
         .then((response) => {
             return response.json().then((data) => {

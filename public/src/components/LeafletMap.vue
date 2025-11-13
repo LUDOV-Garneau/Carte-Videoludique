@@ -309,7 +309,7 @@ onUnmounted(() => {
 
 <template>
   <div class="map" ref="mapEl"></div>
-  
+
   <!-- Petite fenêtre d'image -->
   <transition name="image-window-fade">
     <div
@@ -321,7 +321,7 @@ onUnmounted(() => {
         <button class="image-window__close" @click="closeImageWindow" aria-label="Fermer">
           ×
         </button>
-        
+
         <div v-if="selectedMarqueur && selectedMarqueur.properties">
           <div class="image-window__header">
             <h4>{{ selectedMarqueur.properties.titre }}</h4>
@@ -338,19 +338,19 @@ onUnmounted(() => {
               @load="$event.target.style.opacity = '1'"
             />
           </div>
-          
+
           <div v-else class="image-window__no-image">
             <p>Aucune image disponible pour ce marqueur</p>
           </div>
         </div>
-        
+
         <div v-else class="image-window__no-image">
           <p>Données du marqueur non disponibles</p>
         </div>
       </div>
     </div>
   </transition>
-  
+
 	<!-- Composant panel d'ajout de marqueur -->
 	<AddMarqueurPanel
 		:is-open="createPanelOpen"
