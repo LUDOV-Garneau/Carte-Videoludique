@@ -495,3 +495,123 @@ describe('MarqueurController.deleteMarqueur', () => {
     expect(next).toHaveBeenCalledWith(boom)
   })
 })
+
+/* -------------------- addComment -------------------- */
+describe('MarqueurController.addCommentMarqueur', () => {
+  it('next(err) si une erreur survient', async () => {
+    const boom = new Error('Erreur Mongo');
+
+    const findSpy = vi.spyOn(Marqueur, 'findById').mockRejectedValue(boom);
+
+    const req = mockReq({
+      params: { marqueurId: '123' },
+      body: { auteur: 'Fred', texte: 'test' },
+      originalUrl: '/api/marqueurs/123/commentaires'
+    });
+    const res = mockRes();
+    const next = vi.fn();
+
+    await marqueurController.addCommentMarqueur(req, res, next);
+
+    await new Promise(process.nextTick);
+
+    expect(findSpy).toHaveBeenCalledTimes(1);
+    expect(findSpy).toHaveBeenCalledWith('123');
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledWith(boom);
+  });
+});
+
+
+
+/* -------------------- deleteComment -------------------- */
+describe('MarqueurController.deleteCommentMarqueur', () => {
+  it('404 si le marqueur n’existe pas', async () => {
+    vi.spyOn(Marqueur, 'findById').mockResolvedValue(null)
+
+    const req = mockReq({
+      params: { marqueurId: 'nope', commentId: '999' },
+      originalUrl: '/api/marqueurs/nope/commentaires/999'
+    })
+    const res = mockRes()
+    const next = mockNext()
+
+    await marqueurController.deleteCommentMarqueur(req, res, next)
+
+    expect(Marqueur.findById).toHaveBeenCalledWith('nope')
+    expect(res.statusCode).toBe(404)
+    expect(res.body).toMatchObject({
+      status: 404,
+      error: 'Not Found',
+      message: "Le marqueur spécifié n'existe pas.",
+      path: '/api/marqueurs/nope/commentaires/999'
+    })
+  })
+
+  it('404 si le commentaire n’existe pas', async () => {
+    const marqueur = {
+      _id: 'abc123',
+      comments: [{ _id: 'a1', texte: 'Ancien commentaire' }],
+      save: vi.fn()
+    }
+
+    vi.spyOn(Marqueur, 'findById').mockResolvedValue(marqueur)
+
+    const req = mockReq({
+      params: { marqueurId: 'abc123', commentId: 'b2' },
+      originalUrl: '/api/marqueurs/abc123/commentaires/b2'
+    })
+    const res = mockRes()
+    const next = mockNext()
+
+    await marqueurController.deleteCommentMarqueur(req, res, next)
+
+    expect(res.statusCode).toBe(404)
+    expect(res.body).toMatchObject({
+      status: 404,
+      error: 'Not Found',
+      message: "Le commentaire spécifié n'existe pas.",
+      path: '/api/marqueurs/abc123/commentaires/b2'
+    })
+  })
+
+  it('200 + succès quand le commentaire est supprimé', async () => {
+    const marqueur = {
+      _id: 'abc123',
+      comments: [{ _id: 'a1', texte: 'À supprimer' }],
+      save: vi.fn().mockResolvedValue(true)
+    }
+
+    vi.spyOn(Marqueur, 'findById').mockResolvedValue(marqueur)
+
+    const req = mockReq({
+      params: { marqueurId: 'abc123', commentId: 'a1' },
+      originalUrl: '/api/marqueurs/abc123/commentaires/a1'
+    })
+    const res = mockRes()
+    const next = mockNext()
+
+    await marqueurController.deleteCommentMarqueur(req, res, next)
+
+    expect(Marqueur.findById).toHaveBeenCalledWith('abc123')
+    expect(marqueur.save).toHaveBeenCalled()
+    expect(res.statusCode).toBe(200)
+    expect(res.body.status).toBe(200)
+    expect(res.body.message).toBe('Témoignage supprimé avec succès.')
+  })
+
+  it('next(err) si une erreur survient', async () => {
+    const boom = new Error('Erreur Mongo')
+    vi.spyOn(Marqueur, 'findById').mockRejectedValue(boom)
+
+    const req = mockReq({
+      params: { marqueurId: 'abc123', commentId: 'a1' }
+    })
+    const res = mockRes()
+    const next = mockNext()
+
+    await marqueurController.deleteCommentMarqueur(req, res, next)
+
+    expect(next).toHaveBeenCalledWith(boom)
+  })
+})
