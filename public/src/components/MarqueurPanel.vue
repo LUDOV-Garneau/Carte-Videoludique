@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, reactive } from 'vue';
 import { useMarqueurStore } from '../stores/useMarqueur';
+import { API_URL } from '../config';
 import { svg } from 'leaflet';
 
 // props and emits
@@ -16,7 +17,17 @@ const marqueurStore = useMarqueurStore();
 const canDisplayPanel = computed(() => {
     return props.isOpen && marqueurStore.marqueurActif !== null;
 });
-const isCommenting = ref(false);
+const isCommenting = reactive(ref(false));
+
+const formData = ref({
+	auteur: '',
+	contenu: ''
+});
+const formErrors = ref({
+	auteur: '',
+	contenu: ''
+});
+
 
 function closePanel() {
     emits('close');
@@ -24,7 +35,10 @@ function closePanel() {
 
 function toggleCommenting() {
 	isCommenting.value = !isCommenting.value;
+	formData.value.auteur = '';
+	formData.value.contenu = '';
 	console.log('isCommenting:', isCommenting.value);
+	console.log(marqueurStore.marqueurActif);
 }
 
 function copyToClipboard(text) {
@@ -34,6 +48,53 @@ function copyToClipboard(text) {
     }).catch(err => {
         console.error('Erreur lors de la copie :', err);
     });
+}
+
+function validateCommentForm() {
+	let isValid = true;
+	formErrors.value = {
+		auteur: '',
+		contenu: ''
+	}
+	if (formData.value.auteur.trim().length > 50) {
+		formErrors.value.auteur = 'Le nom ne doit pas dépasser 50 caractères.';
+		isValid = false;
+	}
+	if (formData.value.contenu.trim().length === 0) {
+		formErrors.value.contenu = 'Le contenu du témoignage ne peut pas être vide.';
+		isValid = false;
+	} else if (formData.value.contenu.trim().length > 500) {
+		formErrors.value.contenu = 'Le témoignage ne doit pas dépasser 500 caractères.';
+		isValid = false;
+	}
+	console.log('Form validation:', isValid, formErrors.value);
+	return isValid;
+}
+
+async function sendComment() {
+	try {
+		if (validateCommentForm()) {
+			const auteur = formData.value.auteur.trim();
+			const contenu = formData.value.contenu.trim();
+
+			const response = await fetch(`${API_URL}/marqueurs/${marqueurStore.marqueurActif.properties.id}/commentaires`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ auteur: auteur, texte: contenu }),
+			});
+			if (response.status !== 200 && response.status !== 201) {
+				const errorData = await response.json()
+                throw new Error(errorData.message || 'Erreur inconnue')
+			}
+			const responseData = await response.json();
+			console.log('Commentaire envoyé avec succès :', responseData.data);
+		}
+	} catch (err) {
+		console.error('Erreur lors de l\'envoi du commentaire :', err);
+		throw err;
+	}
 }
 </script>
 <template>
@@ -80,7 +141,24 @@ function copyToClipboard(text) {
 				<div class="panel__section">
 					<h5>Témoignages</h5>
 					<button class="btn-add-comment" @click="toggleCommenting">Ajouter un témoignage</button>
+					<form v-if="isCommenting" class="add-comment-form"  @submit.prevent="sendComment">
+						<div class="add-comment-nom">
+							<label for="auteur">Votre nom :</label>
+							<input type="text" id="auteur" v-model.trim="formData.auteur" name="auteur" />
+						</div>
+						<textarea id="contenu" v-model.trim="formData.contenu" name="contenu" rows="4" placeholder="Votre témoignage..."></textarea>
+						<div class="add-comment-actions">
+							<button type="submit" class="btn-submit-comment">Envoyer</button>
+							<button type="button" class="btn-cancel-comment" @click="toggleCommenting">Annuler</button>
+						</div>
+					</form>
 					<span class="no-comments" v-if="!marqueurStore.marqueurActif.comments">Aucun témoignage</span>
+					<div v-else class="panel__comments">
+						<div v-for="(comment, index) in marqueurStore.marqueurActif.comments" :key="index" class="info-item">
+							<span>Auteur(e) : {{ comment.auteur }}</span>
+							<p>{{ comment.contenu }}</p>
+						</div>
+					</div>
 				</div>
             </div>
         </aside>
@@ -270,6 +348,88 @@ function copyToClipboard(text) {
 .no-comments {
 	display: block;
 	text-align: center;
+}
+
+/* ---------- Formulaire d'ajout de commentaire ---------- */
+.add-comment-form {
+	border: 3px solid #4CAF50;
+	border-radius: 20px;
+	margin-bottom: 10px;
+	box-sizing: border-box;
+}
+
+.add-comment-nom {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	border-bottom: solid 2px #4CAF50;
+}
+.add-comment-nom label {
+	padding: 5px 10px;
+	margin: 0;
+	height: 40px;
+	min-width: max-content;
+	display: flex;
+	align-items: center;
+	border-right: 2px solid #4CAF50;
+	border-radius: 15px 0 0 0;
+	background-color: #4CAF50;
+	color: white;
+}
+.add-comment-nom input {
+	height: auto;
+	width: 100%;
+	padding: 0 10px;
+	margin: 0;
+	background-color: transparent;
+	border: none;
+}
+.add-comment-nom input:focus {
+	outline: none;
+}
+
+.add-comment-form textarea {
+	width: 100%;
+	border: none;
+	resize: none;
+	padding: 10px;
+	margin: 0;
+	font-family: inherit;
+	font-size: 14px;
+	box-sizing: border-box;
+	background-color: transparent;
+	display: block;
+}
+.add-comment-form textarea:focus {
+	outline: none;
+}
+
+.add-comment-actions {
+	display: flex;
+	margin: 0;
+	padding: 0;
+	border-top: 2px solid #4CAF50;
+}
+.btn-submit-comment {
+	border-radius: 0 0 0 16px;
+}
+.btn-cancel-comment {
+	border-radius: 0 0 16px 0;
+}
+.btn-submit-comment, .btn-cancel-comment {
+	width: 100%;
+	height: 36px;
+	border: none;
+	background: white;
+	color: #4CAF50;
+	font-weight: 600;
+	cursor: default;
+	transition: all 0.3s ease;
+}
+.btn-submit-comment:hover, .btn-cancel-comment:hover {
+	background: #4CAF50;
+	color: white;
+	cursor: default;
 }
 
 /* Transition simple (fade + léger slide) */
