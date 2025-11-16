@@ -4,7 +4,7 @@ import MarqueurModal from '../components/MarqueurModalComponent.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter , useRoute} from 'vue-router'
+import { useRouter ,} from 'vue-router'
 import * as cloudinary from '../utils/cloudinary.js'
 
 const props = defineProps({
@@ -16,9 +16,7 @@ const props = defineProps({
 
 const auth = useAuthStore()
 const router = useRouter()
-const route = useRoute()
 
-const marqueurId = computed(() => route.params.id) 
 
 const logout = () => {
   auth.logout()
@@ -41,7 +39,6 @@ const marqueursFiltres = computed(() => {
     m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
   )
 })
-
 
 const getMarqueurs = () => {
   marqueursStore.getMarqueurs()
@@ -120,10 +117,9 @@ const validerModification = async (marqueurModifie) => {
     if (marqueurModifie.files && marqueurModifie.files.length > 0) {
       try {
         const uploaded = await cloudinary.uploadMultipleImages(marqueurModifie.files)
-        // uploaded devrait ressembler à [{ publicId, url, width, height, ... }, ...]
 
         if (Array.isArray(uploaded) && uploaded.length > 0) {
-          // 🔥 Ici on AJOUTE les nouvelles images aux anciennes
+
           imagesPayload = [...imagesPayload, ...uploaded]
         }
       } catch (uploadErr) {
@@ -144,7 +140,7 @@ const validerModification = async (marqueurModifie) => {
   }
 }
 
-const showInfo = (marqueur) => { selectedMarqueur.value = marqueur; modalVisible.value = true }
+// const showInfo = (marqueur) => { selectedMarqueur.value = marqueur; modalVisible.value = true }
 
 onMounted(() => {
   getMarqueurs()

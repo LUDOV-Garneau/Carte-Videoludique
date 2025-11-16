@@ -10,7 +10,6 @@ const emit = defineEmits(['update:modelValue', 'change']);
 const images = reactive([]);
 const fileInput = ref(null);
 
-// Normaliser les images initiales
 props.initialUrls.forEach((url, index) => {
     images.push({ id: 'ext-' + index + '-' + Date.now(), url, file: null, isExternal: true });
 });

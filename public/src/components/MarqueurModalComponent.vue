@@ -23,7 +23,20 @@ const temoignage = ref('')
 //#endregion
 
 //#region Images (AddImage) et compteurs
-const files = ref([])    
+const files = ref([]) 
+
+const TYPES = [
+  'Écoles et instituts de formation',
+  'Développement et édition de jeux',
+  'Boutiques spécialisées',
+  'Magasins à grande surface',
+  'Friperies, marchés aux puces et d\'occasion',
+  'Dépanneurs et marchés',
+  'Clubs vidéo',
+  'Arcades et salles de jeux',
+  'Organismes et institutions',
+  'Autres',
+]
 
 const descCount = ref(0)
 function updateDescCount() {
@@ -249,9 +262,13 @@ onMounted(async () => {
 
           <div class="form-control" :class="{ invalid: typeValidation }">
             <label for="typeMarqueur">Type</label>
-              <input id="typeMarqueur" v-model.trim="type" type="text" placeholder="Ex: Clubs vidéo"
+              <select id="typeMarqueur" v-model.trim="type"
                 :aria-invalid="typeValidation ? 'true':'false'"
-                @input="typeValidation=false" />
+                @input="typeValidation=false" >
+                <option v-for="option in TYPES" :key="option" :value="option">{{ option }}</option>
+              </select>
+                
+         
             <p v-if="typeValidation" class="error-message">{{ typeMessage }}</p>
           </div>
 
@@ -404,7 +421,7 @@ onMounted(async () => {
   color:#0f172a;
   font-size: 0.95rem;
 }
-input,
+input,select,
 textarea{
   width:100%; 
   padding:.75rem 1rem; 
@@ -423,6 +440,7 @@ textarea::placeholder {
 }
 
 input:focus,
+select:focus,
 textarea:focus{
   border-color: var(--accent); 
   box-shadow:0 0 0 3px rgba(0,216,224,.25);
