@@ -161,16 +161,14 @@ onMounted(() => {
   <div class="layout">
     <main class="content">
       <h2 class="section-title">Notifications</h2>
-      
-      
       <div class="offers-wrapper">
         <div class="tabs-wrapper">
         <div class="tabs">
           <button :class="{active: filtreStatus === 'pending'}" @click="filtreStatus='pending'">
-            Ajout
+            Demande d'ajout
           </button>
           <button :class="{active: filtreStatus === 'edit-request'}" @click="filtreStatus='edit-request'">
-            Modification
+            Demande de modification
           </button>
         </div>
       </div>
@@ -236,7 +234,18 @@ onMounted(() => {
           </tbody>
         </table>
         <table v-if="filtreStatus==='edit-request'">
-          <thead>Modification</thead>
+           <thead>
+              <tr>
+                <th>Lieu</th>
+                <th>Modifications proposées</th>
+                <th class="info-col">Info</th>
+                <th class="accept-col">Accepter</th>
+                <th class="reject-col">Refuser</th>
+              </tr>
+            </thead>
+            <tr v-if="!marqueursFiltres || marqueursFiltres.length === 0">
+              <td colspan="6" class="empty">Aucune demande de modification pour le moment.</td>
+            </tr>
         </table>
       </div>
 
@@ -359,7 +368,6 @@ table {
   table-layout: fixed;
   color: #111827;
   background: #ffffff;
-  border-radius: 16px;
   overflow: hidden;
 }
 
@@ -394,7 +402,7 @@ table {
 }
 /* ONGLET ACTIF */
 .tabs button.active {
-  background: linear-gradient(180deg, #f6f7f9 0%, #ffffff 140%);
+  background: #ffffff;
   color: #111827;
 }
 
@@ -407,7 +415,6 @@ table {
   bottom: 0;
   width: 36px;
   height: 36px;
-  mask-image: radial-gradient(circle at bottom right, transparent 70%, black 71%);
   background: var(--bg);
   pointer-events: none;
 }
@@ -427,7 +434,7 @@ thead th {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: linear-gradient(180deg, #f6f7f9 0%, #ffffff 140%);
+  background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
   font-weight: 700;
   letter-spacing: 0.2px;
