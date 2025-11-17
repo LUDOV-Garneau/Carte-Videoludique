@@ -159,17 +159,22 @@ onMounted(() => {
 
 <template>
   <div class="layout">
-    <aside class="sidebar">
-      <span class="brand-vertical">L U D O V</span>
-    </aside>
-
     <main class="content">
-      
-
       <h2 class="section-title">Notifications</h2>
-
+      
+      
       <div class="offers-wrapper">
-        <table class="offers-table" role="table" aria-label="Offres fournisseur">
+        <div class="tabs-wrapper">
+        <div class="tabs">
+          <button :class="{active: filtreStatus === 'pending'}" @click="filtreStatus='pending'">
+            Ajout
+          </button>
+          <button :class="{active: filtreStatus === 'edit-request'}" @click="filtreStatus='edit-request'">
+            Modification
+          </button>
+        </div>
+      </div>
+        <table v-if="filtreStatus==='pending'" class="offers-table" role="table" aria-label="Offres fournisseur">
           <thead>
             <tr>
               <th>Lieu</th>
@@ -230,6 +235,9 @@ onMounted(() => {
             </tr>
           </tbody>
         </table>
+        <table v-if="filtreStatus==='edit-request'">
+          <thead>Modification</thead>
+        </table>
       </div>
 
       <MarqueurModal
@@ -269,31 +277,6 @@ table {
     linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
   position: relative;
   isolation: isolate;
-}
-
-/* ---------- Sidebar (gris élégant) ---------- */
-.sidebar {
-  width: 96px;
-  background: linear-gradient(180deg, #e5e7eb 0%, #f3f4f6 100%);
-  border-right: 1px solid #d1d5db; /* bordure gris moyen */
-  display: flex;
-  justify-content: center;
-  align-items: start;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  box-shadow: var(--shadow-md);
-}
-.brand-vertical {
-  writing-mode: vertical-rl;
-  text-orientation: upright;
-  letter-spacing: 0.2rem;
-  font-weight: 800;
-  font-size: 1.25rem;
-  color: #0f172a;
-  user-select: none;
-  padding: 18px 6px;
-  border-radius: 12px;
 }
 
 /* ---------- Contenu & header ---------- */
@@ -363,7 +346,7 @@ table {
   margin: 0 auto;
   overflow-x: auto;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
+  /* border: 1px solid #e5e7eb; */
   border-radius: 16px;
   box-shadow:
     0 10px 24px rgba(0, 0, 0, 0.06),
@@ -379,6 +362,67 @@ table {
   border-radius: 16px;
   overflow: hidden;
 }
+
+.tabs-wrapper {
+  display:flex;
+  justify-content: flex-start;
+  max-width: 1100px;
+  margin: 0 auto -1px;
+  padding-top: 5px;
+  background: #d7dce2;
+  position: relative;
+  z-index: 10;
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+  background: transparent;
+  overflow: hidden;
+}
+.tabs button {
+  margin: 0 auto;
+  padding: 6px 20px;
+  background: #d7dce2;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: #374151;
+  border-radius: 12px 12px 0 0; /* haut arrondi, bas droit */
+  position: relative;
+  transition: 0.2s;
+}
+/* ONGLET ACTIF */
+.tabs button.active {
+  background: linear-gradient(180deg, #f6f7f9 0%, #ffffff 140%);
+  color: #111827;
+}
+
+/* Arrondi INTERNE (Chrome-style) */
+.tabs button.active::before,
+.tabs button.active::after {
+   content: "";
+  position: absolute;
+  left: -18px;
+  bottom: 0;
+  width: 36px;
+  height: 36px;
+  mask-image: radial-gradient(circle at bottom right, transparent 70%, black 71%);
+  background: var(--bg);
+  pointer-events: none;
+}
+
+
+.tabs button.active::before {
+  left: -12px;
+  border-bottom-right-radius: 12px;
+}
+
+.tabs button.active::after {
+  right: -12px;
+  border-bottom-left-radius: 12px;
+}
+
 thead th {
   position: sticky;
   top: 0;
