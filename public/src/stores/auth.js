@@ -28,6 +28,10 @@ export const useAuthStore = defineStore('auth', () => {
   const name = computed(() => {
     return decodedToken.value ? decodedToken.value.nom : '';
   });
+  // Obtenir le rôle d'admin depuis le token décodé
+  const role = computed(() => {
+    return decodedToken.value ? decodedToken.value.role : '';
+  });
   
   const isAuthenticated = computed(() => {
     const decoded = decodedToken.value
@@ -46,6 +50,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     token,
     name,
+    role,
     decodedToken,
     isAuthenticated,
     logout,

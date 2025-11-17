@@ -24,6 +24,7 @@
         <h3 class="card-title">{{ user.nom }}</h3>
         <p class="text-muted">{{ user.prenom }}</p>
         <p class="text-muted">{{ user.courriel }}</p>
+        <p><strong>Rôle :</strong> {{ user.role }}</p>
         <p><strong>Créé le :</strong> {{ formatDate(user.createdAt) }}</p>
         <p><strong>Mis à jour le :</strong> {{ formatDate(user.updatedAt) }}</p>
 
