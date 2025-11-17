@@ -3,7 +3,8 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import L from 'leaflet'
 import { reverseGeocode } from '../utils/geocode.js'
 import AddMarqueurPanel from './AddMarqueurPanel.vue'
-import { useMarqueursStore } from '../stores/useMarqueur.js'
+import MarqueurPanel from './MarqueurPanel.vue'
+import { useMarqueurStore } from '../stores/useMarqueur.js'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -22,7 +23,7 @@ const DefaultIcon = L.icon({
 })
 L.Marker.prototype.options.icon = DefaultIcon
 
-const marqueurStore = useMarqueursStore()
+const marqueurStore = useMarqueurStore()
 
 const mapEl = ref(null)
 let map
@@ -31,22 +32,21 @@ let btnAjoutMarqueur
 
 const longitude = ref('')
 const latitude = ref('')
-const panelOpen = ref(false)
-const imageWindowOpen = ref(false)
+const createPanelOpen = ref(false);
+const infoPanelOpen = ref(false);
 const marqueurs = ref([]);
 const selectedMarqueur = ref(null);
 const currentMarqueur = ref(null);
 const currentAdresse = ref('');
 
-function openPanel() {
-  panelOpen.value = true
+function openCreatePanel() {
+  createPanelOpen.value = true
   const container = map?.getContainer?.()
   if(container?.style) container.style.cursor = 'crosshair'
   if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none'
 }
-
-function closePanel() {
-  panelOpen.value = false
+function closeCreatePanel() {
+  createPanelOpen.value = false
   const container = map?.getContainer?.()
   if (container?.style) container.style.cursor = 'grab'
   if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = ''
@@ -59,17 +59,21 @@ function closePanel() {
   currentAdresse.value = ''
 }
 
-function openImageWindow() {
-  imageWindowOpen.value = true;
+function openInfoPanel() {
+  if (createPanelOpen.value) closeCreatePanel();
+  infoPanelOpen.value = true;
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none';
 }
-
-function closeImageWindow() {
-  imageWindowOpen.value = false;
+function closeInfoPanel() {
+  infoPanelOpen.value = false;
+  selectedMarqueur.value = null;
+  marqueurStore.marqueurActif = null;
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = '';
 }
 
 async function handleMarqueurAdded() {
 	await afficherMarqueurs();
-	closePanel();
+	closeCreatePanel();
 }
 
 function handlelocateFromAddress({ lat, lng }) {
@@ -113,9 +117,9 @@ async function afficherMarqueurs() {
 
         marqueur.on('click', (e) => {
           selectedMarqueur.value = marqueur;
-
-          openImageWindow();
-
+          marqueurStore.getMarqueur(marqueurData.properties.id);
+          openInfoPanel();
+          
           map.setView([lat, lng], Math.max(map.getZoom(), 15));
         });
 
@@ -128,8 +132,6 @@ async function afficherMarqueurs() {
 }
 
 defineExpose({
-  openImageWindow,
-  closeImageWindow,
   afficherMarqueurs,
   handlelocateFromAddress,
 
@@ -138,7 +140,6 @@ defineExpose({
   marqueurs,
   currentMarqueur,
   selectedMarqueur,
-  imageWindowOpen,
   map,
 });
 
@@ -187,7 +188,7 @@ function addTileLayer() {
  */
 function setupMapClickHandler() {
 	map.on('click', async (e) => {
-		if (!panelOpen.value) return
+		if (!createPanelOpen.value) return
 
 		const { lat, lng } = e.latlng
 		if (currentMarqueur.value) map.removeLayer(currentMarqueur.value)
@@ -247,7 +248,7 @@ function addCustomControl() {
       L.DomEvent.disableScrollPropagation(container)
       L.DomEvent.on(btn, 'click', (e) => {
         L.DomEvent.preventDefault(e)
-        openPanel()
+        openCreatePanel()
       })
 
       return container
@@ -270,7 +271,7 @@ function addCustomControl() {
  */
 function setupKeyboardShortcuts() {
   const onKey = (e) => {
-    if (e.key === 'Escape' && panelOpen.value) closePanel()
+    if (e.key === 'Escape' && createPanelOpen.value) closeCreatePanel()
   }
   window.addEventListener('keydown', onKey)
   map.__onKey = onKey
@@ -297,56 +298,20 @@ onUnmounted(() => {
 <template>
   <div class="map" ref="mapEl"></div>
 
-  <!-- Petite fenêtre d'image -->
-  <transition name="image-window-fade">
-    <div
-      v-if="imageWindowOpen"
-      class="image-window"
-      @click.self="closeImageWindow"
-    >
-      <div class="image-window__content">
-        <button class="image-window__close" @click="closeImageWindow" aria-label="Fermer">
-          ×
-        </button>
-
-        <div v-if="selectedMarqueur && selectedMarqueur.properties">
-          <div class="image-window__header">
-            <h4>{{ selectedMarqueur.properties.titre }}</h4>
-            <p class="image-window__type">{{ selectedMarqueur.properties.type }}</p>
-          </div>
-
-          <div class="image-window__images" v-if="selectedMarqueur.properties.images && selectedMarqueur.properties.images.length > 0">
-            <img
-              v-for="(image, index) in selectedMarqueur.properties.images"
-              :key="index"
-              :src="image.url"
-              :alt="`Image ${index + 1} de ${selectedMarqueur.properties.titre}`"
-              class="image-window__image"
-              @load="$event.target.style.opacity = '1'"
-            />
-          </div>
-
-          <div v-else class="image-window__no-image">
-            <p>Aucune image disponible pour ce marqueur</p>
-          </div>
-        </div>
-
-        <div v-else class="image-window__no-image">
-          <p>Données du marqueur non disponibles</p>
-        </div>
-      </div>
-    </div>
-  </transition>
-
 	<!-- Composant panel d'ajout de marqueur -->
 	<AddMarqueurPanel
-		:is-open="panelOpen"
+		:is-open="createPanelOpen"
 		:coordinates="{ lat: latitude, lng: longitude }"
 		:adresse="currentAdresse"
-		@close="closePanel"
+		@close="closeCreatePanel"
 		@marqueur-added="handleMarqueurAdded"
 		@locate-address="handlelocateFromAddress"
 	/>
+
+  <MarqueurPanel
+    :is-open="infoPanelOpen"
+    @close="closeInfoPanel"
+  />
 </template>
 
 <style scoped>

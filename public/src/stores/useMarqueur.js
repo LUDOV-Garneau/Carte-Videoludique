@@ -4,7 +4,7 @@ import { API_URL } from '../config.js'
 import { useAuthStore } from './auth.js'
 
 
-export const useMarqueursStore = defineStore('marqueurs', () => {
+export const useMarqueurStore = defineStore('marqueur', () => {
     const marqueurs = ref([]);
     const marqueurActif = ref(null);
     const authStore = useAuthStore();
@@ -84,7 +84,6 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
         })
         .then(data => {
             marqueurActif.value = data.data
-            console.log(marqueurActif)
             return marqueurActif
         })
         .catch(error => {
