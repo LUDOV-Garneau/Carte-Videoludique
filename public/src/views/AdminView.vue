@@ -31,6 +31,7 @@ const messageErreur = ref('')
 const filtreStatus = ref('pending')
 const modalVisible = ref(false)
 const selectedMarqueur = ref(null)
+const leafletMapRef = ref(null)
 
 
 const marqueursFiltres = computed(() => {
@@ -45,6 +46,13 @@ const getMarqueurs = () => {
   .catch(error => {
     messageErreur.value = error.message;
   });
+}
+
+function handleLocateFromAddressFromModal(coords) {
+  // on délègue à LeafletMap grâce à sa ref
+  if (leafletMapRef.value?.handleLocateFromAddress) {
+    leafletMapRef.value.handleLocateFromAddress(coords)
+  }
 }
 
 const ouvrirModal = (marqueur) => {
@@ -99,8 +107,10 @@ const refuserMarqueur = async (marqueur) => {
 
 const validerModification = async (marqueurModifie) => {
   try {
+    console.log('Marqueur modifié reçu dans AdminView:', marqueurModifie)
+
     const id = marqueurModifie?.properties?.id || marqueurModifie?._id
-    if (!id) throw new Error('Identifiant du marqueur manquant');
+    if (!id) throw new Error('Identifiant du marqueur manquant')
 
     const props = marqueurModifie?.properties ?? {}
 
@@ -112,19 +122,28 @@ const validerModification = async (marqueurModifie) => {
       temoignage: props.temoignage,
     }
 
+    // 🔹 récupérer lat/lng envoyés par le modal
+    const lat = marqueurModifie.lat
+    const lng = marqueurModifie.lng
+
+    if (lat != null && lng != null && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng))) {
+      payload.lat = Number(lat)
+      payload.lng = Number(lng)
+    }
+
+    console.log('Payload avant envoi :', payload)
+
+    // ---------- images ----------
     let imagesPayload = Array.isArray(props.images) ? [...props.images] : []
 
     if (marqueurModifie.files && marqueurModifie.files.length > 0) {
       try {
         const uploaded = await cloudinary.uploadMultipleImages(marqueurModifie.files)
-
         if (Array.isArray(uploaded) && uploaded.length > 0) {
-
           imagesPayload = [...imagesPayload, ...uploaded]
         }
       } catch (uploadErr) {
         console.warn('Erreur upload image:', uploadErr)
-        
       }
     }
 
@@ -268,11 +287,12 @@ onMounted(() => {
         v-if="modalVisible && selectedMarqueur"
         :marqueur="selectedMarqueur"
         @fermer="modalVisible = false; selectedMarqueur = null"
+        @locate-from-address="handleLocateFromAddressFromModal"
         @valider="validerModification"
       />
       
       <section class="map-wrapper">
-        <LeafletMap />
+        <LeafletMap ref="leafletMapRef"/>
       </section>
     </main>
   </div>

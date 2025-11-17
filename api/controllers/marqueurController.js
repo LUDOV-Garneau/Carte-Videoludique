@@ -167,6 +167,15 @@ exports.updateMarqueur = async (req, res, next) => {
         if (description !== undefined) updateData.$set["properties.description"] = description;
         if (temoignage !== undefined) updateData.$set["properties.temoignage"] = temoignage;
         if (image !== undefined) updateData.$set["properties.image"] = image;
+        // If lat/lng are provided (from the edit form), update geometry coordinates (GeoJSON expects [lng, lat])
+        if (req.body.lat !== undefined && req.body.lng !== undefined) {
+          const lat = req.body.lat === null || req.body.lat === '' ? null : parseFloat(req.body.lat);
+          const lng = req.body.lng === null || req.body.lng === '' ? null : parseFloat(req.body.lng);
+          if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+            updateData.$set["geometry.coordinates"] = [lng, lat];
+          }
+        }
+
         if (images !== undefined) {
             // Normaliser les images : accepter soit un tableau d'objets { publicId, url }, soit un tableau de chaînes (urls)
             const normalized = (Array.isArray(images))

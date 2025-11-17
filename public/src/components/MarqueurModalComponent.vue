@@ -1,14 +1,17 @@
 <script setup>
 import { defineProps, defineEmits, ref, watch, onMounted, nextTick, computed} from 'vue'
 import AddImage from './AddImage.vue'
-import { fetchAdresseSuggestions } from '../utils/geocode'
+import { fetchAdresseSuggestions, geocodeAddress } from '../utils/geocode'
 
 //#region Props & Emits
 const props = defineProps({
   marqueur: { type: Object, required: true }
 })
 
-const emit = defineEmits(['fermer', 'valider'])
+
+const emit = defineEmits(['fermer', 'valider', 'locate-from-address'])
+
+
 //#endregion
 
 //#region Champs du formulaire
@@ -19,6 +22,8 @@ const suggestions = ref([])
 const showSuggestions = ref(false)
 const description = ref('')
 const temoignage = ref('')
+const latitude = ref(null)
+const longitude = ref(null)
 
 //#endregion
 
@@ -43,6 +48,7 @@ function updateDescCount() {
   descCount.value = description.value.length
 }
 //#endregion
+
 
 //#region Refs pour focus
 const titreEl = ref(null)
@@ -162,10 +168,28 @@ async function valider() {
     return
   }
 
+  let lat = latitude.value
+  let lng = longitude.value
+
+  if (lat == null || lng == null) {
+    try {
+      const coords = await geocodeAddress(adresse.value.trim())
+      console.log('Coords depuis valider() :', coords)
+      if (coords) {
+        lat = coords.lat
+        lng = coords.lng
+        latitude.value  = coords.lat
+        longitude.value = coords.lng
+      }
+    } catch (e) {
+      console.error('Erreur geocode dans valider():', e)
+    }
+  }
+
   const original = props.marqueur ?? {}
   const originalProps = original.properties ?? {}
 
-  // Sécuriser la valeur d'image : peut être une string (url) ou un objet
+  console.log('Dans valider(), lat/lng envoyés :', lat, lng)
 
   emit('valider', {
     _id: original._id,
@@ -175,9 +199,12 @@ async function valider() {
       type: type.value.trim(),
       adresse: adresse.value.trim(),
       description: description.value.trim(),
-      temoignage: temoignage.value.trim(),
-      
+      temoignage: temoignage.value.trim(),   
     },
+
+    // include latitude/longitude when available so backend can update geometry
+    lat: latitude.value,
+    lng: longitude.value,
 
     files: files.value
   })
@@ -185,6 +212,7 @@ async function valider() {
 //#endregion
 
 async function onAdresseInput(value) {
+
   adresse.value = value
 
   if (!value || value.length < 3) {
@@ -194,10 +222,38 @@ async function onAdresseInput(value) {
   }
 
   await fetchAdresseSuggestions(suggestions, showSuggestions, adresse.value)
+
+  try {
+    const coords = await geocodeAddress(adresse.value)
+    console.log('Coords from geocode:', coords)
+
+    if (coords) {
+      latitude.value  = coords.lat
+      longitude.value = coords.lng
+    }
+    console.log("latitude.value =", latitude.value)
+    console.log("longitude.value =", longitude.value)
+
+    emit('locate-from-address', coords)
+    
+  } catch (err) {
+    console.error('Erreur geocode :', err)
+  }
 }
 
 function selectSuggestion(item) {
   adresse.value = item.display_name
+  // Nominatim renvoie `lat` et `lon` en strings; on les convertit en nombres
+  if (item && item.lat !== undefined && item.lon !== undefined) {
+    const lat = parseFloat(item.lat)
+    const lng = parseFloat(item.lon)
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+      latitude.value = lat
+      longitude.value = lng
+      // informer le parent qu'on a une position (utile pour aperçu carte)
+      emit('locate-from-address', { lat, lng })
+    }
+  }
   showSuggestions.value = false
   suggestions.value = []
 }
@@ -447,6 +503,12 @@ textarea:focus{
 }
 textarea{ 
   resize: vertical; 
+}
+
+option{
+  font-size: 0.95rem;
+  
+  border-radius:10px; 
 }
 .error-message{ 
   color:#dc2626; 
