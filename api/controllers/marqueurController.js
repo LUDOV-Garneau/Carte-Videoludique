@@ -201,7 +201,7 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       return res.status(400).json(formatErrorResponse(
         400,
         "Bad Request",
-        "Statut invalide. Valeurs acceptées : 'approved', 'pending' ou 'rejected'.",
+        "Statut invalide. Valeurs acceptées : 'approved', 'pending', 'rejected'.",
         req.originalUrl
       ));
     }
@@ -215,13 +215,33 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       ));
     }
 
-    const updatedMarqueur = await Marqueur.findByIdAndUpdate(
+    if (status === "rejected") {
+      const deleted = await Marqueur.findByIdAndDelete(marqueurId);
+      if (!deleted) {
+        return res.status(404).json(formatErrorResponse(
+          404,
+          "Not Found",
+          "Le marqueur à supprimer n'existe pas.",
+          req.originalUrl
+        ));
+      }
+
+      return res.status(200).json(formatSuccessResponse(
+        200,
+        "Le marqueur a été rejeté et supprimé.",
+        deleted,
+        req.originalUrl
+      ));
+    }
+
+    // Sinon → update normal
+    const updated = await Marqueur.findByIdAndUpdate(
       marqueurId,
       { $set: { "properties.status": status } },
       { new: true, runValidators: true, context: "query" }
     );
 
-    if (!updatedMarqueur) {
+    if (!updated) {
       return res.status(404).json(formatErrorResponse(
         404,
         "Not Found",
@@ -233,7 +253,7 @@ exports.updateStatusMarqueur = async (req, res, next) => {
     res.status(200).json(formatSuccessResponse(
       200,
       `Le statut du marqueur a été mis à jour vers '${status}'.`,
-      updatedMarqueur,
+      updated,
       req.originalUrl
     ));
 
@@ -241,6 +261,7 @@ exports.updateStatusMarqueur = async (req, res, next) => {
     next(err);
   }
 };
+
 
 
 exports.addCommentMarqueur = async (req, res, next) => {
