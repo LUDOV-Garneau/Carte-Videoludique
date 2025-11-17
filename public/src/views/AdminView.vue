@@ -29,7 +29,7 @@ const getMarqueurs = () => {
 }
 
 const accepterMarqueur = async (marqueur) => {
-  const id = marqueur?.properties?.id
+  const id = marqueur?.id
   if (!id) return
 
   try {
@@ -51,7 +51,7 @@ const accepterMarqueur = async (marqueur) => {
 }
 
 const refuserMarqueur = async (marqueur) => {
-  const id = marqueur?.properties?.id
+  const id = marqueur?.id
   if (!id) return
 
   try {
