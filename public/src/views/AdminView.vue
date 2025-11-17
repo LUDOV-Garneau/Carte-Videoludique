@@ -55,22 +55,22 @@ const refuserMarqueur = async (marqueur) => {
   if (!id) return
 
   try {
-    if (!authStore.token) throw new Error('Non authentifié: token absent')
+    const payload = { status: "rejected" }
+    const response = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
 
-    const payload = { status: 'rejected' }
-    const result = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
-
-    if (result?.deleted) {
+    // Si backend retourne la suppression
+    if (response?.message?.includes('supprimé')) {
       marqueursStore.marqueurs = marqueursStore.marqueurs.filter(
-        (m) => m.properties.id !== id
+        m => m.properties.id !== id
       )
       return
     }
 
   } catch (err) {
-    messageErreur.value = err.message
+    console.error(err)
   }
 }
+
 
 
 onMounted(() => {
