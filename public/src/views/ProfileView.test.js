@@ -25,6 +25,7 @@ describe('ProfileView.vue', () => {
         nom: 'Dupont',
         prenom: 'Jean',
         courriel: 'jean.dupont@example.com',
+        role : 'Gestionnaire',
         createdAt: '2024-01-01T12:00:00Z',
         updatedAt: '2024-02-01T12:00:00Z',
       },
@@ -47,6 +48,7 @@ describe('ProfileView.vue', () => {
     expect(wrapper.text()).toContain('Dupont')
     expect(wrapper.text()).toContain('Jean')
     expect(wrapper.text()).toContain('jean.dupont@example.com')
+    expect(wrapper.text()).toContain('Gestionnaire')
   })
 
   // --- 2️⃣ Cas : Aucun utilisateur connecté ---

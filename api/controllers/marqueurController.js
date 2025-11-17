@@ -154,11 +154,39 @@ exports.getMarqueur = async (req, res, next) => {
 exports.updateMarqueur = async (req, res, next) => {
     try {
         const marqueurId = req.params.marqueurId;
-        const { titre, type, adresse, description, temoignage, image } = req.body;
+        const { titre, type, adresse, description, temoignage, image, images } = req.body;
+
+        // Utiliser la syntaxe de chemin imbriqué pour properties
+        const updateData = {
+            $set: {}
+        };
+        
+        if (titre !== undefined) updateData.$set["properties.titre"] = titre;
+        if (type !== undefined) updateData.$set["properties.type"] = type;
+        if (adresse !== undefined) updateData.$set["properties.adresse"] = adresse;
+        if (description !== undefined) updateData.$set["properties.description"] = description;
+        if (temoignage !== undefined) updateData.$set["properties.temoignage"] = temoignage;
+        if (image !== undefined) updateData.$set["properties.image"] = image;
+        // If lat/lng are provided (from the edit form), update geometry coordinates (GeoJSON expects [lng, lat])
+        if (req.body.lat !== undefined && req.body.lng !== undefined) {
+          const lat = req.body.lat === null || req.body.lat === '' ? null : parseFloat(req.body.lat);
+          const lng = req.body.lng === null || req.body.lng === '' ? null : parseFloat(req.body.lng);
+          if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+            updateData.$set["geometry.coordinates"] = [lng, lat];
+          }
+        }
+
+        if (images !== undefined) {
+            // Normaliser les images : accepter soit un tableau d'objets { publicId, url }, soit un tableau de chaînes (urls)
+            const normalized = (Array.isArray(images))
+                ? images.map(img => (typeof img === 'string' ? { url: img } : img))
+                : [];
+            updateData.$set["properties.images"] = normalized;
+        }
 
         const updatedMarqueur = await Marqueur.findByIdAndUpdate(
             marqueurId,
-            { titre, type, adresse, description, temoignage, image },
+            updateData,
             { new: true, runValidators: true }
         );
 

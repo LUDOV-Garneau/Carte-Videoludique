@@ -29,7 +29,7 @@ beforeEach(() => {
 /* ---------- SIGNUP ---------- */
 describe('AdminController.signup', () => {
   it('400 si champs manquants', async () => {
-    const req = mockReq({ nom:'A', prenom:'B', courriel:'a@b.com', mdp:'x' /* mdp2 manquant */ })
+    const req = mockReq({ nom:'A', prenom:'B', courriel:'a@b.com',role:'Gestionnaire', mdp:'x' /* mdp2 manquant */ })
     const res = mockRes()
     const next = mockNext()
 
@@ -45,7 +45,7 @@ describe('AdminController.signup', () => {
   })
 
   it('400 si mdp !== mdp2', async () => {
-    const req = mockReq({ nom:'A', prenom:'B', courriel:'a@b.com', mdp:'x', mdp2:'y' })
+    const req = mockReq({ nom:'A', prenom:'B', courriel:'a@b.com',role:'Gestionnaire', mdp:'x', mdp2:'y' })
     const res = mockRes()
     const next = mockNext()
 
@@ -58,7 +58,7 @@ describe('AdminController.signup', () => {
   it('409 si admin existe déjà', async () => {
     vi.spyOn(Admin, 'findOne').mockResolvedValue({ _id: 'exists' })
 
-    const req = mockReq({ nom:'A', prenom:'B', courriel:'a@b.com', mdp:'x', mdp2:'x' })
+    const req = mockReq({ nom:'A', prenom:'B', courriel:'a@b.com',role:'Gestionnaire', mdp:'x', mdp2:'x' })
     const res = mockRes()
     const next = mockNext()
 
@@ -74,7 +74,7 @@ describe('AdminController.signup', () => {
     // mock du save de l’instance
     vi.spyOn(Admin.prototype, 'save').mockResolvedValue(undefined)
 
-    const req = mockReq({ nom:'A', prenom:'B', courriel:'a@b.com', mdp:'x', mdp2:'x' })
+    const req = mockReq({ nom:'A', prenom:'B', courriel:'a@b.com', role:'Gestionnaire', mdp:'x', mdp2:'x' })
     const res = mockRes()
     const next = mockNext()
 
@@ -89,6 +89,7 @@ describe('AdminController.signup', () => {
       nom: 'A',
       prenom: 'B',
       courriel: 'a@b.com',
+      role:'Gestionnaire',
       motDePasse: 'hashed-x',
     })
     expect(res.body.path).toBe(req.originalUrl)
