@@ -21,7 +21,7 @@ const canDisplayPanel = computed(() => {
 const marqueurProperties = computed(() => {
     return marqueurStore.marqueurActif?.properties || {};
 });
-const isCommenting = reactive(ref(false));
+const isCommenting = reactive(ref(false));3
 
 const formData = ref({
 	auteur: '',
@@ -41,7 +41,6 @@ function toggleCommenting() {
 	isCommenting.value = !isCommenting.value;
 	formData.value.auteur = '';
 	formData.value.contenu = '';
-	console.log('isCommenting:', isCommenting.value);
 	console.log(marqueurStore.marqueurActif);
 }
 
@@ -94,6 +93,7 @@ async function sendComment() {
 			}
 			const responseData = await response.json();
 			console.log('Commentaire envoyé avec succès :', responseData.data);
+			toggleCommenting();
 		}
 	} catch (err) {
 		console.error('Erreur lors de l\'envoi du commentaire :', err);
