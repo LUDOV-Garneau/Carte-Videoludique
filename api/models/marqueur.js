@@ -62,14 +62,13 @@ const MarqueurSchema = new mongoose.Schema(
         default: "pending",
         index: true
       },
+      comments: {
+        type: [CommentSchema],
+        default: []
+      },
       tags: [{ type: String, trim: true, lowercase: true }],
       createdByName: { type: String },
     },
-    comments: [CommentSchema],
-    flags: [{
-      reason: { type: String, trim: true },
-      createdAt: { type: Date, default: Date.now }
-    }]
   },
   { timestamps: true }
 );
