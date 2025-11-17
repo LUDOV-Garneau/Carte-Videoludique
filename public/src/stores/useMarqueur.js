@@ -109,17 +109,20 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
             }
         })
         .then((result) => {
-            // MAJ locale optionnelle si tu as un "marqueurActif"
-            if (marqueurActif.value) {
-                marqueurActif.value.properties.titre = result.data.titre;
-                marqueurActif.value.properties.type = result.data.type;
-                marqueurActif.value.properties.adresse = result.data.adresse;
-                marqueurActif.value.properties.description = result.data.description;
-                marqueurActif.value.properties.temoignage = result.data.temoignage;
-                marqueurActif.value.properties.image = result.data.image;
-                return result.data;
+            // MAJ locale : recharger la liste après succès
+            if (marqueurs.value) {
+                const idx = marqueurs.value.findIndex(m => (m._id ?? m.id) === marqueurId)
+                if (idx !== -1) {
+                    marqueurs.value[idx] = result.data
+                }
             }
-            return result; // 👈 pour que le composant puisse lire res.status / res.body
+            
+            // MAJ du marqueur actif si c'est le même
+            if (marqueurActif.value && (marqueurActif.value._id ?? marqueurActif.value.id) === marqueurId) {
+                marqueurActif.value = result.data
+            }
+            
+            return result.data;
         })
         .catch(error => {
             throw error
