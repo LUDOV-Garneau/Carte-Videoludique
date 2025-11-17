@@ -187,7 +187,6 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       ));
     }
 
-    // Cas spécial : rejet = suppression définitive
     if (status === "rejected") {
       const deleted = await Marqueur.findByIdAndDelete(marqueurId);
 
@@ -202,13 +201,12 @@ exports.updateStatusMarqueur = async (req, res, next) => {
 
       return res.status(200).json(formatSuccessResponse(
         200,
-        "Le marqueur a été rejeté et supprimé.",
+        "Marqueur supprimé (rejeté).",
         deleted,
         req.originalUrl
       ));
     }
 
-    // Sinon → simple update du statut
     const updated = await Marqueur.findByIdAndUpdate(
       marqueurId,
       { $set: { "properties.status": status } },
@@ -224,12 +222,13 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       ));
     }
 
-    res.status(200).json(formatSuccessResponse(
+    return res.status(200).json(formatSuccessResponse(
       200,
-      `Le statut du marqueur a été mis à jour vers '${status}'.`,
+      `Statut mis à jour vers '${status}'.`,
       updated,
       req.originalUrl
     ));
+
   } catch (err) {
     next(err);
   }
