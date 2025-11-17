@@ -57,20 +57,21 @@ const refuserMarqueur = async (marqueur) => {
   try {
     if (!authStore.token) throw new Error('Non authentifié: token absent')
 
-    console.log('ancien status:', marqueur.properties.status) // <-- AVANT
-
     const payload = { status: 'rejected' }
-    const updated = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
+    const result = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
 
-    console.log('status renvoyé par le serveur:', updated?.properties?.status) // <-- RÉPONSE
+    if (result?.deleted) {
+      marqueursStore.marqueurs = marqueursStore.marqueurs.filter(
+        (m) => m.properties.id !== id
+      )
+      return
+    }
 
-    marqueur.properties.status = updated.properties.status
-
-    console.log('nouveau status local:', marqueur.properties.status) // <-- APRÈS
   } catch (err) {
     messageErreur.value = err.message
   }
 }
+
 
 onMounted(() => {
   getMarqueurs()
@@ -84,7 +85,7 @@ onMounted(() => {
     </aside>
 
     <main class="content">
-      
+
 
       <h2 class="section-title">Notifications</h2>
 
