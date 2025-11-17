@@ -10,6 +10,13 @@ vi.mock('../utils/geocode', () => ({
   ),
 }))
 
+vi.mock('../components/AddImage.vue', () => ({
+  default: {
+    name: 'AddImage',
+    template: '<div></div>',
+  }
+}))
+
 import { fetchAdresseSuggestions, geocodeAddress } from '@/utils/geocode'
 
 const baseMarqueur = {
@@ -34,6 +41,7 @@ describe('MarqueurModalComponent', () => {
   it('hydrate les champs à partir des props', async () => {
     const wrapper = mount(MarqueurModal, {
       props: {
+        attachTo: document.body,
         marqueur: baseMarqueur,
       },
     })
@@ -51,6 +59,7 @@ describe('MarqueurModalComponent', () => {
 
   it("appelle geocode et émet 'locate-from-address' quand on tape une adresse", async () => {
     const wrapper = mount(MarqueurModal, {
+      attachTo: document.body,  
       props: {
         marqueur: baseMarqueur,
       },

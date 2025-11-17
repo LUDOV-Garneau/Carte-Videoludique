@@ -235,7 +235,7 @@ async function onAdresseInput(value) {
     console.log("longitude.value =", longitude.value)
 
     emit('locate-from-address', coords)
-    
+   
   } catch (err) {
     console.error('Erreur geocode :', err)
   }

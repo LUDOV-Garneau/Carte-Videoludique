@@ -153,6 +153,10 @@ const validerModification = async (marqueurModifie) => {
     modalVisible.value = false
     messageErreur.value = ''
     await getMarqueurs()
+
+    if ( leafletMapRef.value.afficherMarqueurs()) {
+      leafletMapRef.value.afficherMarqueurs()
+    }
   } catch (err) {
     messageErreur.value = err.message || String(err)
     console.error('Erreur lors de la modification:', err)
