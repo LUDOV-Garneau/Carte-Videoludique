@@ -5,54 +5,48 @@ import { useMarqueursStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
+const auth = useAuthStore()
 const router = useRouter()
+
 const marqueursStore = useMarqueursStore()
 const authStore = useAuthStore()
 
 const messageErreur = ref('')
+
 const filtreStatus = ref('pending')
 
-// --------------------------------------------
-// LISTE FILTRÉE (par statut)
-// --------------------------------------------
 const marqueursFiltres = computed(() => {
+  console.log(marqueursStore.marqueurs)
   return (marqueursStore.marqueurs ?? []).filter(
-    (m) => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
+    (m) => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase(),
   )
 })
 
-// --------------------------------------------
-// CHARGER LES MARQUEURS
-// --------------------------------------------
 const getMarqueurs = () => {
   marqueursStore.getMarqueurs().catch((error) => {
     messageErreur.value = error.message
   })
 }
 
-// --------------------------------------------
-// ACCEPTER MARQUEUR
-// --------------------------------------------
 const accepterMarqueur = async (marqueur) => {
   const id = marqueur?.id
   if (!id) return
 
   try {
+    if (!authStore.token) throw new Error('Non authentifié: token absent')
+
     const payload = { status: 'approved' }
     const updated = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
 
-    if (!updated) return
-
-    marqueur.properties.status = updated.properties.status
+    if (updated) {
+      marqueur.properties.status = updated.properties.status
+    }
 
   } catch (err) {
     messageErreur.value = err.message
   }
 }
 
-// --------------------------------------------
-// REFUSER / SUPPRIMER MARQUEUR
-// --------------------------------------------
 const refuserMarqueur = async (marqueur) => {
   const id = marqueur?.id
   if (!id) return
@@ -61,14 +55,15 @@ const refuserMarqueur = async (marqueur) => {
     const payload = { status: "rejected" }
     const response = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
 
-    // Si supprimé → response === null
+    // si supprimé => response === null
     if (response === null) {
-      marqueursStore.marqueurs = marqueursStore.marqueurs.filter(m => m.id !== id)
-      return
+      marqueursStore.marqueurs = marqueursStore.marqueurs.filter(
+        (m) => m.id !== id
+      )
     }
 
   } catch (err) {
-    console.error("Erreur rejet:", err)
+    console.error(err)
   }
 }
 
@@ -85,6 +80,37 @@ onMounted(() => {
 
     <main class="content">
 
+      <!-- ⭐⭐⭐ TON MENU ADMIN ORIGINAL ⭐⭐⭐ -->
+      <header class="page-header">
+        <nav class="navbar navbar-expand-lg bg-body-tertiary mb-2 rounded">
+          <div class="container-fluid">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+              <li class="nav-item">
+                <RouterLink class="nav-link" to="/admin">Notification marqueurs</RouterLink>
+              </li>
+
+              <li class="nav-item">
+                <RouterLink class="nav-link" to="/admin/marqueurs">Liste des marqueurs</RouterLink>
+              </li>
+
+              <li class="nav-item">
+                <RouterLink class="nav-link" to="/admin/utilisateurs">Gestion utilisateurs</RouterLink>
+              </li>
+
+              <li class="nav-item">
+                <button class="nav-link btn btn-link text-danger p-0" @click="auth.logout">
+                  Déconnexion
+                </button>
+              </li>
+
+            </ul>
+          </div>
+        </nav>
+      </header>
+      <!-- ⭐⭐⭐ FIN MENU ADMIN ⭐⭐⭐ -->
+
+
       <h2 class="section-title">Notifications</h2>
 
       <div class="offers-wrapper">
@@ -99,12 +125,10 @@ onMounted(() => {
               <th class="reject-col">Refuser</th>
             </tr>
           </thead>
-
           <tbody>
             <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id">
               <td class="provider">{{ marqueur.properties.titre }}</td>
               <td class="address">{{ marqueur.properties.adresse }}</td>
-
               <td class="info-col">
                 <button class="info-btn" @click="$emit('show-info', marqueur)">
                   <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -115,30 +139,25 @@ onMounted(() => {
                   <span>Afficher la description</span>
                 </button>
               </td>
-
               <td class="menu-col">
                 <button class="kebab" aria-label="Modifier" @click="$emit('menu', marqueur)">
                   Modifier
                 </button>
               </td>
-
               <td class="accept-col">
                 <button class="action-btn accept" @click="accepterMarqueur(marqueur)">
                   Accepter
                 </button>
               </td>
-
               <td class="reject-col">
                 <button class="action-btn reject" @click="refuserMarqueur(marqueur)">
                   Refuser
                 </button>
               </td>
             </tr>
-
-            <tr v-if="marqueursFiltres.length === 0">
+            <tr v-if="!marqueursFiltres || marqueursFiltres.length === 0">
               <td colspan="6" class="empty">Aucune offre pour le moment.</td>
             </tr>
-
           </tbody>
         </table>
       </div>
@@ -151,5 +170,5 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* ton CSS original ici inchangé */
+/* TON CSS ORIGINAL ENTIER – inchangé */
 </style>
