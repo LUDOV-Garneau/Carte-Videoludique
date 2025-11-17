@@ -4,10 +4,6 @@ import LeafletMap from '../components/LeafletMap.vue'
 
 <template>
   <div class="layout">
-    <aside class="sidebar">
-      <span class="brand-vertical">L U D O V</span>
-    </aside>
-  
     <main class="content">   
       <header class="page-header">
         <h1>Le jeu vidéo au Québec</h1>

@@ -1,7 +1,7 @@
 <template>
   <header class="page-header" :class="container">
     <div class="page-header-content">
-      <h1 class="page-title mb-0 text-center">
+     <h1 class="page-title mb-0 text-center">
         <router-link to="/admin" style="text-decoration: none; color: inherit">
           Le jeu vidéo au Québec
         </router-link>

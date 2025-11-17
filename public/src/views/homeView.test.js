@@ -23,7 +23,6 @@ describe('HomeView.vue', () => {
       global: { stubs: { LeafletMap: LeafletMapStub} }
     })
     expect(wrapper.find('h1').text()).toContain("Le jeu vidéo au Québec")
-    expect(wrapper.find('.brand-vertical').text()).toBe('L U D O V')
   })
 
   it("Rend la carte dans la page", () => {
