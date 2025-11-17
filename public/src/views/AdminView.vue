@@ -79,7 +79,7 @@ const refuserMarqueur = async (marqueur) => {
     console.log('ancien status:', marqueur.properties.status) // <-- AVANT
 
     const payload = { status: 'rejected' }
-    const updated = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
+    const updated = await marqueurStore.modifierMarqueurStatus(id, authStore.token, payload)
 
     console.log('status renvoyé par le serveur:', updated?.properties?.status) // <-- RÉPONSE
 
@@ -135,7 +135,7 @@ const validerModification = async (marqueurModifie) => {
 
     payload.images = imagesPayload
 
-    await marqueursStore.modifierMarqueur(id, authStore.token, payload)
+    await marqueurStore.modifierMarqueur(id, authStore.token, payload)
     modalVisible.value = false
     messageErreur.value = ''
     await getMarqueurs()

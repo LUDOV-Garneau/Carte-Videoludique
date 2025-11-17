@@ -28,7 +28,8 @@ const longitude = ref(null)
 //#endregion
 
 //#region Images (AddImage) et compteurs
-const files = ref([]) 
+const files = ref([])
+const imagePreview = ref('')
 
 const TYPES = [
   'Écoles et instituts de formation',

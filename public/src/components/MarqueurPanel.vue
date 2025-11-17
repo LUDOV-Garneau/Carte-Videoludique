@@ -17,6 +17,10 @@ const marqueurStore = useMarqueurStore();
 const canDisplayPanel = computed(() => {
     return props.isOpen && marqueurStore.marqueurActif !== null;
 });
+
+const marqueurProperties = computed(() => {
+    return marqueurStore.marqueurActif?.properties || {};
+});
 const isCommenting = reactive(ref(false));
 
 const formData = ref({
@@ -77,7 +81,7 @@ async function sendComment() {
 			const auteur = formData.value.auteur.trim();
 			const contenu = formData.value.contenu.trim();
 
-			const response = await fetch(`${API_URL}/marqueurs/${marqueurStore.marqueurActif.properties.id}/commentaires`, {
+			const response = await fetch(`${API_URL}/marqueurs/${marqueurStore.marqueurActif?.properties?.id}/commentaires`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -103,35 +107,35 @@ async function sendComment() {
 			<div class="panel__close-wrapper">
 				<button class="panel__close" @click="closePanel" aria-label="Fermer">×</button>
 			</div>
-			<img v-if="marqueurStore.marqueurActif.properties.images.length > 0" class="panel__thumbnail" :src="marqueurStore.marqueurActif.properties.images[0].url" :alt="'image d\'entré d\'un marqueur'" />
+			<img v-if="marqueurProperties.images?.length > 0" class="panel__thumbnail" :src="marqueurProperties.images[0].url" :alt="'image d\'entrée d\'un marqueur'" />
             <header class="panel__header">
-                <h3>{{ marqueurStore.marqueurActif.properties.titre }}</h3>
-				<p>Catégorie : {{ marqueurStore.marqueurActif.properties.type }}</p>
+                <h3>{{ marqueurProperties.titre }}</h3>
+				<p>Catégorie : {{ marqueurProperties.type }}</p>
             </header>
             <div class="panel__body">
 				<div class="panel__section">
 					<h5>Description</h5>
-					<p>{{ marqueurStore.marqueurActif.properties.description }}</p>
-					<span>Créé par : {{ marqueurStore.marqueurActif.properties.createdByName }}</span>
+					<p>{{ marqueurProperties.description }}</p>
+					<span>Créé par : {{ marqueurProperties.createdByName }}</span>
 				</div>
 				<div class="panel__info-list">
-					<div v-if="marqueurStore.marqueurActif.properties.adresse" class="info-item">
+					<div v-if="marqueurProperties.adresse" class="info-item">
 						<svg class="info-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 							<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
 						</svg>
-						<span class="info-text">{{ marqueurStore.marqueurActif.properties.adresse }}</span>
-						<button class="info-copy-button" @click="copyToClipboard(marqueurStore.marqueurActif.properties.adresse)" title="Copier l'adresse">
+						<span class="info-text">{{ marqueurProperties.adresse }}</span>
+						<button class="info-copy-button" @click="copyToClipboard(marqueurProperties.adresse)" title="Copier l'adresse">
 							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="currentColor"/>
 							</svg>
 						</button>
 					</div>
-					<div v-if="marqueurStore.marqueurActif.geometry.coordinates" class="info-item">
+					<div v-if="marqueurStore.marqueurActif?.geometry?.coordinates" class="info-item">
 						<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none " class="info-icon">
 							<path fill="currentColor" stroke="currentColor" stroke-width="2" d="M12,10 C14.209139,10 16,8.209139 16,6 C16,3.790861 14.209139,2 12,2 C9.790861,2 8,3.790861 8,6 C8,8.209139 9.790861,10 12,10 Z M12,10 L12,22"></path>
 						</svg>
-						<span class="info-text">Coordonnées : {{ marqueurStore.marqueurActif.geometry.coordinates.join(', ') }}</span>
-						<button class="info-copy-button" @click="copyToClipboard(marqueurStore.marqueurActif.geometry.coordinates.join(', '))" title="Copier les coordonnées">
+						<span class="info-text">Coordonnées : {{ marqueurStore.marqueurActif?.geometry?.coordinates?.join(', ') }}</span>
+						<button class="info-copy-button" @click="copyToClipboard(marqueurStore.marqueurActif?.geometry?.coordinates?.join(', ') || '')" title="Copier les coordonnées">
 							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="currentColor"/>
 							</svg>
@@ -152,9 +156,9 @@ async function sendComment() {
 							<button type="button" class="btn-cancel-comment" @click="toggleCommenting">Annuler</button>
 						</div>
 					</form>
-					<span class="no-comments" v-if="!marqueurStore.marqueurActif.comments">Aucun témoignage</span>
+					<span class="no-comments" v-if="!marqueurStore.marqueurActif?.comments">Aucun témoignage</span>
 					<div v-else class="panel__comments">
-						<div v-for="(comment, index) in marqueurStore.marqueurActif.comments" :key="index" class="info-item">
+						<div v-for="(comment, index) in marqueurStore.marqueurActif?.comments || []" :key="index" class="info-item">
 							<span>Auteur(e) : {{ comment.auteur }}</span>
 							<p>{{ comment.contenu }}</p>
 						</div>

@@ -129,7 +129,7 @@ async function afficherMarqueurs() {
           marqueurStore.getMarqueur(marqueurData.properties.id);
           openInfoPanel();
 
-          // openImageWindow();
+          openImageWindow();
           
           map.setView([lat, lng], Math.max(map.getZoom(), 15));
         });
