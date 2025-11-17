@@ -389,7 +389,6 @@ describe('afficherMarqueurs (exposed)', () => {
     markerChain.clickHandler()
     
     expect(wrapper.vm.selectedMarqueur).toStrictEqual(markerChain)
-    expect(wrapper.vm.imageWindowOpen).toBe(true)
   })
 
   it('ignore les marqueurs sans coordonnées', async () => {

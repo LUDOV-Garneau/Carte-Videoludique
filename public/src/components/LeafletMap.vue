@@ -34,7 +34,6 @@ const longitude = ref('')
 const latitude = ref('')
 const createPanelOpen = ref(false);
 const infoPanelOpen = ref(false);
-const imageWindowOpen = ref(false)
 const marqueurs = ref([]);
 const selectedMarqueur = ref(null);
 const currentMarqueur = ref(null);
@@ -70,14 +69,6 @@ function closeInfoPanel() {
   selectedMarqueur.value = null;
   marqueurStore.marqueurActif = null;
   if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = '';
-}
-
-function openImageWindow() {
-  imageWindowOpen.value = true;
-}
-
-function closeImageWindow() {
-  imageWindowOpen.value = false;
 }
 
 async function handleMarqueurAdded() {
@@ -128,8 +119,6 @@ async function afficherMarqueurs() {
           selectedMarqueur.value = marqueur;
           marqueurStore.getMarqueur(marqueurData.properties.id);
           openInfoPanel();
-
-          openImageWindow();
           
           map.setView([lat, lng], Math.max(map.getZoom(), 15));
         });
@@ -143,8 +132,6 @@ async function afficherMarqueurs() {
 }
 
 defineExpose({
-  openImageWindow,
-  closeImageWindow,
   afficherMarqueurs,
   handlelocateFromAddress,
 
@@ -153,7 +140,6 @@ defineExpose({
   marqueurs,
   currentMarqueur,
   selectedMarqueur,
-  imageWindowOpen,
   map,
 });
 
@@ -311,47 +297,6 @@ onUnmounted(() => {
 
 <template>
   <div class="map" ref="mapEl"></div>
-
-  <!-- Petite fenêtre d'image -->
-  <transition name="image-window-fade">
-    <div
-      v-if="imageWindowOpen"
-      class="image-window"
-      @click.self="closeImageWindow"
-    >
-      <div class="image-window__content">
-        <button class="image-window__close" @click="closeImageWindow" aria-label="Fermer">
-          ×
-        </button>
-
-        <div v-if="selectedMarqueur && selectedMarqueur.properties">
-          <div class="image-window__header">
-            <h4>{{ selectedMarqueur.properties.titre }}</h4>
-            <p class="image-window__type">{{ selectedMarqueur.properties.type }}</p>
-          </div>
-
-          <div class="image-window__images" v-if="selectedMarqueur.properties.images && selectedMarqueur.properties.images.length > 0">
-            <img
-              v-for="(image, index) in selectedMarqueur.properties.images"
-              :key="index"
-              :src="image.url"
-              :alt="`Image ${index + 1} de ${selectedMarqueur.properties.titre}`"
-              class="image-window__image"
-              @load="$event.target.style.opacity = '1'"
-            />
-          </div>
-
-          <div v-else class="image-window__no-image">
-            <p>Aucune image disponible pour ce marqueur</p>
-          </div>
-        </div>
-
-        <div v-else class="image-window__no-image">
-          <p>Données du marqueur non disponibles</p>
-        </div>
-      </div>
-    </div>
-  </transition>
 
 	<!-- Composant panel d'ajout de marqueur -->
 	<AddMarqueurPanel
