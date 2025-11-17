@@ -1,7 +1,6 @@
 "use strict";
 
 const Marqueur = require("../models/marqueur");
-
 const dotenv = require("dotenv");
 const { formatErrorResponse, formatSuccessResponse } = require("../utils/formatErrorResponse");
 
@@ -14,18 +13,12 @@ dotenv.config();
  * @param {import('express').Request} req - Objet de requête Express contenant les données du marqueur dans `req.body`.
  * @param {import('express').Response} res - Objet de réponse Express utilisé pour envoyer le marqueur créé.
  * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
- * 
- * @returns {void} Cette fonction ne retourne rien directement, elle envoie une réponse JSON ou passe une erreur à `next`.
- * 
- * @throws {Error} Passe une erreur à `next` en cas de problème lors de l'enregistrement du marqueur.
  */
 exports.createMarqueur = async (req, res, next) => {
   try {
     const form = req.body;
     const isAdmin = req.admin !== null && req.admin !== undefined;
 
-
-    // Validation des champs requis
     if (!form.titre || !form.description) {
       return res.status(400).json(formatErrorResponse(
         400,
@@ -35,12 +28,10 @@ exports.createMarqueur = async (req, res, next) => {
       ));
     }
 
-    // Défaut pour type
-    if (!form.type || form.type.trim() === '') {
-      form.type = 'Autres';
+    if (!form.type || form.type.trim() === "") {
+      form.type = "Autres";
     }
 
-    // Création du marqueur conforme au modèle GeoJSON
     const marqueur = new Marqueur({
       type: "Feature",
       geometry: {
@@ -69,123 +60,104 @@ exports.createMarqueur = async (req, res, next) => {
       result,
       req.originalUrl
     ));
-
   } catch (err) {
     next(err);
   }
 };
 
-
 /**
  * Récupère tous les marqueurs et les renvoie en réponse JSON.
- * 
- * @param {import('express').Request} req - Objet de requête Express.
- * @param {import('express').Response} res - Objet de réponse Express utilisé pour envoyer la liste des marqueurs en JSON.
- * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
- * 
- * @returns {void} Cette fonction ne retourne rien directement, elle envoie une réponse JSON ou passe une erreur à `next`.
- * 
- * @throws {Error} Passe une erreur à `next` en cas de problème lors de la récupération.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 exports.getMarqueurs = async (req, res, next) => {
-    try {
-        const marqueurs = await Marqueur.find();
+  try {
+    const marqueurs = await Marqueur.find();
 
-        res.status(200).json(formatSuccessResponse(
-            200,
-            "Les marqueurs ont été récupérés avec succès!",
-            marqueurs,
-            req.originalUrl
-        ));
-    } catch (err) {
-        next(err);
-    }
+    res.status(200).json(formatSuccessResponse(
+      200,
+      "Les marqueurs ont été récupérés avec succès!",
+      marqueurs,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
 };
 
 /**
- * Récupère un marqueur en fonction de son identifiant et le renvoie en réponse JSON.
- * 
- * @param {import('express').Request} req - Objet de requête Express contenant l'ID du marqueur dans `req.params.marqueurId`.
- * @param {import('express').Response} res - Objet de réponse Express utilisé pour envoyer le marqueur en JSON.
- * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
- * 
- * @returns {void} Cette fonction ne retourne rien directement, elle envoie une réponse JSON ou passe une erreur à `next`.
- * 
- * @throws {Error} Renvoie une erreur 404 si le marqueur n'existe pas.
+ * Récupère un marqueur en fonction de son identifiant.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 exports.getMarqueur = async (req, res, next) => {
-    try {
-        const marqueurId = req.params.marqueurId;
+  try {
+    const marqueur = await Marqueur.findById(req.params.marqueurId);
 
-        const marqueur = await Marqueur.findById(marqueurId);
-        if (!marqueur) {
-            return res.status(404).json(formatErrorResponse(
-                404,
-                "Not Found",
-                "Le marqueur spécifié n'existe pas",
-                req.originalUrl
-            ));
-        }
-
-        res.status(200).json(formatSuccessResponse(
-            200,
-            "Marqueur trouvé",
-            marqueur,
-            req.originalUrl
-        ));
-
-    } catch (err) {
-        next(err);
+    if (!marqueur) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "Le marqueur spécifié n'existe pas",
+        req.originalUrl
+      ));
     }
+
+    res.status(200).json(formatSuccessResponse(
+      200,
+      "Marqueur trouvé",
+      marqueur,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
 };
 
 /**
  * Met à jour un marqueur existant en fonction de son identifiant.
- * Tous les champs du marqueur peuvent être modifiés.
- * 
- * @param {import('express').Request} req - Objet de requête Express contenant l'ID du marqueur dans `req.params.marqueurId` et les nouvelles données dans `req.body`.
- * @param {import('express').Response} res - Objet de réponse Express utilisé pour envoyer le marqueur mis à jour.
- * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
- * 
- * @returns {void} Cette fonction ne retourne rien directement, elle envoie une réponse JSON ou passe une erreur à `next`.
- * 
- * @throws {Error} Renvoie une erreur 404 si le marqueur n'existe pas.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 exports.updateMarqueur = async (req, res, next) => {
-    try {
-        const marqueurId = req.params.marqueurId;
-        const { titre, type, adresse, description, temoignage, image } = req.body;
+  try {
+    const { marqueurId } = req.params;
 
-        const updatedMarqueur = await Marqueur.findByIdAndUpdate(
-            marqueurId,
-            { titre, type, adresse, description, temoignage, image },
-            { new: true, runValidators: true }
-        );
+    const updated = await Marqueur.findByIdAndUpdate(
+      marqueurId,
+      req.body,
+      { new: true, runValidators: true }
+    );
 
-        if (!updatedMarqueur) {
-            return res.status(404).json(formatErrorResponse(
-                404,
-                "Not Found",
-                "Le marqueur à mettre à jour n'existe pas",
-                req.originalUrl
-            ));
-        }
-
-        res.status(200).json(formatSuccessResponse(
-            200,
-            "Le marqueur a été mis à jour avec succès!",
-            updatedMarqueur,
-            req.originalUrl
-        ));
-
-    } catch (err) {
-        next(err);
+    if (!updated) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "Le marqueur à mettre à jour n'existe pas",
+        req.originalUrl
+      ));
     }
+
+    res.status(200).json(formatSuccessResponse(
+      200,
+      "Le marqueur a été mis à jour avec succès!",
+      updated,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
 };
 
 /**
  * Met à jour le statut d’un marqueur (approved, pending, rejected).
- * Accessible uniquement aux administrateurs.
+ * Si rejeté → suppression du marqueur.
  *
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -193,7 +165,7 @@ exports.updateMarqueur = async (req, res, next) => {
  */
 exports.updateStatusMarqueur = async (req, res, next) => {
   try {
-    const marqueurId = req.params.marqueurId;
+    const { marqueurId } = req.params;
     const { status } = req.body;
 
     const allowedStatuses = ["approved", "pending", "rejected"];
@@ -201,7 +173,7 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       return res.status(400).json(formatErrorResponse(
         400,
         "Bad Request",
-        "Statut invalide. Valeurs acceptées : 'approved', 'pending', 'rejected'.",
+        "Statut invalide. Valeurs acceptées : approved, pending, rejected.",
         req.originalUrl
       ));
     }
@@ -215,8 +187,10 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       ));
     }
 
+    // Cas spécial : rejet = suppression définitive
     if (status === "rejected") {
       const deleted = await Marqueur.findByIdAndDelete(marqueurId);
+
       if (!deleted) {
         return res.status(404).json(formatErrorResponse(
           404,
@@ -234,7 +208,7 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       ));
     }
 
-    // Sinon → update normal
+    // Sinon → simple update du statut
     const updated = await Marqueur.findByIdAndUpdate(
       marqueurId,
       { $set: { "properties.status": status } },
@@ -256,32 +230,23 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       updated,
       req.originalUrl
     ));
-
   } catch (err) {
     next(err);
   }
 };
 
-
-
+/**
+ * Ajoute un commentaire (témoignage) à un marqueur existant.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
 exports.addCommentMarqueur = async (req, res, next) => {
   try {
     const { marqueurId } = req.params;
     const { auteur, texte } = req.body;
 
-    // On cherche le marqueur en premier
-    const marqueur = await Marqueur.findById(marqueurId);
-
-    if (!marqueur) {
-      return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le marqueur spécifié n'existe pas.",
-        req.originalUrl
-      ));
-    }
-
-    // Ensuite on valide le texte
     if (!texte || texte.trim() === "") {
       return res.status(400).json(formatErrorResponse(
         400,
@@ -291,35 +256,8 @@ exports.addCommentMarqueur = async (req, res, next) => {
       ));
     }
 
-    const newComment = { auteur: auteur || "Anonyme", texte };
-    marqueur.comments.push(newComment);
-    await marqueur.save();
-
-    res.status(200).json(formatSuccessResponse(
-      200,
-      "Témoignage ajouté avec succès.",
-      marqueur,
-      req.originalUrl
-    ));
-  } catch (err) {
-    next(err); // <---- ce que le test vérifie
-  }
-};
-
-
-/**
- * Supprime un commentaire spécifique d’un marqueur existant.
- * 
- * @param {import('express').Request} req - Objet de requête Express contenant les IDs du marqueur et du commentaire.
- * @param {import('express').Response} res - Objet de réponse Express utilisé pour renvoyer le marqueur mis à jour.
- * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
- */
-exports.deleteCommentMarqueur = async (req, res, next) => {
-  try {
-    const { marqueurId, commentId } = req.params;
-
-    // Cherche le marqueur
     const marqueur = await Marqueur.findById(marqueurId);
+
     if (!marqueur) {
       return res.status(404).json(formatErrorResponse(
         404,
@@ -329,7 +267,42 @@ exports.deleteCommentMarqueur = async (req, res, next) => {
       ));
     }
 
-    // Trouve l'index du commentaire à supprimer
+    marqueur.comments.push({ auteur: auteur || "Anonyme", texte });
+    await marqueur.save();
+
+    res.status(200).json(formatSuccessResponse(
+      200,
+      "Témoignage ajouté avec succès.",
+      marqueur,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Supprime un commentaire spécifique d’un marqueur existant.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+exports.deleteCommentMarqueur = async (req, res, next) => {
+  try {
+    const { marqueurId, commentId } = req.params;
+
+    const marqueur = await Marqueur.findById(marqueurId);
+
+    if (!marqueur) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "Le marqueur spécifié n'existe pas.",
+        req.originalUrl
+      ));
+    }
+
     const index = marqueur.comments.findIndex(
       (c) => c._id.toString() === commentId
     );
@@ -343,7 +316,6 @@ exports.deleteCommentMarqueur = async (req, res, next) => {
       ));
     }
 
-    // Supprime le commentaire
     marqueur.comments.splice(index, 1);
     await marqueur.save();
 
@@ -357,134 +329,34 @@ exports.deleteCommentMarqueur = async (req, res, next) => {
     next(err);
   }
 };
-
-
-
-
-exports.addCommentMarqueur = async (req, res, next) => {
-  try {
-    const { marqueurId } = req.params;
-    const { auteur, texte } = req.body; // <-- correction ici
-
-    if (!texte || texte.trim() === "") {
-      return res.status(400).json(formatErrorResponse(
-        400,
-        "Bad Request",
-        "Le contenu du témoignage est requis.",
-        req.originalUrl
-      ));
-    }
-
-    const marqueur = await Marqueur.findById(marqueurId);
-    if (!marqueur) {
-      return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le marqueur spécifié n'existe pas.",
-        req.originalUrl
-      ));
-    }
-
-    const newComment = { auteur: auteur || "Anonyme", texte }; 
-    marqueur.comments.push(newComment);
-    await marqueur.save();
-
-    res.status(200).json(formatSuccessResponse( 
-      200,
-      "Témoignage ajouté avec succès.",
-      marqueur,
-      req.originalUrl
-    ));
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * Supprime un commentaire spécifique d’un marqueur existant.
- * 
- * @param {import('express').Request} req - Objet de requête Express contenant les IDs du marqueur et du commentaire.
- * @param {import('express').Response} res - Objet de réponse Express utilisé pour renvoyer le marqueur mis à jour.
- * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
- */
-exports.deleteCommentMarqueur = async (req, res, next) => {
-  try {
-    const { marqueurId, commentId } = req.params;
-
-    // Cherche le marqueur
-    const marqueur = await Marqueur.findById(marqueurId);
-    if (!marqueur) {
-      return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le marqueur spécifié n'existe pas.",
-        req.originalUrl
-      ));
-    }
-
-    // Trouve l'index du commentaire à supprimer
-    const index = marqueur.comments.findIndex(
-      (c) => c._id.toString() === commentId
-    );
-
-    if (index === -1) {
-      return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le commentaire spécifié n'existe pas.",
-        req.originalUrl
-      ));
-    }
-
-    // Supprime le commentaire
-    marqueur.comments.splice(index, 1);
-    await marqueur.save();
-
-    res.status(200).json(formatSuccessResponse(
-      200,
-      "Témoignage supprimé avec succès.",
-      marqueur,
-      req.originalUrl
-    ));
-  } catch (err) {
-    next(err);
-  }
-};
-
-
 
 /**
  * Supprime un marqueur en fonction de son identifiant.
- * 
- * @param {import('express').Request} req - Objet de requête Express contenant l'ID du marqueur dans `req.params.marqueurId`.
- * @param {import('express').Response} res - Objet de réponse Express utilisé pour envoyer la confirmation de suppression.
- * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
- * 
- * @returns {void} Cette fonction ne retourne rien directement, elle envoie une réponse JSON ou passe une erreur à `next`.
- * 
- * @throws {Error} Renvoie une erreur 404 si le marqueur n'existe pas.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 exports.deleteMarqueur = async (req, res, next) => {
-    try {
-        const marqueurId = req.params.marqueurId;
+  try {
+    const deleted = await Marqueur.findByIdAndDelete(req.params.marqueurId);
 
-        const deletedMarqueur = await Marqueur.findByIdAndDelete(marqueurId);
-        if (!deletedMarqueur) {
-            return res.status(404).json(formatErrorResponse(
-                404,
-                "Not Found",
-                "Le marqueur à supprimer n'existe pas",
-                req.originalUrl
-            ));
-        }
-
-        res.status(200).json(formatSuccessResponse(
-            200,
-            "Le marqueur a été supprimé avec succès!",
-            deletedMarqueur,
-            req.originalUrl
-        ));
-    } catch (err) {
-        next(err);
+    if (!deleted) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "Le marqueur à supprimer n'existe pas",
+        req.originalUrl
+      ));
     }
+
+    res.status(200).json(formatSuccessResponse(
+      200,
+      "Le marqueur a été supprimé avec succès!",
+      deleted,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
 };
