@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useRouter ,} from 'vue-router'
 import * as cloudinary from '../utils/cloudinary.js'
 import TableauNotification from '../components/TableauNotification.vue'
+import NavBar from '../components/NavBar.vue';
 
 const props = defineProps({
   marqueur: {
@@ -159,6 +160,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <NavBar/>
   <div class="layout">
     <main class="content">
       <h2 class="section-title">Notifications</h2>
@@ -202,10 +204,6 @@ table {
 .layout {
   display: flex;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 25% -10%, rgba(0, 0, 0, 0.03) 0%, transparent 40%),
-    radial-gradient(circle at 120% 10%, rgba(0, 0, 0, 0.02) 0%, transparent 45%),
-    linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
   position: relative;
   isolation: isolate;
 }
@@ -215,50 +213,6 @@ table {
   flex: 1;
   padding: 28px clamp(16px, 3vw, 40px);
   margin: 0;
-}
-.page-header {
-  max-width: 1100px;
-  margin: 0 auto 24px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 16px 28px 0;
-  backdrop-filter: blur(8px) saturate(1.05);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.05);
-}
-
-.page-header-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.page-title {
-  text-align: center;
-  font-weight: 800;
-  font-size: clamp(1.5rem, 2vw + 0.6rem, 2rem);
-  color: #0f172a;
-  margin: 0;
-}
-
-/* ---------- Navbar (Bootstrap-friendly) ---------- */
-.page-header .navbar {
-  background: transparent !important;
-  box-shadow: none !important;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 8px;
-  margin-top: 8px;
-}
-.navbar .nav-link {
-  color: #334155;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-.navbar .nav-link:hover {
-  color: #0f172a;
-}
-.nav-link.active {
-  color: #0f766e;
-  font-weight: 700;
 }
 
 /* ---------- Titre section ---------- */

@@ -75,6 +75,8 @@ const toggleNav = () => {
       Cette carte vise à répertorier les lieux où le jeu vidéo s’est vendu, joué,
       échangé et créé au fil de son histoire au Québec.
     </p>
+
+    <div class="section-separator"></div>
   </header>
 </template>
 
@@ -85,7 +87,6 @@ p {
   color: var(--text);
 }
 
-/* liens actifs router-link */
 .nav-link.active {
   color: #ec0f0f;
   font-weight: bold;
@@ -93,14 +94,33 @@ p {
 
 /* ---------- Header global ---------- */
 .page-header {
+  position: relative;
   max-width: 1100px;
-  margin: 10px auto;
-  border: 1px solid #e5e7eb;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 16px;
-  padding: 16px 24px 12px;
-  backdrop-filter: blur(8px) saturate(1.05);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.05);
+  margin: 24px auto 32px;
+  padding: 24px 32px 20px;
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 17px 27px rgba(15, 23, 42, 0.10);
+  overflow: hidden; /* pour le halo ci-dessous */
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.section-separator {
+  width: 80px;
+  height: 4px;
+  background-color: #2c7a7b;
+  border-radius: 999px;
+  margin: 14px 0 4px;
+  opacity: 0.9;
 }
 
 /* Ligne du haut : titre + nav */
@@ -125,12 +145,12 @@ p {
 
 .subtitle {
   margin-top: 10px;
-  font-size: clamp(0.95rem, 1.2vw + 0.6rem, 1.05rem);
-  color: #0f172a;
-  line-height: 1.6;
+  font-size: 0.98rem;
+  color: rgba(15, 23, 42, 0.88);
+  line-height: 1.7;
   border-top: 1px solid #e5e7eb;
-  padding-top: 10px;
-  text-align: start;
+  padding-top: 12px;
+  max-width: 60ch;
 }
 
 /* ---------- Navbar ---------- */
@@ -207,14 +227,16 @@ p {
   color: rgba(15, 23, 42, 0.8);
   text-decoration: none;
   font-size: 0.95rem;
-  padding: 0.4rem 0.6rem;
+  padding: 0.35rem 0.85rem;
   border-radius: 999px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  background-color: rgba(15, 23, 42, 0.02);
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .nav-link:hover {
-  background-color: rgba(15, 23, 42, 0.04);
+  background-color: rgba(15, 23, 42, 0.06);
   color: #0f172a;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04);
 }
 
 /* ---------- Responsive ---------- */

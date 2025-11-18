@@ -1,28 +1,3 @@
-
-<template>
-  <div class="container mt-5">
-    <h2>Connexion</h2>
-    <form @submit.prevent="handleSubmit" class="form-group" novalidate>
-      <div class="mb-3">
-        <label for="email" class="form-label">Courriel</label>
-        <input type="email" id="email" v-model="email" class="form-control" required />
-        <span v-if="emailError" class="error">{{ emailError }}</span>
-      </div>
-
-      <div class="mb-3">
-        <label for="password" class="form-label">Mot de passe</label>
-        <input type="password" id="password" v-model="password" class="form-control" required />
-        <span v-if="passwordError" class="error">{{ passwordError }}</span>
-      </div>
-      <span v-if="errorMessage" class="error">
-        {{ errorMessage }}
-      </span>
-
-      <button type="submit" class="btn btn-primary">Se connecter</button>
-    </form>
-  </div>
-</template>
-
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -99,24 +74,126 @@ function isValidEmail(email) {
 }
 </script>
 
+<template>
+  <div class="login-page">
+    <div class="login-card">
+      <h2>Connexion</h2>
+
+      <form @submit.prevent="handleSubmit" novalidate>
+        <div class="field">
+          <label for="email">Courriel</label>
+          <input type="email" id="email" v-model="email" required />
+          <span v-if="emailError" class="error">{{ emailError }}</span>
+        </div>
+
+        <div class="field">
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" v-model="password" required />
+          <span v-if="passwordError" class="error">{{ passwordError }}</span>
+        </div>
+
+        <span v-if="errorMessage" class="error center">{{ errorMessage }}</span>
+
+        <button type="submit" class="btn">Se connecter</button>
+      </form>
+      <a href="/">Retour à la carte</a>
+    </div>
+  </div>
+</template>
+
+
+
 <style scoped>
-/* Styles pour le formulaire */
-.form-group {
-  max-width: 400px;
-  margin: 0 auto;
+/* centre tout dans la page */
+.login-page {
+  display: flex;
+  justify-content: center;
+  padding-top: 40px;
+  padding-bottom: 80px;
 }
 
-.btn-primary {
-  width: 100%;
+/* card moderne */
+.login-card {
+  background: #ffffff;
+  width: 420px;
+  padding: 32px 38px;
+  border-radius: 18px;
+
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
 }
 
-.alert {
-  margin-top: 10px;
+.login-card h2 {
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #0f172a;
 }
-.error {
-  color: red;
-  font-size: 0.9rem;
-  margin-top: 5px;
+
+/* champs */
+.field {
+  margin-bottom: 18px;
+}
+
+.field label {
   display: block;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 1rem;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  outline: none;
+
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* focus turquoise */
+.field input:focus {
+  border-color: #2c7a7b;
+  box-shadow: 0 0 0 3px rgba(44, 122, 123, 0.2);
+}
+
+/* erreurs */
+.error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.error.center {
+  display: block;
+  text-align: center;
+  margin: 8px 0 10px;
+}
+
+/* bouton */
+.btn {
+  width: 100%;
+  padding: 12px 0;
+  margin-top: 10px;
+
+  background-color: #2c7a7b;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+
+  transition: background-color 0.25s ease, transform 0.15s ease;
+}
+
+.btn:hover {
+  background-color: #256f70;
+}
+
+.btn:active {
+  transform: scale(0.97);
 }
 </style>

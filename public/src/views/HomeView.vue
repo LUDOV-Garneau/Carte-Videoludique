@@ -1,10 +1,12 @@
 <script setup>
 import LeafletMap from '../components/LeafletMap.vue'
+import NavBar from '../components/NavBar.vue';
 </script>
 
 <template>
+  <NavBar/>
   <div class="layout">
-    <main class="content">  
+    <main class="content"> 
       <section class="map-wrapper">
         <LeafletMap /> 
       </section>      
@@ -18,30 +20,12 @@ import LeafletMap from '../components/LeafletMap.vue'
 h1, h2, p { color: var(--text); }
 
 /* Layout général avec fond subtil “grid” + dégradé */
-.layout{
+.layout {
   display: flex;
   min-height: 100vh;
-  background:
-    radial-gradient(
-      circle at 25% -10%,
-      rgba(0, 0, 0, 0.03) 0%,  
-      transparent 40%
-    ),
-    radial-gradient(
-      circle at 120% 10%,
-      rgba(0, 0, 0, 0.02) 0%, 
-      transparent 45%
-    ),
-    linear-gradient(
-      180deg,
-      #fafafa 0%,  
-      #ffffff 100% 
-    );
-
   position: relative;
   isolation: isolate;
 }
-
 
 /* Zone de contenu */
 .content{
@@ -51,9 +35,10 @@ h1, h2, p { color: var(--text); }
 }
 
 
+
 /* Carte avec cadre premium */
 .map-wrapper{
-   position: relative;
+  position: relative;
   margin: 18px auto 0;
   width: 100%;
   max-width: 1200px;
