@@ -118,6 +118,9 @@ async function sendComment() {
 					<p>{{ marqueurProperties.description }}</p>
 					<span>Créé par : {{ marqueurProperties.createdByName }}</span>
 				</div>
+				<button class="btn-edit" @click="openModificationRequest()">
+   					Demander une modification
+				</button>
 				<div class="panel__info-list">
 					<div v-if="marqueurProperties.adresse" class="info-item">
 						<svg class="info-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -330,6 +333,21 @@ async function sendComment() {
 	width: 100%;
 	height: 100%;
 }
+.btn-edit {
+  	display: block;
+	width: auto;
+	height: 30px;
+	border-radius: 25px;
+	padding: 0 12px;
+	margin: 5px auto;
+	border: 1px solid rgba(67, 160, 71, 0.35);
+	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+	color: #4CAF50;
+	cursor: default;
+	font-weight: 600;
+	font-size: small;
+	transition: all 0.3s ease;
+}
 
 .btn-add-comment {
 	display: block;
@@ -344,7 +362,7 @@ async function sendComment() {
 	font-weight: 600;
 	transition: all 0.3s ease;
 }
-.btn-add-comment:hover {
+.btn-add-comment:hover, .btn-edit:hover {
 	background: #4CAF50;
 	color: white;
 }
