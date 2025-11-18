@@ -3,6 +3,7 @@ import { ref, computed, reactive } from 'vue';
 import { useMarqueurStore } from '../stores/useMarqueur';
 import { API_URL } from '../config';
 import { svg } from 'leaflet';
+import MarqueurModal from './MarqueurModalComponent.vue';
 
 // props and emits
 const props = defineProps({
@@ -36,6 +37,8 @@ const formErrors = ref({
 function closePanel() {
     emits('close');
 }
+
+
 
 function toggleCommenting() {
 	isCommenting.value = !isCommenting.value;
@@ -169,7 +172,12 @@ async function sendComment() {
 				</div>
             </div>
         </aside>
+		
     </transition>
+	<MarqueurModal
+	v-if="modalVisible && selcctedMarqueur"
+	:marqueur="selcctedMarqueur"
+	/>
 </template>
 <style scoped>
 /* ---------- Panneau ---------- */
