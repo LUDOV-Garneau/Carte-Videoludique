@@ -1,6 +1,6 @@
 
 const EditRequest = require('../models/editRequest');
-const Marqueur = require('../models/Marqueur');
+const Marqueur = require('../models/marqueur.js');
 
 const dotenv = require("dotenv");
 const { formatErrorResponse, formatSuccessResponse } = require("../utils/formatErrorResponse");

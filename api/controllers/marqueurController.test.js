@@ -1,7 +1,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import * as marqueurController from './marqueurController.js'
-import Marqueur from '../models/Marqueur.js'
+import Marqueur from '../models/marqueur.js'
 
 function mockRes() {
   return {
