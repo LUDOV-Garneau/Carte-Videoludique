@@ -9,7 +9,7 @@ const optionalAuth = require("../middlewares/optionalAuth");
 router.post("/marqueurs/:id/edit-requests", optionalAuth, editRequestController.createEditRequest);
 
 // GET => /edit-requests
-router.get("/edit-requests", isAuth, editRequestController.listEditRequests);
+router.get("/edit-requests", isAuth, editRequestController.getEditRequests);
 
 // PUT => /edit-requests/:editRequestId/approve
 router.put("/edit-requests/:editRequestId/approve", isAuth, editRequestController.approveEditRequest);

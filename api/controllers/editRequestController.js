@@ -9,7 +9,7 @@ dotenv.config();
 
 exports.createEditRequest = async (req, res, next) => {
   try {
-    const marqueurId = req.params.id;
+    const marqueurId = req.params.marqueurId;
 
     const {
       titre,
