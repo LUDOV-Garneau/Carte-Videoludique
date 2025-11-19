@@ -5,17 +5,17 @@ import { ref, onMounted, computed } from 'vue'
 import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
 import { useEditRequestStore } from '@/stores/useEditRequest'
-import { useRouter ,} from 'vue-router'
+import { useRouter } from 'vue-router'
 import * as cloudinary from '../utils/cloudinary.js'
 import TableauNotification from '../components/TableauNotification.vue'
-import NavBar from '../components/NavBar.vue';
-
+import NavBar from '../components/NavBar.vue'
 
 /* ----------------------------------------------------
    STORES + ROUTER
 ---------------------------------------------------- */
 const router = useRouter()
 const authStore = useAuthStore()
+const marqueurStore = useMarqueurStore()
 const editRequestStore = useEditRequestStore()
 
 /* ----------------------------------------------------
@@ -53,26 +53,14 @@ const getMarqueurs = () => {
   })
 }
 
-const ouvrirModal = (marqueur) => {
-  selectedMarqueur.value = marqueur
-  modalVisible.value = true
-}
-
+/* ----------------------------------------------------
+   GET EDIT REQUESTS
+---------------------------------------------------- */
 const getEditRequests = () => {
-  editRequestStore.getEditRequests()
-  .catch(error => {
-    messageErreur.value = error.message;
-  });
+  editRequestStore.getEditRequests().catch(error => {
+    messageErreur.value = error.message
+  })
 }
-
-const accepterMarqueur = async (marqueur) => {
-  const id = marqueur?.properties?.id
-  if (!id) return
-
-  try {
-    if (!authStore.token) throw new Error('Non authentifié: token absent')
-
-    console.log('ancien status:', marqueur.properties.status) // <-- AVANT
 
 /* ----------------------------------------------------
    OUVRIR MODAL
@@ -86,8 +74,8 @@ const ouvrirModal = (marqueur) => {
    ACCEPTER MARQUEUR
 ---------------------------------------------------- */
 const accepterMarqueur = async (marqueur) => {
-  const id = marqueur.id || marqueur._id || marqueur?.properties?.id
-  if (!id) return console.error("Aucun ID trouvé (accepter):", marqueur)
+  const id = marqueur?.properties?.id || marqueur.id || marqueur._id
+  if (!id) return
 
   try {
     const updated = await marqueurStore.modifierMarqueurStatus(id, authStore.token, {
@@ -106,7 +94,7 @@ const accepterMarqueur = async (marqueur) => {
    REFUSER → SUPPRIMER MARQUEUR
 ---------------------------------------------------- */
 const refuserMarqueur = async (marqueur) => {
-  const id = marqueur.id || marqueur._id || marqueur?.properties?.id
+  const id = marqueur?.properties?.id || marqueur.id || marqueur._id
   if (!id) return console.error("Aucun ID trouvé pour suppression:", marqueur)
 
   try {
@@ -117,7 +105,6 @@ const refuserMarqueur = async (marqueur) => {
     )
 
     await marqueurStore.getMarqueurs()
-    console.log("Marqueur supprimé et liste rafraîchie")
   } catch (err) {
     console.error("Erreur suppression:", err)
   }
@@ -149,7 +136,6 @@ const validerModification = async (marqueurModifie) => {
       payload.lng = Number(lng)
     }
 
-    // Images
     let imagesPayload = Array.isArray(props.images) ? [...props.images] : []
 
     if (marqueurModifie.files?.length > 0) {
@@ -193,7 +179,7 @@ onMounted(() => {
   <div class="layout">
     <main class="content">
       <h2 class="section-title">Notifications</h2>
-     
+
       <TableauNotification
         v-model:filtre-status="filtreStatus"
         :marqueurs-filtres="marqueursFiltres"
