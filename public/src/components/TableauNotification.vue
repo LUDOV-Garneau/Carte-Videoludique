@@ -1,4 +1,11 @@
 <script setup>
+import { onMounted, watch } from 'vue'
+import { useEditRequestStore } from '@/stores/useEditRequest'
+import { useAuthStore } from '@/stores/auth'
+
+const editRequestStore = useEditRequestStore()
+const authStore = useAuthStore()
+
 const props = defineProps({
     filtreStatus: { type: String, default: 'pending' },
     marqueursFiltres: { type: Array, default: () => [] } 
@@ -27,6 +34,31 @@ const accepterLocal = (marqueur) => {
 const refuserLocal = (marqueur) => {
   emit('refuser', marqueur)
 }
+
+const loadEditRequests = async () => {
+  try {
+    const token = authStore.token
+    const data = await editRequestStore.getEditRequests(token)
+    console.log('liste editRequest :', data)
+  } catch (error) {
+    console.error('Erreur lors de la récupération des demandes de modification :', error)
+  }
+}
+watch(
+  () => props.filtreStatus,
+  (newVal) => {
+    if (newVal === 'edit-request') {
+      loadEditRequests()
+    }
+  }
+)
+
+onMounted(() => {
+  console.log('Filtre status:', props.filtreStatus)
+  if (props.filtreStatus === 'edit-request') {
+    loadEditRequests()
+  }
+})
    
 </script>
 
@@ -141,12 +173,38 @@ const refuserLocal = (marqueur) => {
         </tr>
       </thead>
       <tbody>
-        <tr v-if="!marqueursFiltres || marqueursFiltres.length === 0">
-          <td colspan="6" class="empty">
+        <tr
+          v-for="req in editRequestStore.editRequests"
+          :key="req._id"
+        >
+          <td>{{ req.proposedProperties?.titre || req.marqueur?.properties?.titre }}</td>
+          <td>
+            <!-- Tu pourras ici afficher un résumé des diff (adresse, description, etc.) -->
+            {{ req.proposedProperties?.adresse }}<br />
+            {{ req.proposedProperties?.description }}
+          </td>
+          <td class="info-col">
+            <button class="info-btn">
+              Voir détails
+            </button>
+          </td>
+          <td class="accept-col">
+            <button class="action-btn accept">
+              Accepter
+            </button>
+          </td>
+          <td class="reject-col">
+            <button class="action-btn reject">
+              Refuser
+            </button>
+          </td>
+        </tr>
+
+        <tr v-if="!editRequestStore.editRequests.length">
+          <td colspan="5" class="empty">
             Aucune demande de modification pour le moment.
           </td>
         </tr>
-        <!-- ici tu pourras boucler sur les demandes de modif quand tu auras la structure -->
       </tbody>
     </table>
   </div>

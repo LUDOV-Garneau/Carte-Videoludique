@@ -4,10 +4,12 @@ import MarqueurModal from '../components/MarqueurModalComponent.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
+import { useEditRequestStore } from '@/stores/useEditRequest'
 import { useRouter ,} from 'vue-router'
 import * as cloudinary from '../utils/cloudinary.js'
 import TableauNotification from '../components/TableauNotification.vue'
 import NavBar from '../components/NavBar.vue';
+
 
 const props = defineProps({
   marqueur: {
@@ -26,6 +28,7 @@ const logout = () => {
 
 const marqueurStore = useMarqueurStore()
 const authStore = useAuthStore()
+const editRequestStore = useEditRequestStore()
 
 const messageErreur = ref('')
 
@@ -44,6 +47,18 @@ const marqueursFiltres = computed(() => {
 
 const getMarqueurs = () => {
   marqueurStore.getMarqueurs()
+  .catch(error => {
+    messageErreur.value = error.message;
+  });
+}
+
+const ouvrirModal = (marqueur) => {
+  selectedMarqueur.value = marqueur
+  modalVisible.value = true
+}
+
+const getEditRequests = () => {
+  editRequestStore.getEditRequests()
   .catch(error => {
     messageErreur.value = error.message;
   });
@@ -156,6 +171,7 @@ const validerModification = async (marqueurModifie) => {
 
 onMounted(() => {
   getMarqueurs()
+  getEditRequests()
 })
 </script>
 

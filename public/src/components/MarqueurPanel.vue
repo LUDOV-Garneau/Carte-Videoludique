@@ -1,8 +1,9 @@
 <script setup>
 import { ref, computed, reactive } from 'vue';
 import { useMarqueurStore } from '../stores/useMarqueur';
+import { useEditRequestStore } from '../stores/useEditRequest';
 import { API_URL } from '../config';
-import { svg } from 'leaflet';
+// import { svg } from 'leaflet';
 import MarqueurModal from './MarqueurModalComponent.vue';
 
 // props and emits
@@ -15,6 +16,8 @@ const props = defineProps({
 const emits = defineEmits(['close']);
 
 const marqueurStore = useMarqueurStore();
+const editRequestStore = useEditRequestStore();
+
 const canDisplayPanel = computed(() => {
     return props.isOpen && marqueurStore.marqueurActif !== null;
 });
@@ -22,7 +25,9 @@ const canDisplayPanel = computed(() => {
 const marqueurProperties = computed(() => {
     return marqueurStore.marqueurActif?.properties || {};
 });
-const isCommenting = reactive(ref(false));3
+const isCommenting = reactive(ref(false));
+
+const isEditModalOpen = ref(false);
 
 const formData = ref({
 	auteur: '',
@@ -33,12 +38,39 @@ const formErrors = ref({
 	contenu: ''
 });
 
+function openModificationRequest() {
+	if(!marqueurStore.marqueurActif) return;
+	isEditModalOpen.value = true;
+}
 
 function closePanel() {
     emits('close');
 }
 
 
+async function handleEditRequestSubmit(payloadFromModal) {
+	try {
+		const original = marqueurStore.marqueurActif;
+		if (!original) return;
+
+		const marqueurId = original.properties?.id || original._id;
+
+		const props = payloadFromModal.properties || {};
+
+		const body = {
+			titre: props.titre,
+    		type: props.type,
+      		adresse: props.adresse,
+      		description: props.description,
+      		temoignage: props.temoignage,
+		}
+		await editRequestStore.createEditRequest(marqueurId, body);
+		isEditModalOpen.value = false;
+		console.log('Demande de modification soumise avec succès');
+	} catch (err) {
+		console.error('Erreur lors de la soumission de la demande de modification :', err);
+	}
+}
 
 function toggleCommenting() {
 	isCommenting.value = !isCommenting.value;
@@ -175,9 +207,11 @@ async function sendComment() {
 		
     </transition>
 	<MarqueurModal
-	v-if="modalVisible && selcctedMarqueur"
-	:marqueur="selcctedMarqueur"
-	/>
+    	v-if="isEditModalOpen"
+    	:marqueur="marqueurStore.marqueurActif"
+    	@fermer="isEditModalOpen = false"
+    	@valider="handleEditRequestSubmit"
+  	/>
 </template>
 <style scoped>
 /* ---------- Panneau ---------- */

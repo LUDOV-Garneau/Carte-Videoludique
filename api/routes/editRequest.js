@@ -11,6 +11,8 @@ router.post("/marqueurs/:id/edit-requests", optionalAuth, editRequestController.
 // GET => /edit-requests
 router.get("/edit-requests", isAuth, editRequestController.getEditRequests);
 
+router.get("/edit-requests/:editRequestId", isAuth, editRequestController.getEditRequest);
+
 // PUT => /edit-requests/:editRequestId/approve
 router.put("/edit-requests/:editRequestId/approve", isAuth, editRequestController.approveEditRequest);
 

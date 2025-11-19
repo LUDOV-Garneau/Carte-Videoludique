@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { API_URL } from '../config.js';
-import { get } from 'mongoose';
+
 
 export const useEditRequestStore = defineStore('editRequest', () => {
     const editRequests = ref([]);
@@ -134,7 +134,6 @@ export const useEditRequestStore = defineStore('editRequest', () => {
             }
         })
         .then((data) => {
-            // Met à jour la liste locale des demandes de modification
             const index = editRequests.value.findIndex(req => req._id === requestId);
             if (index !== -1) {
                 editRequests.value[index] = data.data;
