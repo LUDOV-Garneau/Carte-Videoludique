@@ -62,7 +62,7 @@ exports.createEditRequest = async (req, res, next) => {
 
 exports.getEditRequests = async (req, res, next) => {
   try {
-    const status = req.query.status; // optionnel: ?status=pending
+    const status = req.query.status;
 
     const filter = {};
     if (status) {
@@ -79,6 +79,29 @@ exports.getEditRequests = async (req, res, next) => {
         req.originalUrl
       )
     );
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getEditRequest = async (req, res, next) => {
+  try {
+    const requestId = req.params.id;
+    const editRequest = await EditRequest.findById(requestId).populate("marqueur");
+    if (!editRequest) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "La demande de modification spécifiée n'existe pas",
+        req.originalUrl
+      ));
+    }
+    return res.status(200).json(formatSuccessResponse(
+      200,
+      "Demande de modification récupérée avec succès",
+      editRequest,
+      req.originalUrl
+    ));
   } catch (err) {
     next(err);
   }
