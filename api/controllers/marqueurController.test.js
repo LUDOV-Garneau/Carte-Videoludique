@@ -211,12 +211,20 @@ describe('MarqueurController.updateMarqueur', () => {
   it('200 + payload mis à jour quand OK', async () => {
     const updated = {
       _id: 'abc123',
-      titre: 'Nouveau titre',
-      type: 'Lieu',
-      adresse: '123 rue Exemple',
-      description: 'Desc',
-      temoignage: 'Tem',
-      image: 'img.png'
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [-73.5, 45.5]
+      },
+      properties: {
+        titre: 'Nouveau titre',
+        type: 'Clubs vidéo',
+        adresse: '123 rue Exemple',
+        description: 'Desc',
+        temoignage: 'Tem',
+        image: 'img.png',
+        status: 'pending'
+      }
     }
     vi.spyOn(Marqueur, 'findByIdAndUpdate').mockResolvedValue(updated)
 
@@ -225,7 +233,11 @@ describe('MarqueurController.updateMarqueur', () => {
       originalUrl: '/api/marqueurs/abc123',
       body: {
         titre: 'Nouveau titre',
-        description: 'Desc'
+        type: 'Clubs vidéo',
+        adresse: '123 rue Exemple',
+        description: 'Desc',
+        temoignage: 'Tem',
+        image: 'img.png'
       }
     })
     const res = mockRes()
@@ -233,9 +245,19 @@ describe('MarqueurController.updateMarqueur', () => {
 
     await marqueurController.updateMarqueur(req, res, next)
 
+    // Vérifier que findByIdAndUpdate utilise $set pour les champs imbriqués
     expect(Marqueur.findByIdAndUpdate).toHaveBeenCalledWith(
       'abc123',
-      expect.objectContaining({ titre: 'Nouveau titre', description: 'Desc' }),
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          'properties.titre': 'Nouveau titre',
+          'properties.type': 'Clubs vidéo',
+          'properties.adresse': '123 rue Exemple',
+          'properties.description': 'Desc',
+          'properties.temoignage': 'Tem',
+          'properties.image': 'img.png'
+        })
+      }),
       { new: true, runValidators: true }
     )
 
