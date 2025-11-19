@@ -58,7 +58,7 @@ const MarqueurSchema = new mongoose.Schema(
       images: { type: [ImageSchema], default: [] },
       status: {
         type: String,
-        enum: ["pending", "approved", "rejected"],
+        enum: ["pending", "edit-request", "approved", "rejected"],
         default: "pending",
         index: true
       },

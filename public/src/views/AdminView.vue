@@ -4,15 +4,19 @@ import MarqueurModal from '../components/MarqueurModalComponent.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import { useEditRequestStore } from '@/stores/useEditRequest'
+import { useRouter ,} from 'vue-router'
 import * as cloudinary from '../utils/cloudinary.js'
+import TableauNotification from '../components/TableauNotification.vue'
+import NavBar from '../components/NavBar.vue';
+
 
 /* ----------------------------------------------------
    STORES + ROUTER
 ---------------------------------------------------- */
 const router = useRouter()
 const authStore = useAuthStore()
-const marqueurStore = useMarqueurStore()   // ← FIX : bon nom
+const editRequestStore = useEditRequestStore()
 
 /* ----------------------------------------------------
    REFS
@@ -49,12 +53,26 @@ const getMarqueurs = () => {
   })
 }
 
-/* ----------------------------------------------------
-   LOCALISATION VIA MODAL
----------------------------------------------------- */
-function handleLocateFromAddressFromModal(coords) {
-  leafletMapRef.value?.handleLocateFromAddress?.(coords)
+const ouvrirModal = (marqueur) => {
+  selectedMarqueur.value = marqueur
+  modalVisible.value = true
 }
+
+const getEditRequests = () => {
+  editRequestStore.getEditRequests()
+  .catch(error => {
+    messageErreur.value = error.message;
+  });
+}
+
+const accepterMarqueur = async (marqueur) => {
+  const id = marqueur?.properties?.id
+  if (!id) return
+
+  try {
+    if (!authStore.token) throw new Error('Non authentifié: token absent')
+
+    console.log('ancien status:', marqueur.properties.status) // <-- AVANT
 
 /* ----------------------------------------------------
    OUVRIR MODAL
@@ -153,7 +171,9 @@ const validerModification = async (marqueurModifie) => {
     messageErreur.value = ''
     await getMarqueurs()
 
-    leafletMapRef.value?.afficherMarqueurs?.()
+    if (leafletMapRef.value?.afficherMarqueurs) {
+      leafletMapRef.value.afficherMarqueurs()
+    }
   } catch (err) {
     messageErreur.value = err.message || String(err)
   }
@@ -164,68 +184,23 @@ const validerModification = async (marqueurModifie) => {
 ---------------------------------------------------- */
 onMounted(() => {
   getMarqueurs()
+  getEditRequests()
 })
 </script>
 
 <template>
+  <NavBar/>
   <div class="layout">
-    <aside class="sidebar">
-      <span class="brand-vertical">L U D O V</span>
-
-      <!-- 🔥 Bouton Déconnexion ajouté -->
-      <button class="logout-btn" @click="logout">Déconnexion</button>
-    </aside>
-
     <main class="content">
       <h2 class="section-title">Notifications</h2>
-
-      <div class="offers-wrapper">
-        <table class="offers-table" role="table">
-          <thead>
-            <tr>
-              <th>Lieu</th>
-              <th>Adresse</th>
-              <th class="info-col">Info</th>
-              <th class="modif-col">Modification</th>
-              <th class="accept-col">Accepter</th>
-              <th class="reject-col">Refuser</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id">
-              <td>{{ marqueur.properties.titre }}</td>
-              <td>{{ marqueur.properties.adresse }}</td>
-
-              <td class="info-col">
-                <button class="info-btn" @click="$emit('show-info', marqueur)">
-                  <span>Afficher la description</span>
-                </button>
-              </td>
-
-              <td class="menu-col">
-                <button class="kebab" @click="ouvrirModal(marqueur)">Modifier</button>
-              </td>
-
-              <td class="accept-col">
-                <button class="action-btn accept" @click="accepterMarqueur(marqueur)">
-                  Accepter
-                </button>
-              </td>
-
-              <td class="reject-col">
-                <button class="action-btn reject" @click="refuserMarqueur(marqueur)">
-                  Refuser
-                </button>
-              </td>
-            </tr>
-
-            <tr v-if="marqueursFiltres.length === 0">
-              <td colspan="6" class="empty">Aucune offre pour le moment.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+     
+      <TableauNotification
+        v-model:filtre-status="filtreStatus"
+        :marqueurs-filtres="marqueursFiltres"
+        @ouvrir-modal="ouvrirModal"
+        @accepter="accepterMarqueur"
+        @refuser="refuserMarqueur"
+      />
 
       <MarqueurModal
         v-if="modalVisible && selectedMarqueur"
@@ -243,17 +218,64 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.logout-btn {
-  margin-top: 20px;
-  background: #ef4444;
-  color: #fff;
-  border: none;
-  padding: 10px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 700;
-  width: 80%;
-  transition: background 0.2s ease, transform 0.1s ease;
+/* Tableau de notification */
+
+/* Titre */
+/* ---------- Typo & couleurs locales (sans :root) ---------- */
+h1,
+h2,
+p,
+table {
+  color: #111827;
+}
+
+/* ---------- Layout & fond blanc texturé ---------- */
+.layout {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  isolation: isolate;
+}
+
+/* ---------- Contenu & header ---------- */
+.content {
+  flex: 1;
+  padding: 28px clamp(16px, 3vw, 40px);
+  margin: 0;
+}
+
+/* ---------- Titre section ---------- */
+.section-title {
+  margin: 8px auto 12px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  max-width: 1100px;
+}
+
+/* ---------- Carte encadrée premium ---------- */
+.map-wrapper {
+  position: relative;
+  margin: 18px auto 0;
+  width: 100%;
+  max-width: 1200px;
+  height: min(78vh, 900px);
+  border-radius: 20px;
+  overflow: clip;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.08),
+    0 6px 14px rgba(0, 0, 0, 0.06);
+}
+
+/* ---------- Titres par défaut ---------- */
+h1 {
+  color: #0f172a;
+}
+h2 {
+  color: #0f172a;
+  text-decoration: underline;
 }
 .logout-btn:hover {
   background: #dc2626;

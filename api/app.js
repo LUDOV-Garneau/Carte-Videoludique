@@ -33,6 +33,7 @@ const adminRoutes = require("./routes/admin");
 
 const marqueurRoutes = require("./routes/marqueur")
 const cloudinaryRoutes = require("./routes/cloudinary");
+const editRequestRoutes = require("./routes/editRequest");
 
 // app.use(seed);
 app.use((req, res, next) => {
@@ -42,6 +43,7 @@ app.use((req, res, next) => {
 app.use(adminRoutes);
 app.use(marqueurRoutes);
 app.use(cloudinaryRoutes);
+app.use(editRequestRoutes);
 
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);

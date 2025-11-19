@@ -1,36 +1,51 @@
 import { mount } from '@vue/test-utils'
 import HomeView from './HomeView.vue'
 import { describe, it, expect } from 'vitest'
-import { defineComponent } from 'vue'
 
-
-
-const LeafletMapStub = defineComponent({
-  name: 'LeafletMap',
-  template: '<div data-testid="map"></div>',
-})
 
 describe('HomeView.vue', () => {
+  const LeafletMapStub = {
+    template: '<div data-testid="map"></div>'
+  }
+
+  const NavBarStub = {
+    template: '<nav data-testid="navbar"></nav>'
+  }
+
   it("Se monte sans erreur", () => {
     const wrapper = mount(HomeView, {
-      global: { stubs: { LeafletMap: LeafletMapStub} }
+      global: {
+        stubs: {
+          LeafletMap: LeafletMapStub,
+          NavBar: NavBarStub
+        }
+      }
     })
     expect(wrapper.exists()).toBe(true)
   })
 
-  it("Affiche le titre et la marque vertical", () => {
+  it("Affiche la barre de navigation", () => {
     const wrapper = mount(HomeView, {
-      global: { stubs: { LeafletMap: LeafletMapStub} }
+      global: {
+        stubs: {
+          LeafletMap: LeafletMapStub,
+          NavBar: NavBarStub
+        }
+      }
     })
-    expect(wrapper.find('h1').text()).toContain("Le jeu vidéo au Québec")
-    expect(wrapper.find('.brand-vertical').text()).toBe('L U D O V')
+    expect(wrapper.get('[data-testid="navbar"]').exists()).toBe(true)
   })
 
   it("Rend la carte dans la page", () => {
     const wrapper = mount(HomeView, {
-      global: { stubs: { LeafletMap: LeafletMapStub} }
+      global: {
+        stubs: {
+          LeafletMap: LeafletMapStub,
+          NavBar: NavBarStub
+        }
+      }
     })
+
     expect(wrapper.get('[data-testid="map"]').exists()).toBe(true)
-    expect(wrapper.findComponent({ name: 'LeafletMap' }).exists()).toBe(true)
   })
 })

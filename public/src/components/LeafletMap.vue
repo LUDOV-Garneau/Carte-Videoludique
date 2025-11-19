@@ -296,6 +296,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  
   <div class="map" ref="mapEl"></div>
 
 	<!-- Composant panel d'ajout de marqueur -->
