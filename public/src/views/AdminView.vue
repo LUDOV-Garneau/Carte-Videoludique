@@ -1,6 +1,5 @@
 <script setup>
 import LeafletMap from '../components/LeafletMap.vue'
-import MarqueurModal from '../components/MarqueurModalComponent.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
@@ -60,8 +59,12 @@ const ouvrirModal = (marqueur) => {
 }
 
 const accepterMarqueur = async (marqueur) => {
-  const id = marqueur.id   // ← CORRIGÉ
-  if (!id) return
+  // on essaie plusieurs façons d’obtenir l’identifiant
+  const id = marqueur.id || marqueur._id || marqueur?.properties?.id
+  if (!id) {
+    console.error("Aucun ID trouvé pour ce marqueur:", marqueur)
+    return
+  }
 
   try {
     if (!authStore.token) throw new Error('Non authentifié: token absent')
@@ -69,35 +72,42 @@ const accepterMarqueur = async (marqueur) => {
     const payload = { status: 'approved' }
     const updated = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
 
-    if (updated) {
+    // mise à jour locale de la ligne si le backend renvoie quelque chose
+    if (updated && updated.properties?.status) {
       marqueur.properties.status = updated.properties.status
     }
-
   } catch (err) {
     messageErreur.value = err.message
   }
 }
 
-
 const refuserMarqueur = async (marqueur) => {
-  const id = marqueur.id   // ← CORRIGÉ
-  if (!id) return
+  const id = marqueur.id || marqueur._id || marqueur?.properties?.id
+  console.log("ID utilisé pour suppression:", id)
+  if (!id) {
+    console.error("Aucun ID trouvé pour ce marqueur:", marqueur)
+    return
+  }
 
   try {
     if (!authStore.token) throw new Error('Non authentifié: token absent')
 
-    const payload = { status: 'rejected' }
-    await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
+    // 🔥 suppression dans le backend
+    await marqueursStore.supprimerMarqueur(id, authStore.token)
 
-    // ⚡ SUPPRESSION IMMÉDIATE DU TABLEAU
+    // 🔥 suppression locale immédiate
     marqueursStore.marqueurs = marqueursStore.marqueurs.filter(
-      (m) => m.id !== id
+      (m) => (m.id || m._id || m.properties?.id) !== id
     )
 
+    await marqueursStore.getMarqueurs()
+
+    console.log("Marqueur supprimé et liste rafraîchie")
   } catch (err) {
-    console.error(err)
+    console.error("Erreur suppression:", err)
   }
 }
+
 
 
 const validerModification = async (marqueurModifie) => {

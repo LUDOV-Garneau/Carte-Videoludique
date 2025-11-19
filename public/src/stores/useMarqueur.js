@@ -184,6 +184,26 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
         })
     }
 
+  function supprimerMarqueur(id, token) {
+  return fetch(`${API_URL}/marqueurs/${id}`, {
+    method: 'DELETE',
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token
+    }
+  })
+  .then(async (response) => {
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Erreur inconnue')
+    }
+
+    return data
+  })
+}
+
+
     return {
         marqueurs,
         marqueurActif,
@@ -191,7 +211,8 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
         getMarqueurs,
         getMarqueur,
         modifierMarqueur,
-        modifierMarqueurStatus
+        modifierMarqueurStatus,
+        supprimerMarqueur
     }
 
 }, {

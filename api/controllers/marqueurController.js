@@ -173,20 +173,12 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       return res.status(400).json(formatErrorResponse(
         400,
         "Bad Request",
-        "Statut invalide. Valeurs acceptées : approved, pending, rejected.",
+        "Statut invalide.",
         req.originalUrl
       ));
     }
 
-    if (!req.admin) {
-      return res.status(403).json(formatErrorResponse(
-        403,
-        "Forbidden",
-        "Seul un administrateur peut modifier le statut d’un marqueur.",
-        req.originalUrl
-      ));
-    }
-
+    // 🔥 Si rejeté : suppression
     if (status === "rejected") {
       const deleted = await Marqueur.findByIdAndDelete(marqueurId);
 
@@ -207,10 +199,11 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       ));
     }
 
+    // 🔥 Sinon on met juste à jour le statut
     const updated = await Marqueur.findByIdAndUpdate(
       marqueurId,
       { $set: { "properties.status": status } },
-      { new: true, runValidators: true, context: "query" }
+      { new: true, runValidators: true }
     );
 
     if (!updated) {
@@ -224,7 +217,7 @@ exports.updateStatusMarqueur = async (req, res, next) => {
 
     return res.status(200).json(formatSuccessResponse(
       200,
-      `Statut mis à jour vers '${status}'.`,
+      `Statut mis à jour vers '${status}'`,
       updated,
       req.originalUrl
     ));
