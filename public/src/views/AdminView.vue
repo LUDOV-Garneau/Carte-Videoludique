@@ -2,7 +2,7 @@
 import LeafletMap from '../components/LeafletMap.vue'
 import MarqueurModal from '../components/MarqueurModalComponent.vue'
 import { ref, onMounted, computed } from 'vue'
-import { useMarqueurStore } from '../stores/useMarqueur'
+import { useMarqueursStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
 import { useEditRequestStore } from '@/stores/useEditRequest'
 import { useRouter } from 'vue-router'
@@ -15,7 +15,7 @@ import NavBar from '../components/NavBar.vue'
 ---------------------------------------------------- */
 const router = useRouter()
 const authStore = useAuthStore()
-const marqueurStore = useMarqueurStore()
+const marqueurStore = useMarqueursStore()
 const editRequestStore = useEditRequestStore()
 
 /* ----------------------------------------------------
