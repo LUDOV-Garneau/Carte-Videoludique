@@ -1,6 +1,6 @@
 "use strict";
 
-const Marqueur = require("../models/marqueur");
+const Marqueur = require("../models/Marqueur");
 
 const dotenv = require("dotenv");
 const { formatErrorResponse, formatSuccessResponse } = require("../utils/formatErrorResponse");
