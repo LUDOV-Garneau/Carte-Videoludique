@@ -3,77 +3,84 @@ import LeafletMap from '../components/LeafletMap.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueursStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter ,} from 'vue-router'
+import { useRouter } from 'vue-router'
 import * as cloudinary from '../utils/cloudinary.js'
 
-const props = defineProps({
-  marqueur: {
-    type: Object,
-    required: true
-  }
-})
-
-const auth = useAuthStore()
+/* ----------------------------------------------------
+   STORES + ROUTER
+---------------------------------------------------- */
 const router = useRouter()
-
-const logout = () => {
-  auth.logout()
-  router.push('/connexion')
-}
-
-
-const marqueursStore = useMarqueursStore()
 const authStore = useAuthStore()
+const marqueursStore = useMarqueursStore()
 
+/* ----------------------------------------------------
+   REFS
+---------------------------------------------------- */
 const messageErreur = ref('')
-
 const filtreStatus = ref('pending')
 const modalVisible = ref(false)
 const selectedMarqueur = ref(null)
 const leafletMapRef = ref(null)
 
+/* ----------------------------------------------------
+   LOGOUT
+---------------------------------------------------- */
+const logout = () => {
+  authStore.logout()
+  router.push('/connexion')
+}
 
+/* ----------------------------------------------------
+   MARQUEURS FILTRÉS
+---------------------------------------------------- */
 const marqueursFiltres = computed(() => {
-  console.log(marqueursStore.marqueurs)
   return (marqueursStore.marqueurs ?? []).filter(
-    (m) => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase(),
+    (m) =>
+      (m.properties?.status ?? '').toLowerCase() ===
+      filtreStatus.value.toLowerCase()
   )
 })
 
+/* ----------------------------------------------------
+   GET MARQUEURS
+---------------------------------------------------- */
 const getMarqueurs = () => {
   marqueursStore.getMarqueurs().catch((error) => {
     messageErreur.value = error.message
   })
 }
 
+/* ----------------------------------------------------
+   LOCALISATION VIA MODAL
+---------------------------------------------------- */
 function handleLocateFromAddressFromModal(coords) {
-  // on délègue à LeafletMap grâce à sa ref
-  if (leafletMapRef.value?.handleLocateFromAddress) {
-    leafletMapRef.value.handleLocateFromAddress(coords)
-  }
+  leafletMapRef.value?.handleLocateFromAddress?.(coords)
 }
 
+/* ----------------------------------------------------
+   OUVRIR MODAL DE MODIFICATION
+---------------------------------------------------- */
 const ouvrirModal = (marqueur) => {
   selectedMarqueur.value = marqueur
   modalVisible.value = true
 }
 
+/* ----------------------------------------------------
+   ACCEPTER MARQUEUR
+---------------------------------------------------- */
 const accepterMarqueur = async (marqueur) => {
-  // on essaie plusieurs façons d’obtenir l’identifiant
   const id = marqueur.id || marqueur._id || marqueur?.properties?.id
   if (!id) {
-    console.error("Aucun ID trouvé pour ce marqueur:", marqueur)
+    console.error("Aucun ID trouvé (accepter):", marqueur)
     return
   }
 
   try {
-    if (!authStore.token) throw new Error('Non authentifié: token absent')
+    const updated = await marqueursStore.modifierMarqueurStatus(id, authStore.token, {
+      status: 'approved'
+    })
 
-    const payload = { status: 'approved' }
-    const updated = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
-
-    // mise à jour locale de la ligne si le backend renvoie quelque chose
-    if (updated && updated.properties?.status) {
+    if (updated?.properties?.status) {
       marqueur.properties.status = updated.properties.status
     }
   } catch (err) {
@@ -81,21 +88,21 @@ const accepterMarqueur = async (marqueur) => {
   }
 }
 
+/* ----------------------------------------------------
+   REFUSER → SUPPRIMER MARQUEUR
+---------------------------------------------------- */
 const refuserMarqueur = async (marqueur) => {
   const id = marqueur.id || marqueur._id || marqueur?.properties?.id
   console.log("ID utilisé pour suppression:", id)
+
   if (!id) {
-    console.error("Aucun ID trouvé pour ce marqueur:", marqueur)
+    console.error("Aucun ID trouvé pour suppression:", marqueur)
     return
   }
 
   try {
-    if (!authStore.token) throw new Error('Non authentifié: token absent')
-
-    // 🔥 suppression dans le backend
     await marqueursStore.supprimerMarqueur(id, authStore.token)
 
-    // 🔥 suppression locale immédiate
     marqueursStore.marqueurs = marqueursStore.marqueurs.filter(
       (m) => (m.id || m._id || m.properties?.id) !== id
     )
@@ -108,69 +115,58 @@ const refuserMarqueur = async (marqueur) => {
   }
 }
 
-
-
+/* ----------------------------------------------------
+   VALIDER MODIFICATION (MODAL)
+---------------------------------------------------- */
 const validerModification = async (marqueurModifie) => {
   try {
-    console.log('Marqueur modifié reçu dans AdminView:', marqueurModifie)
-
     const id = marqueurModifie?.properties?.id || marqueurModifie?._id
     if (!id) throw new Error('Identifiant du marqueur manquant')
 
     const props = marqueurModifie?.properties ?? {}
-
     const payload = {
       titre: props.titre,
       type: props.type,
       adresse: props.adresse,
       description: props.description,
-      temoignage: props.temoignage,
+      temoignage: props.temoignage
     }
 
-    // 🔹 récupérer lat/lng envoyés par le modal
-    const lat = marqueurModifie.lat
-    const lng = marqueurModifie.lng
-
-    if (lat != null && lng != null && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng))) {
-      payload.lat = Number(lat)
-      payload.lng = Number(lng)
+    if (!isNaN(marqueurModifie.lat) && !isNaN(marqueurModifie.lng)) {
+      payload.lat = Number(marqueurModifie.lat)
+      payload.lng = Number(marqueurModifie.lng)
     }
 
-    console.log('Payload avant envoi :', payload)
-
-    // ---------- images ----------
     let imagesPayload = Array.isArray(props.images) ? [...props.images] : []
-
     if (marqueurModifie.files && marqueurModifie.files.length > 0) {
       try {
-        const uploaded = await cloudinary.uploadMultipleImages(marqueurModifie.files)
-        if (Array.isArray(uploaded) && uploaded.length > 0) {
-          imagesPayload = [...imagesPayload, ...uploaded]
-        }
-      } catch (uploadErr) {
-        console.warn('Erreur upload image:', uploadErr)
+        const uploaded = await cloudinary.uploadMultipleImages(
+          marqueurModifie.files
+        )
+        if (Array.isArray(uploaded)) imagesPayload.push(...uploaded)
+      } catch (e) {
+        console.warn("Erreur d'upload image:", e)
       }
     }
 
     payload.images = imagesPayload
 
     await marqueursStore.modifierMarqueur(id, authStore.token, payload)
+
     modalVisible.value = false
-    messageErreur.value = ''
+    selectedMarqueur.value = null
     await getMarqueurs()
 
-    if ( leafletMapRef.value.afficherMarqueurs()) {
-      leafletMapRef.value.afficherMarqueurs()
-    }
+    leafletMapRef.value?.afficherMarqueurs?.()
   } catch (err) {
-    messageErreur.value = err.message || String(err)
-    console.error('Erreur lors de la modification:', err)
+    messageErreur.value = err.message
+    console.error("Erreur modification:", err)
   }
 }
 
-// const showInfo = (marqueur) => { selectedMarqueur.value = marqueur; modalVisible.value = true }
-
-
+/* ----------------------------------------------------
+   ON MOUNT
+---------------------------------------------------- */
 onMounted(() => {
   getMarqueurs()
 })
