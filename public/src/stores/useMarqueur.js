@@ -9,9 +9,9 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
     const marqueurActif = ref(null)
     const authStore = useAuthStore()
 
-    // --------------------------------------------
-    // AJOUTER UN MARQUEUR
-    // --------------------------------------------
+    /* --------------------------------------------
+       AJOUTER UN MARQUEUR
+    -------------------------------------------- */
     function ajouterMarqueur(payload) {
 
         const headers = { "Content-Type": "application/json" }
@@ -32,7 +32,6 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
                 throw new Error(data.message || 'Erreur inconnue')
             }
 
-            // 🔥 ajoute .id au marqueur nouvellement créé
             const mapped = {
                 ...data.data,
                 id: data.data._id
@@ -47,9 +46,9 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
         })
     }
 
-    // --------------------------------------------
-    // RÉCUPÉRER TOUS LES MARQUEURS
-    // --------------------------------------------
+    /* --------------------------------------------
+       GET TOUS LES MARQUEURS
+    -------------------------------------------- */
     function getMarqueurs() {
         return fetch(`${API_URL}/marqueurs`, {
             method: 'GET',
@@ -62,7 +61,6 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
                 throw new Error(data.message || 'Erreur inconnue')
             }
 
-            // 🔥 important : mapper l'id à la racine !
             marqueurs.value = data.data.map(m => ({
                 ...m,
                 id: m._id
@@ -76,9 +74,9 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
         })
     }
 
-    // --------------------------------------------
-    // RÉCUPÉRER UN SEUL MARQUEUR
-    // --------------------------------------------
+    /* --------------------------------------------
+       GET UN SEUL MARQUEUR
+    -------------------------------------------- */
     function getMarqueur(marqueurId) {
         return fetch(`${API_URL}/marqueurs/${marqueurId}`, {
             method: 'GET',
@@ -104,9 +102,9 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
         })
     }
 
-    // --------------------------------------------
-    // MODIFIER UN MARQUEUR COMPLET
-    // --------------------------------------------
+    /* --------------------------------------------
+       MODIFIER MARQUEUR COMPLET
+    -------------------------------------------- */
     function modifierMarqueur(marqueurId, token, payload) {
         return fetch(`${API_URL}/marqueurs/${marqueurId}`, {
             method: 'PUT',
@@ -135,9 +133,9 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
         })
     }
 
-    // --------------------------------------------
-    // MODIFIER LE STATUT D'UN MARQUEUR (APPROUVER/REJETER)
-    // --------------------------------------------
+    /* --------------------------------------------
+       MODIFIER STATUT (APPROUVE / REJETÉ)
+    -------------------------------------------- */
     function modifierMarqueurStatus(marqueurId, token, status) {
 
         return fetch(`${API_URL}/marqueurs/${marqueurId}/status`, {
@@ -155,9 +153,8 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
                 throw new Error(data.message || 'Erreur inconnue')
             }
 
-            // 🔥 Cas suppression
+            // 🔥 Cas SUPPRESSION locale
             if (data.message?.includes("supprim")) {
-                // retirer le marqueur localement
                 marqueurs.value = marqueurs.value.filter(m => m.id !== marqueurId)
                 return null
             }
@@ -168,7 +165,6 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
                 id: data.data._id
             }
 
-            // mise à jour locale si existe
             const index = marqueurs.value.findIndex(m => m.id === marqueurId)
             if (index !== -1) marqueurs.value[index] = updated
 
@@ -184,25 +180,30 @@ export const useMarqueursStore = defineStore('marqueurs', () => {
         })
     }
 
-  function supprimerMarqueur(id, token) {
-  return fetch(`${API_URL}/marqueurs/${id}`, {
-    method: 'DELETE',
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + token
+    /* --------------------------------------------
+       SUPPRIMER UN MARQUEUR
+    -------------------------------------------- */
+    function supprimerMarqueur(id, token) {
+        return fetch(`${API_URL}/marqueurs/${id}`, {
+            method: 'DELETE',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            }
+        })
+        .then(async (response) => {
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erreur inconnue')
+            }
+
+            // 🔥 supprimer localement (IMPORTANT)
+            marqueurs.value = marqueurs.value.filter(m => m.id !== id)
+
+            return data
+        })
     }
-  })
-  .then(async (response) => {
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Erreur inconnue')
-    }
-
-    return data
-  })
-}
-
 
     return {
         marqueurs,
