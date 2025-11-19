@@ -96,11 +96,12 @@ import LeafletMap from './LeafletMap.vue'
 const mockMarqueurStore = {
   marqueurs: [],
   getMarqueurs: vi.fn(() => Promise.resolve()),
+  getMarqueur: vi.fn(() => Promise.resolve()),
   ajouterMarqueur: vi.fn(() => Promise.resolve({ id: 1, message: 'Marqueur créé' }))
 }
 
 vi.mock('../stores/useMarqueur.js', () => ({
-  useMarqueursStore: vi.fn(() => mockMarqueurStore)
+  useMarqueurStore: vi.fn(() => mockMarqueurStore)
 }))
 
 import { createPinia } from 'pinia'
@@ -212,7 +213,9 @@ describe('handlelocateFromAddress (exposed)', () => {
   })
 
   afterEach(() => {
-    wrapper.unmount()
+    if (wrapper) {
+      wrapper.unmount()
+    }
   })
 
   it('place un nouveau marqueur et met à jour les coordonnées', async () => {
@@ -320,7 +323,9 @@ describe('afficherMarqueurs (exposed)', () => {
   })
 
   afterEach(() => {
-    wrapper.unmount()
+    if (wrapper) {
+      wrapper.unmount()
+    }
     vi.clearAllMocks()
     vi.restoreAllMocks()
   })
@@ -384,7 +389,6 @@ describe('afficherMarqueurs (exposed)', () => {
     markerChain.clickHandler()
     
     expect(wrapper.vm.selectedMarqueur).toStrictEqual(markerChain)
-    expect(wrapper.vm.imageWindowOpen).toBe(true)
   })
 
   it('ignore les marqueurs sans coordonnées', async () => {

@@ -2,7 +2,7 @@
 import LeafletMap from '../components/LeafletMap.vue'
 import MarqueurModal from '../components/MarqueurModalComponent.vue'
 import { ref, onMounted, computed } from 'vue'
-import { useMarqueursStore } from '../stores/useMarqueur'
+import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter ,} from 'vue-router'
 import * as cloudinary from '../utils/cloudinary.js'
@@ -22,8 +22,7 @@ const logout = () => {
   router.push('/connexion')
 }
 
-
-const marqueursStore = useMarqueursStore()
+const marqueurStore = useMarqueurStore()
 const authStore = useAuthStore()
 
 const messageErreur = ref('')
@@ -35,28 +34,17 @@ const leafletMapRef = ref(null)
 
 
 const marqueursFiltres = computed(() => {
-  console.log(marqueursStore.marqueurs)
-  return (marqueursStore.marqueurs ?? []).filter(
-    (m) => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase(),
+  console.log(marqueurStore.marqueurs)
+  return (marqueurStore.marqueurs ?? []).filter(
+    m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
   )
 })
 
 const getMarqueurs = () => {
-  marqueursStore.getMarqueurs().catch((error) => {
-    messageErreur.value = error.message
-  })
-}
-
-function handleLocateFromAddressFromModal(coords) {
-  // on délègue à LeafletMap grâce à sa ref
-  if (leafletMapRef.value?.handleLocateFromAddress) {
-    leafletMapRef.value.handleLocateFromAddress(coords)
-  }
-}
-
-const ouvrirModal = (marqueur) => {
-  selectedMarqueur.value = marqueur
-  modalVisible.value = true
+  marqueurStore.getMarqueurs()
+  .catch(error => {
+    messageErreur.value = error.message;
+  });
 }
 
 const accepterMarqueur = async (marqueur) => {
@@ -68,8 +56,8 @@ const accepterMarqueur = async (marqueur) => {
 
     console.log('ancien status:', marqueur.properties.status) // <-- AVANT
 
-    const payload = { status: 'approved' }
-    const updated = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
+    const payload = { status: 'approved' };
+    const updated = await marqueurStore.modifierMarqueurStatus(id, authStore.token, payload);
 
     console.log('status renvoyé par le serveur:', updated?.properties?.status) // <-- RÉPONSE
 
@@ -91,7 +79,7 @@ const refuserMarqueur = async (marqueur) => {
     console.log('ancien status:', marqueur.properties.status) // <-- AVANT
 
     const payload = { status: 'rejected' }
-    const updated = await marqueursStore.modifierMarqueurStatus(id, authStore.token, payload)
+    const updated = await marqueurStore.modifierMarqueurStatus(id, authStore.token, payload)
 
     console.log('status renvoyé par le serveur:', updated?.properties?.status) // <-- RÉPONSE
 
@@ -147,7 +135,7 @@ const validerModification = async (marqueurModifie) => {
 
     payload.images = imagesPayload
 
-    await marqueursStore.modifierMarqueur(id, authStore.token, payload)
+    await marqueurStore.modifierMarqueur(id, authStore.token, payload)
     modalVisible.value = false
     messageErreur.value = ''
     await getMarqueurs()
