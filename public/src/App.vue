@@ -1,11 +1,20 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import NavBar from './components/NavBar.vue';
+import { RouterView } from 'vue-router'
+
 </script>
 
 <template>
-  <NavBar/>
+  
   <RouterView />
 </template>
 
-<style scoped></style>
+<style>
+/* fond global pour toute l’appli */
+html,
+body,
+#app {
+  min-height: 100%;
+  margin: 0;
+  background-color: #f5f7fa; 
+}
+</style>

@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, reactive } from 'vue';
 import { useMarqueurStore } from '../stores/useMarqueur';
+import { useEditRequestStore } from '../stores/useEditRequest';
 import { API_URL } from '../config';
-import { svg } from 'leaflet';
+// import { svg } from 'leaflet';
+import MarqueurModal from './MarqueurModalComponent.vue';
 
 // props and emits
 const props = defineProps({
@@ -14,6 +16,8 @@ const props = defineProps({
 const emits = defineEmits(['close']);
 
 const marqueurStore = useMarqueurStore();
+const editRequestStore = useEditRequestStore();
+
 const canDisplayPanel = computed(() => {
     return props.isOpen && marqueurStore.marqueurActif !== null;
 });
@@ -21,7 +25,9 @@ const canDisplayPanel = computed(() => {
 const marqueurProperties = computed(() => {
     return marqueurStore.marqueurActif?.properties || {};
 });
-const isCommenting = reactive(ref(false));3
+const isCommenting = reactive(ref(false));
+
+const isEditModalOpen = ref(false);
 
 const formData = ref({
 	auteur: '',
@@ -32,9 +38,38 @@ const formErrors = ref({
 	contenu: ''
 });
 
+function openModificationRequest() {
+	if(!marqueurStore.marqueurActif) return;
+	isEditModalOpen.value = true;
+}
 
 function closePanel() {
     emits('close');
+}
+
+
+async function handleEditRequestSubmit(payloadFromModal) {
+	try {
+		const original = marqueurStore.marqueurActif;
+		if (!original) return;
+
+		const marqueurId = original.properties?.id || original._id;
+
+		const props = payloadFromModal.properties || {};
+
+		const body = {
+			titre: props.titre,
+    		type: props.type,
+      		adresse: props.adresse,
+      		description: props.description,
+      		temoignage: props.temoignage,
+		}
+		await editRequestStore.createEditRequest(marqueurId, body);
+		isEditModalOpen.value = false;
+		console.log('Demande de modification soumise avec succès');
+	} catch (err) {
+		console.error('Erreur lors de la soumission de la demande de modification :', err);
+	}
 }
 
 function toggleCommenting() {
@@ -118,6 +153,9 @@ async function sendComment() {
 					<p>{{ marqueurProperties.description }}</p>
 					<span>Créé par : {{ marqueurProperties.createdByName }}</span>
 				</div>
+				<button class="btn-edit" @click="openModificationRequest()">
+   					Demander une modification
+				</button>
 				<div class="panel__info-list">
 					<div v-if="marqueurProperties.adresse" class="info-item">
 						<svg class="info-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -166,7 +204,14 @@ async function sendComment() {
 				</div>
             </div>
         </aside>
+		
     </transition>
+	<MarqueurModal
+    	v-if="isEditModalOpen"
+    	:marqueur="marqueurStore.marqueurActif"
+    	@fermer="isEditModalOpen = false"
+    	@valider="handleEditRequestSubmit"
+  	/>
 </template>
 <style scoped>
 /* ---------- Panneau ---------- */
@@ -330,6 +375,21 @@ async function sendComment() {
 	width: 100%;
 	height: 100%;
 }
+.btn-edit {
+  	display: block;
+	width: auto;
+	height: 30px;
+	border-radius: 25px;
+	padding: 0 12px;
+	margin: 5px auto;
+	border: 1px solid rgba(67, 160, 71, 0.35);
+	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+	color: #4CAF50;
+	cursor: default;
+	font-weight: 600;
+	font-size: small;
+	transition: all 0.3s ease;
+}
 
 .btn-add-comment {
 	display: block;
@@ -344,7 +404,7 @@ async function sendComment() {
 	font-weight: 600;
 	transition: all 0.3s ease;
 }
-.btn-add-comment:hover {
+.btn-add-comment:hover, .btn-edit:hover {
 	background: #4CAF50;
 	color: white;
 }
