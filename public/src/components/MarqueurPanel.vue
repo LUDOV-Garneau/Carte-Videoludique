@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, reactive } from 'vue';
-import { useMarqueurStore } from '../stores/useMarqueur';
+import { useMarqueursStore } from '../stores/useMarqueur.js';
 import { useEditRequestStore } from '../stores/useEditRequest';
 import { API_URL } from '../config';
 // import { svg } from 'leaflet';
@@ -15,7 +15,7 @@ const props = defineProps({
 });
 const emits = defineEmits(['close']);
 
-const marqueurStore = useMarqueurStore();
+const marqueurStore = useMarqueursStore();
 const editRequestStore = useEditRequestStore();
 
 const canDisplayPanel = computed(() => {
@@ -204,7 +204,7 @@ async function sendComment() {
 				</div>
             </div>
         </aside>
-		
+
     </transition>
 	<MarqueurModal
     	v-if="isEditModalOpen"
@@ -498,38 +498,38 @@ async function sendComment() {
 
 /* Transition simple (fade + léger slide) */
 .panel-fade-enter-active,
-.panel-fade-leave-active { 
-  	transition: opacity .18s ease, transform .18s ease; 
+.panel-fade-leave-active {
+  	transition: opacity .18s ease, transform .18s ease;
 }
 
 .panel-fade-enter-from,
-.panel-fade-leave-to { 
-	opacity: 0; 
-	transform: translateX(8px); 
+.panel-fade-leave-to {
+	opacity: 0;
+	transform: translateX(8px);
 }
 
 .panel.left.panel-fade-enter-from,
-.panel.left.panel-fade-leave-to { 
-  	transform: translateX(-8px); 
+.panel.left.panel-fade-leave-to {
+  	transform: translateX(-8px);
 }
 
 ::-webkit-scrollbar {
   width: 10px;
 }
- 
+
 /* Fond de la track */
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 8px;
 }
- 
+
 /* La barre (thumb) */
 ::-webkit-scrollbar-thumb {
   background: #cfcfcf;
   border-radius: 8px;
   border: 2px solid #f1f1f1; /* pour créer un espace visuel */
 }
- 
+
 /* Effet au hover */
 ::-webkit-scrollbar-thumb:hover {
   background: #b6b6b6;
