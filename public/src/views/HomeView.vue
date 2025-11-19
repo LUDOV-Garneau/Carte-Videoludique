@@ -16,8 +16,7 @@ import NavBar from '../components/NavBar.vue';
 
 <style scoped>
 
-/* Reset local couleurs (évite les noirs durs) */
-h1, h2, p { color: var(--text); }
+
 
 /* Layout général avec fond subtil “grid” + dégradé */
 .layout {
