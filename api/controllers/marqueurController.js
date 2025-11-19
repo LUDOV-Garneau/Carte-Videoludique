@@ -144,6 +144,10 @@ exports.updateMarqueur = async (req, res, next) => {
       ));
     }
 
+    const newComment = { auteur: auteur || "Anonyme", contenu: texte };
+    marqueur.properties.comments.push(newComment);
+    await marqueur.save();
+
     res.status(200).json(formatSuccessResponse(
       200,
       "Le marqueur a été mis à jour avec succès!",

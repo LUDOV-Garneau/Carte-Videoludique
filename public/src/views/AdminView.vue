@@ -1,7 +1,8 @@
 <script setup>
 import LeafletMap from '../components/LeafletMap.vue'
+import MarqueurModal from '../components/MarqueurModalComponent.vue'
 import { ref, onMounted, computed } from 'vue'
-import { useMarqueursStore } from '../stores/useMarqueur'
+import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter ,} from 'vue-router'
 import * as cloudinary from '../utils/cloudinary.js'
@@ -34,16 +35,17 @@ const leafletMapRef = ref(null)
 
 
 const marqueursFiltres = computed(() => {
-  console.log(marqueursStore.marqueurs)
-  return (marqueursStore.marqueurs ?? []).filter(
-    (m) => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase(),
+  console.log(marqueurStore.marqueurs)
+  return (marqueurStore.marqueurs ?? []).filter(
+    m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
   )
 })
 
 const getMarqueurs = () => {
-  marqueursStore.getMarqueurs().catch((error) => {
-    messageErreur.value = error.message
-  })
+  marqueurStore.getMarqueurs()
+  .catch(error => {
+    messageErreur.value = error.message;
+  });
 }
 
 function handleLocateFromAddressFromModal(coords) {
@@ -166,6 +168,64 @@ const validerModification = async (marqueurModifie) => {
     messageErreur.value = err.message || String(err)
     console.error('Erreur lors de la modification:', err)
   }
+};
+
+const validerModification = async (marqueurModifie) => {
+  try {
+    console.log('Marqueur modifié reçu dans AdminView:', marqueurModifie)
+
+    const id = marqueurModifie?.properties?.id || marqueurModifie?._id
+    if (!id) throw new Error('Identifiant du marqueur manquant')
+
+    const props = marqueurModifie?.properties ?? {}
+
+    const payload = {
+      titre: props.titre,
+      type: props.type,
+      adresse: props.adresse,
+      description: props.description,
+      temoignage: props.temoignage,
+    }
+
+    // 🔹 récupérer lat/lng envoyés par le modal
+    const lat = marqueurModifie.lat
+    const lng = marqueurModifie.lng
+
+    if (lat != null && lng != null && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng))) {
+      payload.lat = Number(lat)
+      payload.lng = Number(lng)
+    }
+
+    console.log('Payload avant envoi :', payload)
+
+    // ---------- images ----------
+    let imagesPayload = Array.isArray(props.images) ? [...props.images] : []
+
+    if (marqueurModifie.files && marqueurModifie.files.length > 0) {
+      try {
+        const uploaded = await cloudinary.uploadMultipleImages(marqueurModifie.files)
+        if (Array.isArray(uploaded) && uploaded.length > 0) {
+          imagesPayload = [...imagesPayload, ...uploaded]
+        }
+      } catch (uploadErr) {
+        console.warn('Erreur upload image:', uploadErr)
+      }
+    }
+
+    payload.images = imagesPayload
+
+    await marqueurStore.modifierMarqueur(id, authStore.token, payload)
+    modalVisible.value = false
+    messageErreur.value = ''
+    await getMarqueurs()
+
+    if ( leafletMapRef.value.afficherMarqueurs()) {
+      leafletMapRef.value.afficherMarqueurs()
+    }
+  } catch (err) {
+    messageErreur.value = err.message || String(err)
+    console.error('Erreur lors de la modification:', err)
+  }
 }
 
 // const showInfo = (marqueur) => { selectedMarqueur.value = marqueur; modalVisible.value = true }
@@ -231,7 +291,7 @@ onMounted(() => {
                 <button class="kebab" aria-label="Modifier" @click="ouvrirModal(marqueur)">
                   Modifier
                 </button>
-
+                
               </td>
               <td class="accept-col">
                 <button class="action-btn accept" @click="accepterMarqueur(marqueur)">
@@ -258,7 +318,7 @@ onMounted(() => {
         @locate-from-address="handleLocateFromAddressFromModal"
         @valider="validerModification"
       />
-
+      
       <section class="map-wrapper">
         <LeafletMap ref="leafletMapRef"/>
       </section>

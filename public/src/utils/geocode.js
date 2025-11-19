@@ -93,4 +93,53 @@ async function geocodeAddress(q) {
   return { lat: parseFloat(res.lat), lng: parseFloat(res.lon) }
 }
 
-export { reverseGeocode, geocodeAddress };
+async function fetchAdresseSuggestions(suggestion, showSuggestion, rawQuery) {
+  const query = (rawQuery || '').trim()
+
+  if (!query || query.length < 3) {
+    suggestion.value = []
+    showSuggestion.value = false
+    return
+  }
+
+  // On peut ajouter un contexte Québec, Canada pour aider Nominatim
+  const fullQuery = `${query}, Québec, Canada`
+
+  const params = new URLSearchParams({
+    q: fullQuery,
+    format: 'json',
+    addressdetails: '1',
+    limit: '5',
+    countrycodes: 'ca'
+  })
+
+  const url = 'https://nominatim.openstreetmap.org/search?' + params.toString()
+
+  try {
+    const resp = await fetch(url, {
+      headers: {
+        'Accept-Language': 'fr',
+        'User-Agent': 'CarteVideoludique/1.0 (contact@example.com)'
+      }
+    })
+
+    let data = await resp.json()
+
+    // Sécurité : garder seulement le Canada (au cas où)
+    data = data.filter(
+      item => item.address && item.address.country_code === 'ca'
+    )
+
+    suggestion.value = data
+    showSuggestion.value = data.length > 0
+  } catch (error) {
+    console.error(
+      "Erreur lors de la récupération des suggestions d'adresse : ",
+      error
+    )
+    suggestion.value = []
+    showSuggestion.value = false
+  }
+}
+
+export { reverseGeocode, geocodeAddress, fetchAdresseSuggestions };
