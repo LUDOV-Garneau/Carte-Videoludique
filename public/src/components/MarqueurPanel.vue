@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, reactive } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useAuthStore } from '../stores/auth.js';
 import { useMarqueurStore } from '../stores/useMarqueur.js';
 import { useEditRequestStore } from '../stores/useEditRequest';
 import { API_URL } from '../config';
@@ -13,21 +14,21 @@ const props = defineProps({
         required: true
     },
 });
-const emits = defineEmits(['close']);
+const emits = defineEmits(['close', 'marqueur-deleted']);
 
 const marqueurStore = useMarqueurStore();
+const authStore = useAuthStore();
 const editRequestStore = useEditRequestStore();
 
 const canDisplayPanel = computed(() => {
-    console.log('is commenting: ' + isCommenting);
     return props.isOpen && marqueurStore.marqueurActif !== null;
 });
 
 const marqueurProperties = computed(() => {
     return marqueurStore.marqueurActif?.properties || {};
 });
-const isCommenting = reactive(ref(false));
-
+const isCommenting = ref(false);
+const isDeletingMarqueur = ref(false);
 const isEditModalOpen = ref(false);
 
 const formData = ref({
@@ -73,12 +74,14 @@ async function handleEditRequestSubmit(payloadFromModal) {
 	}
 }
 
+function toggleDeleteMarqueur() {
+	isDeletingMarqueur.value = !isDeletingMarqueur.value;
+}
+
 function toggleCommenting() {
 	isCommenting.value = !isCommenting.value;
 	formData.value.auteur = '';
 	formData.value.contenu = '';
-	console.log(marqueurStore.marqueurActif);
-  console.log('is commenting: ' + isCommenting);
 }
 
 function copyToClipboard(text) {
@@ -88,6 +91,18 @@ function copyToClipboard(text) {
     }).catch(err => {
         console.error('Erreur lors de la copie :', err);
     });
+}
+
+async function deleteMarqueur() {
+	try {
+		if (authStore.isAuthenticated) {
+			await marqueurStore.supprimerMarqueur(marqueurStore.marqueurActif?.properties?.id, authStore.token);
+			emits('marqueur-deleted');
+			closePanel();
+		}
+	} catch (err) {
+		console.error('Erreur lors de la suppression du marqueur :', err);
+	}
 }
 
 function validateCommentForm() {
@@ -129,7 +144,7 @@ async function sendComment() {
                 throw new Error(errorData.message || 'Erreur inconnue')
 			}
 			const responseData = await response.json();
-			console.log('Commentaire envoyé avec succès :', responseData.data);
+			marqueurStore.marqueurActif.properties.comments.push(responseData.data);
 			toggleCommenting();
 		}
 	} catch (err) {
@@ -181,6 +196,12 @@ async function sendComment() {
 							</svg>
 						</button>
 					</div>
+				</div>
+				<button v-if="authStore.isAuthenticated && !isDeletingMarqueur" class="btn-panel1" @click="toggleDeleteMarqueur">Supprimer le marqueur</button>
+				<div v-if="authStore.isAuthenticated && isDeletingMarqueur" class="panel__section delete-confirmation">
+					<p>Êtes-vous sûr de vouloir supprimer ce marqueur ? Cette action est irréversible.</p>
+					<button @click="deleteMarqueur">Supprimer</button>
+					<button @click="toggleDeleteMarqueur">Annuler</button>
 				</div>
 				<div class="panel__section">
 					<h5>Témoignages</h5>
@@ -377,6 +398,43 @@ async function sendComment() {
 	width: 100%;
 	height: 100%;
 }
+
+.delete-confirmation {
+	margin: 20px;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	border: 2px solid #4CAF50;
+	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+	border-radius: 20px;
+	box-sizing: border-box;
+}
+.delete-confirmation p {
+	display: block;
+	width: 100%;
+	padding: 12px;
+	text-align: center;
+}
+.delete-confirmation button {
+	margin: 0;
+	display: block;
+	width: 50%;
+	height: 36px;
+	box-sizing: border-box;
+	border: none;
+	border-top: 2px solid #4CAF50;
+}
+.delete-confirmation button:hover {
+	background-color: #4CAF50;
+	color: white;
+}
+.delete-confirmation button:first-of-type {
+	border-radius: 0 0 0 17px;
+}
+.delete-confirmation button:last-of-type {
+	border-radius: 0 0 17px 0;
+}
+
 .btn-panel1 {
   	display: block;
 	width: auto;
@@ -404,7 +462,7 @@ async function sendComment() {
 
 /* ---------- Formulaire d'ajout de commentaire ---------- */
 .add-comment-form {
-	border: 3px solid #4CAF50;
+	border: 2px solid #4CAF50;
 	border-radius: 20px;
 	margin-bottom: 10px;
 	box-sizing: border-box;
@@ -463,10 +521,10 @@ async function sendComment() {
 	border-top: 2px solid #4CAF50;
 }
 .btn-submit-comment {
-	border-radius: 0 0 0 16px;
+	border-radius: 0 0 0 17px;
 }
 .btn-cancel-comment {
-	border-radius: 0 0 16px 0;
+	border-radius: 0 0 17px 0;
 }
 .btn-submit-comment, .btn-cancel-comment {
 	width: 100%;
@@ -475,13 +533,11 @@ async function sendComment() {
 	background: white;
 	color: #4CAF50;
 	font-weight: 600;
-	cursor: default;
 	transition: all 0.3s ease;
 }
 .btn-submit-comment:hover, .btn-cancel-comment:hover {
 	background: #4CAF50;
 	color: white;
-	cursor: default;
 }
 
 /* ---------- Commentaires ---------- */

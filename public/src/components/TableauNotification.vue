@@ -28,11 +28,11 @@ const ouvrirModalLocal = (marqueur) => {
 }
 
 const accepterLocal = (marqueur) => {
-  emit('accepter', marqueur)
+  emit('accepter-marqueur', marqueur)
 }
 
 const refuserLocal = (marqueur) => {
-  emit('refuser', marqueur)
+  emit('refuser-marqueur', marqueur)
 }
 
 const loadEditRequests = async () => {

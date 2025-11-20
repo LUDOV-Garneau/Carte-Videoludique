@@ -11,16 +11,7 @@
 
     <div v-if="user" class="card mx-auto text-center" style="max-width: 500px;">
       <div class="card-body">
-        <!-- <img
-          v-if="user.avatar"
-          :src="user.avatar"
-          alt="Avatar"
-          class="rounded-circle mb-3"
-          width="120"
-          height="120"
-        /> -->
-        <!-- -->
-
+        
         <h3 class="card-title">{{ user.nom }}</h3>
         <p class="text-muted">{{ user.prenom }}</p>
         <p class="text-muted">{{ user.courriel }}</p>
@@ -39,11 +30,10 @@
 
 <script setup>
 import { ref,onBeforeMount } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { API_URL } from '@/config'
 
-const router = useRouter()
+
 const auth = useAuthStore()
 
 

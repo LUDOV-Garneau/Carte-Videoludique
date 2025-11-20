@@ -66,6 +66,9 @@ const accepterMarqueur = async (marqueur) => {
     if (updated?.properties?.status) {
       marqueur.properties.status = updated.properties.status
     }
+    if (leafletMapRef.value?.afficherMarqueurs) {
+      leafletMapRef.value.afficherMarqueurs()
+    }
   } catch (err) {
     messageErreur.value = err.message
   }
@@ -83,6 +86,10 @@ const refuserMarqueur = async (marqueur) => {
     )
 
     await marqueurStore.getMarqueurs()
+
+    if (leafletMapRef.value?.afficherMarqueurs) {
+      leafletMapRef.value.afficherMarqueurs()
+    }
   } catch (err) {
     console.error("Erreur suppression:", err)
   }
@@ -156,8 +163,8 @@ onMounted(() => {
         v-model:filtre-status="filtreStatus"
         :marqueurs-filtres="marqueursFiltres"
         @ouvrir-modal="ouvrirModal"
-        @accepter="accepterMarqueur"
-        @refuser="refuserMarqueur"
+        @accepter-marqueur="accepterMarqueur"
+        @refuser-marqueur="refuserMarqueur"
       />
 
       <MarqueurModal
