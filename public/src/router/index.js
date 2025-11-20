@@ -70,6 +70,18 @@ const router = createRouter({
       path: '/accounts',
       name: 'Accounts',
       component: AccountsView,
+      beforeEnter: (to, from, next) => {
+        const auth = useAuthStore()
+        if (auth.isAuthenticated) {
+          if(auth.role === 'Gestionnaire'){
+            next()
+          }else{
+            next('/403')
+          } 
+        } else {
+          next('/connexion')
+        }
+      },
     },
     {
       path: '/403',
