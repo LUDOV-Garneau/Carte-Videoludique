@@ -149,7 +149,7 @@ const validerModification = async (marqueurModifie) => {
 
 onMounted(() => {
   getMarqueurs()
-  getEditRequests()
+ 
 })
 </script>
 
