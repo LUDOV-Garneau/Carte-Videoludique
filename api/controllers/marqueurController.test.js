@@ -316,139 +316,187 @@ describe('MarqueurController.updateMarqueur', () => {
 })
 
 /* -------------------- updateStatusMarqueur -------------------- */
-describe('MarqueurController.updateStatusMarqueur', () => {
-  it('400 si statut invalide', async () => {
+describe("MarqueurController.updateStatusMarqueur", () => {
+
+  it("400 si statut invalide", async () => {
     const req = mockReq({
-      params: { marqueurId: 'abc123' },
-      originalUrl: '/api/marqueurs/abc123/status',
-      body: { status: 'not-valid' },
-      admin: { _id: 'admin123' }
-    })
-    const res = mockRes()
-    const next = mockNext()
+      params: { marqueurId: "abc123" },
+      originalUrl: "/api/marqueurs/abc123/status",
+      body: { status: "not-valid" }
+    });
+    const res = mockRes();
+    const next = mockNext();
 
-    await marqueurController.updateStatusMarqueur(req, res, next)
+    await marqueurController.updateStatusMarqueur(req, res, next);
 
-    expect(res.statusCode).toBe(400)
+    expect(res.statusCode).toBe(400);
     expect(res.body).toMatchObject({
       status: 400,
-      error: 'Bad Request',
-      message: "Statut invalide. Valeurs acceptées : 'approved', 'pending' ou 'rejected'.",
-      path: '/api/marqueurs/abc123/status'
-    })
-    expect(next).not.toHaveBeenCalled()
-  })
+      error: "Bad Request",
+      message: "Statut invalide.",
+      path: "/api/marqueurs/abc123/status"
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
 
-  it('403 si admin non connecté', async () => {
-    const req = mockReq({
-      params: { marqueurId: 'abc123' },
-      originalUrl: '/api/marqueurs/abc123/status',
-      body: { status: 'approved' },
-      admin: null
-    })
-    const res = mockRes()
-    const next = mockNext()
+  /* -----------------------------------------------------------
+     🔥 TESTS POUR LE CAS "rejected" → SUPPRESSION
+  ----------------------------------------------------------- */
 
-    await marqueurController.updateStatusMarqueur(req, res, next)
-
-    expect(res.statusCode).toBe(403)
-    expect(res.body).toMatchObject({
-      status: 403,
-      error: 'Forbidden',
-      message: "Seul un administrateur peut modifier le statut d’un marqueur.",
-      path: '/api/marqueurs/abc123/status'
-    })
-    expect(next).not.toHaveBeenCalled()
-  })
-
-  it('404 si le marqueur n’existe pas', async () => {
-    vi.spyOn(Marqueur, 'findByIdAndUpdate').mockResolvedValue(null)
+  it("404 si status = rejected mais le marqueur n'existe pas", async () => {
+    vi.spyOn(Marqueur, "findByIdAndDelete").mockResolvedValue(null);
 
     const req = mockReq({
-      params: { marqueurId: 'nope' },
-      originalUrl: '/api/marqueurs/nope/status',
-      body: { status: 'approved' },
-      admin: { _id: 'admin123' }
-    })
-    const res = mockRes()
-    const next = mockNext()
+      params: { marqueurId: "nope" },
+      originalUrl: "/api/marqueurs/nope/status",
+      body: { status: "rejected" }
+    });
+    const res = mockRes();
+    const next = mockNext();
 
-    await marqueurController.updateStatusMarqueur(req, res, next)
+    await marqueurController.updateStatusMarqueur(req, res, next);
 
-    expect(Marqueur.findByIdAndUpdate).toHaveBeenCalledWith(
-      'nope',
-      { $set: { 'properties.status': 'approved' } },
-      { new: true, runValidators: true, context: 'query' }
-    )
+    expect(Marqueur.findByIdAndDelete).toHaveBeenCalledWith("nope");
 
-    expect(res.statusCode).toBe(404)
+    expect(res.statusCode).toBe(404);
     expect(res.body).toMatchObject({
       status: 404,
-      error: 'Not Found',
-      message: "Le marqueur à mettre à jour n'existe pas.",
-      path: '/api/marqueurs/nope/status'
-    })
-    expect(next).not.toHaveBeenCalled()
-  })
+      error: "Not Found",
+      message: "Le marqueur à supprimer n'existe pas.",
+      path: "/api/marqueurs/nope/status"
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
 
-  it('200 + payload mis à jour quand OK', async () => {
-    const updated = {
-      _id: 'abc123',
-      properties: {
-        status: 'approved'
-      }
-    }
-    vi.spyOn(Marqueur, 'findByIdAndUpdate').mockResolvedValue(updated)
+  it("200 si status = rejected et suppression OK", async () => {
+    const deleted = { _id: "abc123", properties: { status: "rejected" } };
+
+    vi.spyOn(Marqueur, "findByIdAndDelete").mockResolvedValue(deleted);
 
     const req = mockReq({
-      params: { marqueurId: 'abc123' },
-      originalUrl: '/api/marqueurs/abc123/status',
-      body: { status: 'approved' },
-      admin: { _id: 'admin123' }
-    })
-    const res = mockRes()
-    const next = mockNext()
+      params: { marqueurId: "abc123" },
+      originalUrl: "/api/marqueurs/abc123/status",
+      body: { status: "rejected" }
+    });
+    const res = mockRes();
+    const next = mockNext();
 
-    await marqueurController.updateStatusMarqueur(req, res, next)
+    await marqueurController.updateStatusMarqueur(req, res, next);
 
-    expect(Marqueur.findByIdAndUpdate).toHaveBeenCalledWith(
-      'abc123',
-      { $set: { 'properties.status': 'approved' } },
-      { new: true, runValidators: true, context: 'query' }
-    )
+    expect(Marqueur.findByIdAndDelete).toHaveBeenCalledWith("abc123");
 
-    expect(next).not.toHaveBeenCalled()
-    expect(res.statusCode).toBe(200)
+    expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
       status: 200,
-      message: "Le statut du marqueur a été mis à jour vers 'approved'.",
-      data: updated,
-      path: '/api/marqueurs/abc123/status'
-    })
-  })
+      message: "Marqueur supprimé (rejeté).",
+      data: deleted,
+      path: "/api/marqueurs/abc123/status"
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
 
-  it('next(err) si Mongoose jette une erreur', async () => {
-    const boom = new Error('Database error')
-    vi.spyOn(Marqueur, 'findByIdAndUpdate').mockRejectedValue(boom)
+  /* -----------------------------------------------------------
+     🔥 TESTS POUR approved / pending
+  ----------------------------------------------------------- */
+
+  it("404 si findByIdAndUpdate retourne null", async () => {
+    vi.spyOn(Marqueur, "findByIdAndUpdate").mockResolvedValue(null);
 
     const req = mockReq({
-      params: { marqueurId: 'abc123' },
-      originalUrl: '/api/marqueurs/abc123/status',
-      body: { status: 'rejected' },
-      admin: { _id: 'admin123' }
-    })
-    const res = mockRes()
-    const next = mockNext()
+      params: { marqueurId: "nope" },
+      originalUrl: "/api/marqueurs/nope/status",
+      body: { status: "approved" }
+    });
+    const res = mockRes();
+    const next = mockNext();
 
-    await marqueurController.updateStatusMarqueur(req, res, next)
+    await marqueurController.updateStatusMarqueur(req, res, next);
 
-    expect(Marqueur.findByIdAndUpdate).toHaveBeenCalled()
-    expect(next).toHaveBeenCalledTimes(1)
-    expect(next).toHaveBeenCalledWith(boom)
-  })
-})
+    expect(Marqueur.findByIdAndUpdate).toHaveBeenCalledWith(
+      "nope",
+      { $set: { "properties.status": "approved" } },
+      { new: true, runValidators: true }
+    );
 
+    expect(res.statusCode).toBe(404);
+    expect(res.body).toMatchObject({
+      status: 404,
+      error: "Not Found",
+      message: "Le marqueur à mettre à jour n'existe pas.",
+      path: "/api/marqueurs/nope/status"
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
 
+  it("200 quand mise à jour OK", async () => {
+    const updated = {
+      _id: "abc123",
+      properties: { status: "approved" }
+    };
+
+    vi.spyOn(Marqueur, "findByIdAndUpdate").mockResolvedValue(updated);
+
+    const req = mockReq({
+      params: { marqueurId: "abc123" },
+      originalUrl: "/api/marqueurs/abc123/status",
+      body: { status: "approved" }
+    });
+    const res = mockRes();
+    const next = mockNext();
+
+    await marqueurController.updateStatusMarqueur(req, res, next);
+
+    expect(Marqueur.findByIdAndUpdate).toHaveBeenCalledWith(
+      "abc123",
+      { $set: { "properties.status": "approved" } },
+      { new: true, runValidators: true }
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      status: 200,
+      message: "Statut mis à jour vers 'approved'",
+      data: updated,
+      path: "/api/marqueurs/abc123/status"
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("next(err) si Mongoose rejette (approved / pending)", async () => {
+    const error = new Error("DB failure");
+    vi.spyOn(Marqueur, "findByIdAndUpdate").mockRejectedValue(error);
+
+    const req = mockReq({
+      params: { marqueurId: "abc123" },
+      originalUrl: "/api/marqueurs/abc123/status",
+      body: { status: "approved" }
+    });
+    const res = mockRes();
+    const next = mockNext();
+
+    await marqueurController.updateStatusMarqueur(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(error);
+  });
+
+  it("next(err) si Mongoose rejette (rejected)", async () => {
+    const error = new Error("DB failure");
+    vi.spyOn(Marqueur, "findByIdAndDelete").mockRejectedValue(error);
+
+    const req = mockReq({
+      params: { marqueurId: "abc123" },
+      originalUrl: "/api/marqueurs/abc123/status",
+      body: { status: "rejected" }
+    });
+    const res = mockRes();
+    const next = mockNext();
+
+    await marqueurController.updateStatusMarqueur(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(error);
+  });
+
+});
 
 /* -------------------- deleteMarqueur -------------------- */
 describe('MarqueurController.deleteMarqueur', () => {

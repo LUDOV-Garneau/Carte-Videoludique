@@ -3,7 +3,7 @@ import AdminView from './AdminView.vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { defineComponent } from 'vue'
-import { useMarqueurStore } from '../stores/useMarqueur'
+import { useMarqueursStore } from '../stores/useMarqueur'
 import { useAuthStore } from '../stores/auth'
 
 const LeafletMapStub = defineComponent({
@@ -20,7 +20,7 @@ describe('AdminView.vue', () => {
   beforeEach(() => {
     pinia = createPinia()
     setActivePinia(pinia)
-    marqueurStore = useMarqueurStore()
+    marqueurStore = useMarqueursStore()
     authStore = useAuthStore()
     authStore.token = 'faketoken123'
   })
@@ -114,26 +114,39 @@ describe('AdminView.vue', () => {
     expect(marqueur.properties.status).toBe('approved')
   })
 
-  it('met à jour le statut du marqueur en "rejected" quand refuserMarqueur() est appelé', async () => {
-    wrapper = mount(AdminView, {
-      global: { plugins: [pinia], stubs: { LeafletMap: LeafletMapStub } }
-    })
-
-    const marqueur = {
-      properties: { id: '456', status: 'pending' }
-    }
-
-    const updatedMarqueur = { properties: { id: '456', status: 'rejected' } }
-
-    const spy = vi
-      .spyOn(marqueurStore, 'modifierMarqueurStatus')
-      .mockResolvedValue(updatedMarqueur)
-
-    await wrapper.vm.refuserMarqueur(marqueur)
-
-    expect(spy).toHaveBeenCalledWith('456', authStore.token, { status: 'rejected' })
-    expect(marqueur.properties.status).toBe('rejected')
+  it('supprime le marqueur et rafraîchit la liste quand refuserMarqueur() est appelé', async () => {
+  wrapper = mount(AdminView, {
+    global: { plugins: [pinia], stubs: { LeafletMap: LeafletMapStub } }
   })
+
+  // 🔥 Arrange
+  const marqueur = { properties: { id: '456' } }
+
+  // contenu initial du store
+  marqueurStore.marqueurs = [
+    { properties: { id: '123' } },
+    { properties: { id: '456' } },
+    { properties: { id: '789' } }
+  ]
+
+  // mocks
+  const spyDelete = vi
+    .spyOn(marqueurStore, 'supprimerMarqueur')
+    .mockResolvedValue(true)
+
+  const spyGet = vi
+    .spyOn(marqueurStore, 'getMarqueurs')
+    .mockResolvedValue([])
+
+  await wrapper.vm.refuserMarqueur(marqueur)
+
+  expect(spyDelete).toHaveBeenCalledWith('456', authStore.token)
+
+  expect(marqueurStore.marqueurs.find(m => m.properties.id === '456')).toBeUndefined()
+
+  expect(spyGet).toHaveBeenCalledTimes(1)
+})
+
 
   it('affiche une erreur si aucun token n’est disponible', async () => {
     authStore.token = null

@@ -4,7 +4,7 @@ import L from 'leaflet'
 import { reverseGeocode } from '../utils/geocode.js'
 import AddMarqueurPanel from './AddMarqueurPanel.vue'
 import MarqueurPanel from './MarqueurPanel.vue'
-import { useMarqueurStore } from '../stores/useMarqueur.js'
+import { useMarqueursStore } from '../stores/useMarqueur.js'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -23,7 +23,7 @@ const DefaultIcon = L.icon({
 })
 L.Marker.prototype.options.icon = DefaultIcon
 
-const marqueurStore = useMarqueurStore()
+const marqueurStore = useMarqueursStore()
 
 const mapEl = ref(null)
 let map
@@ -119,7 +119,7 @@ async function afficherMarqueurs() {
           selectedMarqueur.value = marqueur;
           marqueurStore.getMarqueur(marqueurData.properties.id);
           openInfoPanel();
-          
+
           map.setView([lat, lng], Math.max(map.getZoom(), 15));
         });
 
@@ -296,7 +296,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  
+
   <div class="map" ref="mapEl"></div>
 
 	<!-- Composant panel d'ajout de marqueur -->
