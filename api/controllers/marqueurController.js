@@ -127,11 +127,31 @@ exports.getMarqueur = async (req, res, next) => {
  */
 exports.updateMarqueur = async (req, res, next) => {
   try {
-    const { marqueurId } = req.params;
+    const id = req.params.marqueurId || req.params.id;
+
+    const {
+      titre,
+      type,
+      adresse,
+      description,
+      temoignage,
+      image
+    } = req.body;
+
+    const update = {
+      $set: {
+        "properties.titre": titre,
+        "properties.type": type,
+        "properties.adresse": adresse,
+        "properties.description": description,
+        "properties.temoignage": temoignage,
+        "properties.image": image,
+      }
+    };
 
     const updated = await Marqueur.findByIdAndUpdate(
-      marqueurId,
-      req.body,
+      id,
+      update,
       { new: true, runValidators: true }
     );
 
@@ -144,20 +164,18 @@ exports.updateMarqueur = async (req, res, next) => {
       ));
     }
 
-    const newComment = { auteur: auteur || "Anonyme", contenu: texte };
-    marqueur.properties.comments.push(newComment);
-    await marqueur.save();
-
-    res.status(200).json(formatSuccessResponse(
+    return res.status(200).json(formatSuccessResponse(
       200,
       "Le marqueur a été mis à jour avec succès!",
       updated,
       req.originalUrl
     ));
+
   } catch (err) {
     next(err);
   }
 };
+
 
 /**
  * Met à jour le statut d’un marqueur (approved, pending, rejected).
