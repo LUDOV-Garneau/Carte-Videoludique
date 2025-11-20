@@ -4,16 +4,13 @@ import MarqueurModal from '../components/MarqueurModalComponent.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
-import { useEditRequestStore } from '@/stores/useEditRequest'
-import { useRouter } from 'vue-router'
+
 import * as cloudinary from '../utils/cloudinary.js'
 import TableauNotification from '../components/TableauNotification.vue'
 import NavBar from '../components/NavBar.vue'
 
-const router = useRouter()
 const authStore = useAuthStore()
 const marqueurStore = useMarqueurStore()
-const editRequestStore = useEditRequestStore()
 
 const messageErreur = ref('')
 const filtreStatus = ref('pending')
@@ -21,10 +18,7 @@ const modalVisible = ref(false)
 const selectedMarqueur = ref(null)
 const leafletMapRef = ref(null)
 
-const logout = () => {
-  authStore.logout()
-  router.push('/connexion')
-}
+
 
 const marqueursFiltres = computed(() => {
   return (marqueurStore.marqueurs ?? []).filter(
@@ -38,11 +32,6 @@ const getMarqueurs = () => {
   })
 }
 
-const getEditRequests = () => {
-  editRequestStore.getEditRequests().catch(error => {
-    messageErreur.value = error.message
-  })
-}
 
 const ouvrirModal = (marqueur) => {
   selectedMarqueur.value = marqueur
