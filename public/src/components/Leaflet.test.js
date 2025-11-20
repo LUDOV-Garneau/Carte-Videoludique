@@ -14,6 +14,13 @@ vi.mock('leaflet/dist/images/marker-shadow.png', () => ({ default: 'marker-shado
 vi.mock('leaflet', () => {
   const onHandlers = {}
 
+  const latLngBounds = vi.fn((sw, ne) => ({
+    _southWest: sw,
+    _northEast: ne,
+    // si tu utilises bounds.contains(latlng) dans ton composant
+    contains: vi.fn(() => true)
+  }))
+
   const map = {
     setView: vi.fn(() => map),
     on: vi.fn((evt, cb) => { onHandlers[evt] = cb; return map }),
@@ -80,6 +87,7 @@ vi.mock('leaflet', () => {
     DomUtil,
     DomEvent,
     Marker,
+    latLngBounds, 
   }
 
   return { default: L, onHandlers, map }

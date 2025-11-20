@@ -39,6 +39,11 @@ const selectedMarqueur = ref(null);
 const currentMarqueur = ref(null);
 const currentAdresse = ref('');
 
+const WORLD_BOUNDS = L.latLngBounds(
+  [-85.05112878, -180],  // Sud-Ouest
+  [85.05112878, 180]     // Nord-Est
+)
+
 function openCreatePanel() {
   createPanelOpen.value = true
   const container = map?.getContainer?.()
@@ -153,7 +158,14 @@ defineExpose({
  * @returns {void}
  */
 function initMap() {
-  map = L.map(mapEl.value, { zoomControl: true, zoomAnimation: false }).setView([45.5017, -73.5673], 12)
+  map = L.map(mapEl.value, { 
+    zoomControl: true,
+    zoomAnimation: false,
+    maxBounds: WORLD_BOUNDS,
+    maxBoundsViscosity: 1.0,
+    minZoom: 2
+  })
+  .setView([45.5017, -73.5673], 12)
 }
 
 /**
@@ -168,6 +180,8 @@ function initMap() {
 function addTileLayer() {
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
+    noWrap: true,
+    bounds: WORLD_BOUNDS,
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     subdomains: 'abcd'
   }).addTo(map)
@@ -189,6 +203,11 @@ function addTileLayer() {
 function setupMapClickHandler() {
 	map.on('click', async (e) => {
 		if (!createPanelOpen.value) return
+
+    if(!WORLD_BOUNDS.contains(e.latlng)) {
+      alert('Veuillez sélectionner un emplacement à l’intérieur des limites du monde.');
+      return;
+    }
 
 		const { lat, lng } = e.latlng
 		if (currentMarqueur.value) map.removeLayer(currentMarqueur.value)
