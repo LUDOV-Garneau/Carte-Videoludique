@@ -3,7 +3,7 @@ import AdminView from './AdminView.vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { defineComponent } from 'vue'
-import { useMarqueursStore } from '../stores/useMarqueur'
+import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '../stores/auth'
 
 const LeafletMapStub = defineComponent({
@@ -20,7 +20,7 @@ describe('AdminView.vue', () => {
   beforeEach(() => {
     pinia = createPinia()
     setActivePinia(pinia)
-    marqueurStore = useMarqueursStore()
+    marqueurStore = useMarqueurStore()
     authStore = useAuthStore()
     authStore.token = 'faketoken123'
   })

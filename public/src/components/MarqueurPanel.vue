@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, reactive } from 'vue';
-import { useMarqueursStore } from '../stores/useMarqueur.js';
+import { useMarqueurStore } from '../stores/useMarqueur.js';
 import { useEditRequestStore } from '../stores/useEditRequest';
 import { API_URL } from '../config';
 // import { svg } from 'leaflet';
@@ -15,7 +15,7 @@ const props = defineProps({
 });
 const emits = defineEmits(['close']);
 
-const marqueurStore = useMarqueursStore();
+const marqueurStore = useMarqueurStore();
 const editRequestStore = useEditRequestStore();
 
 const canDisplayPanel = computed(() => {
@@ -153,7 +153,7 @@ async function sendComment() {
 					<p>{{ marqueurProperties.description }}</p>
 					<span>Créé par : {{ marqueurProperties.createdByName }}</span>
 				</div>
-				<button class="btn-edit" @click="openModificationRequest()">
+				<button class="btn-panel1" @click="openModificationRequest()">
    					Demander une modification
 				</button>
 				<div class="panel__info-list">
@@ -182,7 +182,7 @@ async function sendComment() {
 				</div>
 				<div class="panel__section">
 					<h5>Témoignages</h5>
-					<button class="btn-add-comment" @click="toggleCommenting">Ajouter un témoignage</button>
+					<button v-if="!isCommenting" class="btn-panel1" @click="toggleCommenting">Ajouter un témoignage</button>
 					<form v-if="isCommenting" class="add-comment-form"  @submit.prevent="sendComment">
 						<div class="add-comment-nom">
 							<label for="auteur">Votre nom :</label>
@@ -194,9 +194,9 @@ async function sendComment() {
 							<button type="button" class="btn-cancel-comment" @click="toggleCommenting">Annuler</button>
 						</div>
 					</form>
-					<span class="no-comments" v-if="!marqueurStore.marqueurActif?.comments">Aucun témoignage</span>
-					<div v-else class="panel__comments">
-						<div v-for="(comment, index) in marqueurStore.marqueurActif?.comments || []" :key="index" class="info-item">
+					<span class="no-comments" v-if="marqueurStore.marqueurActif?.properties.comments.length === 0">Aucun témoignage</span>
+					<div v-else>
+						<div v-for="(comment, index) in marqueurStore.marqueurActif?.properties.comments || []" :key="index" class="panel__comments">
 							<span>Auteur(e) : {{ comment.auteur }}</span>
 							<p>{{ comment.contenu }}</p>
 						</div>
@@ -375,13 +375,13 @@ async function sendComment() {
 	width: 100%;
 	height: 100%;
 }
-.btn-edit {
+.btn-panel1 {
   	display: block;
 	width: auto;
 	height: 30px;
 	border-radius: 25px;
 	padding: 0 12px;
-	margin: 5px auto;
+	margin: 12px auto;
 	border: 1px solid rgba(67, 160, 71, 0.35);
 	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
 	color: #4CAF50;
@@ -390,21 +390,7 @@ async function sendComment() {
 	font-size: small;
 	transition: all 0.3s ease;
 }
-
-.btn-add-comment {
-	display: block;
-	width: auto;
-	height: 40px;
-	border-radius: 25px;
-	padding: 0 16px;
-	margin: 16px auto;
-	border: 2px solid #4CAF50;
-	color: #4CAF50;
-	cursor: default;
-	font-weight: 600;
-	transition: all 0.3s ease;
-}
-.btn-add-comment:hover, .btn-edit:hover {
+.btn-panel1:hover {
 	background: #4CAF50;
 	color: white;
 }
@@ -494,6 +480,12 @@ async function sendComment() {
 	background: #4CAF50;
 	color: white;
 	cursor: default;
+}
+
+/* ---------- Commentaires ---------- */
+.panel__comments {
+	border-top: 1px solid #ccc;
+	padding: 8px 0;
 }
 
 /* Transition simple (fade + léger slide) */

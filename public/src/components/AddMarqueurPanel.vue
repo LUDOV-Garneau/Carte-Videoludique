@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { useMarqueursStore } from '../stores/useMarqueur.js';
+import { useMarqueurStore } from '../stores/useMarqueur.js';
 import AddImage from './AddImage.vue';
 import * as utils from '../utils/utils.js';
 import * as cloudinary from '../utils/cloudinary.js';
@@ -24,7 +24,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'marqueur-added', 'locate-address']);
 
 // Variables
-const marqueurStore = useMarqueursStore();
+const marqueurStore = useMarqueurStore();
 
 const files = ref([]);
 

@@ -4,7 +4,7 @@ import L from 'leaflet'
 import { reverseGeocode } from '../utils/geocode.js'
 import AddMarqueurPanel from './AddMarqueurPanel.vue'
 import MarqueurPanel from './MarqueurPanel.vue'
-import { useMarqueursStore } from '../stores/useMarqueur.js'
+import { useMarqueurStore } from '../stores/useMarqueur.js'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -23,7 +23,7 @@ const DefaultIcon = L.icon({
 })
 L.Marker.prototype.options.icon = DefaultIcon
 
-const marqueurStore = useMarqueursStore()
+const marqueurStore = useMarqueurStore()
 
 const mapEl = ref(null)
 let map
