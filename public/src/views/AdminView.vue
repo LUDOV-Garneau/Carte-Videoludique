@@ -10,70 +10,51 @@ import * as cloudinary from '../utils/cloudinary.js'
 import TableauNotification from '../components/TableauNotification.vue'
 import NavBar from '../components/NavBar.vue'
 
-/* ----------------------------------------------------
-   STORES + ROUTER
----------------------------------------------------- */
 const router = useRouter()
 const authStore = useAuthStore()
 const marqueurStore = useMarqueursStore()
 const editRequestStore = useEditRequestStore()
 
-/* ----------------------------------------------------
-   REFS
----------------------------------------------------- */
 const messageErreur = ref('')
 const filtreStatus = ref('pending')
 const modalVisible = ref(false)
 const selectedMarqueur = ref(null)
 const leafletMapRef = ref(null)
 
-/* ----------------------------------------------------
-   LOGOUT
----------------------------------------------------- */
 const logout = () => {
   authStore.logout()
   router.push('/connexion')
 }
 
-/* ----------------------------------------------------
-   MARQUEURS FILTRÉS
----------------------------------------------------- */
 const marqueursFiltres = computed(() => {
   return (marqueurStore.marqueurs ?? []).filter(
     m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
   )
 })
 
-/* ----------------------------------------------------
-   GET MARQUEURS
----------------------------------------------------- */
 const getMarqueurs = () => {
   marqueurStore.getMarqueurs().catch(error => {
     messageErreur.value = error.message
   })
 }
 
-/* ----------------------------------------------------
-   GET EDIT REQUESTS
----------------------------------------------------- */
 const getEditRequests = () => {
   editRequestStore.getEditRequests().catch(error => {
     messageErreur.value = error.message
   })
 }
 
-/* ----------------------------------------------------
-   OUVRIR MODAL
----------------------------------------------------- */
 const ouvrirModal = (marqueur) => {
   selectedMarqueur.value = marqueur
   modalVisible.value = true
 }
 
-/* ----------------------------------------------------
-   ACCEPTER MARQUEUR
----------------------------------------------------- */
 const accepterMarqueur = async (marqueur) => {
+  if (!authStore.token) {
+    messageErreur.value = "Non authentifié"
+    return
+  }
+
   const id = marqueur?.properties?.id || marqueur.id || marqueur._id
   if (!id) return
 
@@ -90,12 +71,9 @@ const accepterMarqueur = async (marqueur) => {
   }
 }
 
-/* ----------------------------------------------------
-   REFUSER → SUPPRIMER MARQUEUR
----------------------------------------------------- */
 const refuserMarqueur = async (marqueur) => {
   const id = marqueur?.properties?.id || marqueur.id || marqueur._id
-  if (!id) return console.error("Aucun ID trouvé pour suppression:", marqueur)
+  if (!id) return
 
   try {
     await marqueurStore.supprimerMarqueur(id, authStore.token)
@@ -110,9 +88,6 @@ const refuserMarqueur = async (marqueur) => {
   }
 }
 
-/* ----------------------------------------------------
-   MODIFIER MARQUEUR
----------------------------------------------------- */
 const validerModification = async (marqueurModifie) => {
   try {
     const id = marqueurModifie?.properties?.id || marqueurModifie?._id
@@ -165,9 +140,6 @@ const validerModification = async (marqueurModifie) => {
   }
 }
 
-/* ----------------------------------------------------
-   ON MOUNT
----------------------------------------------------- */
 onMounted(() => {
   getMarqueurs()
   getEditRequests()

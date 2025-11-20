@@ -1,7 +1,7 @@
 // src/components/Leaflet.test.js
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { nextTick } from 'vue' 
+import { nextTick } from 'vue'
 
 
 
@@ -93,6 +93,7 @@ import L, { onHandlers, map as mapApi } from 'leaflet'
 import LeafletMap from './LeafletMap.vue'
 
 // Mock du store pour les tests restants
+// Mock du store pour les tests restants
 const mockMarqueurStore = {
   marqueurs: [],
   getMarqueurs: vi.fn(() => Promise.resolve()),
@@ -101,8 +102,9 @@ const mockMarqueurStore = {
 }
 
 vi.mock('../stores/useMarqueur.js', () => ({
-  useMarqueurStore: vi.fn(() => mockMarqueurStore)
+  useMarqueursStore: vi.fn(() => mockMarqueurStore)
 }))
+
 
 import { createPinia } from 'pinia'
 
@@ -202,7 +204,7 @@ describe('handlelocateFromAddress (exposed)', () => {
         plugins: [createPinia()]
       }
     })
-    
+
     // Mock de marqueur
     markerChain = {
       addTo: vi.fn(() => markerChain),
@@ -220,14 +222,14 @@ describe('handlelocateFromAddress (exposed)', () => {
 
   it('place un nouveau marqueur et met à jour les coordonnées', async () => {
     const coordinates = { lat: 46.8139, lng: -71.2082 }
-    
+
     await wrapper.vm.handlelocateFromAddress(coordinates)
-    
+
     expect(L.marker).toHaveBeenCalledWith(coordinates)
     expect(markerChain.addTo).toHaveBeenCalledWith(mapApi)
     expect(markerChain.bindPopup).toHaveBeenCalledWith('Adresse localisée')
     expect(markerChain.openPopup).toHaveBeenCalled()
-    
+
     expect(wrapper.vm.latitude).toBe('46.81390')
     expect(wrapper.vm.longitude).toBe('-71.20820')
     expect(mapApi.setView).toHaveBeenCalledWith(coordinates, 15)
@@ -237,29 +239,29 @@ describe('handlelocateFromAddress (exposed)', () => {
   it('supprime l\'ancien marqueur avant d\'ajouter le nouveau', async () => {
     const oldMarker = { id: 'old' }
     wrapper.vm.currentMarqueur = oldMarker
-    
+
     const coordinates = { lat: 46.8139, lng: -71.2082 }
     await wrapper.vm.handlelocateFromAddress(coordinates)
-    
+
     expect(mapApi.removeLayer).toHaveBeenCalledWith(oldMarker)
     expect(wrapper.vm.currentMarqueur).toStrictEqual(markerChain)
   })
 
   it('ne supprime rien si aucun marqueur actuel', async () => {
     wrapper.vm.currentMarqueur = null
-    
+
     const coordinates = { lat: 46.8139, lng: -71.2082 }
     await wrapper.vm.handlelocateFromAddress(coordinates)
-    
+
     expect(mapApi.removeLayer).not.toHaveBeenCalled()
     expect(wrapper.vm.currentMarqueur).toStrictEqual(markerChain)
   })
 
   it('formate correctement les coordonnées avec 5 décimales', async () => {
     const coordinates = { lat: 46.123456789, lng: -71.987654321 }
-    
+
     await wrapper.vm.handlelocateFromAddress(coordinates)
-    
+
     expect(wrapper.vm.latitude).toBe('46.12346')
     expect(wrapper.vm.longitude).toBe('-71.98765')
   })
@@ -283,16 +285,16 @@ describe('afficherMarqueurs (exposed)', () => {
       properties: {},
       comments: []
     }
-    
+
     // S'assurer que L.marker retourne toujours notre mock
     L.marker.mockImplementation(() => defaultMarkerChain)
-    
+
     // Reset the mock store data
     mockMarqueurStore.marqueurs = [
       {
         geometry: { coordinates: [-73.56, 45.5] },
-        properties: { 
-          titre: 'Marqueur 1', 
+        properties: {
+          titre: 'Marqueur 1',
           type: 'Boutiques spécialisées',
           description: 'Description 1',
           images: [{ url: 'http://example.com/img1.jpg' }]
@@ -301,21 +303,21 @@ describe('afficherMarqueurs (exposed)', () => {
       },
       {
         geometry: { coordinates: [-73.57, 45.51] },
-        properties: { 
-          titre: 'Marqueur 2', 
+        properties: {
+          titre: 'Marqueur 2',
           type: 'Arcades et salles de jeux',
           description: 'Description 2'
         },
         comments: ['Commentaire test']
       }
     ]
-    
+
     // Reset mocks
     mockMarqueurStore.getMarqueurs.mockResolvedValue()
     vi.clearAllMocks()
-    
+
     globalThis.fetch = vi.fn()
-    
+
     const pinia = createPinia()
     wrapper = mount(LeafletMap, {
       global: { plugins: [pinia] },
@@ -334,14 +336,14 @@ describe('afficherMarqueurs (exposed)', () => {
     // Réinitialiser les mocks car afficherMarqueurs est appelé au montage
     vi.clearAllMocks()
     L.marker.mockImplementation(() => defaultMarkerChain)
-    
+
     await wrapper.vm.afficherMarqueurs()
 
     expect(mockMarqueurStore.getMarqueurs).toHaveBeenCalledTimes(1)
     expect(L.marker).toHaveBeenCalledTimes(2)
     expect(L.marker).toHaveBeenCalledWith([45.5, -73.56])
     expect(L.marker).toHaveBeenCalledWith([45.51, -73.57])
-    
+
     expect(wrapper.vm.marqueurs).toHaveLength(2)
   })
 
@@ -349,7 +351,7 @@ describe('afficherMarqueurs (exposed)', () => {
     // Réinitialiser les mocks car afficherMarqueurs est appelé au montage
     vi.clearAllMocks()
     L.marker.mockImplementation(() => defaultMarkerChain)
-    
+
     // Ajouter des marqueurs existants
     const oldMarker = { properties: { titre: 'Ancien' } }
     wrapper.vm.marqueurs.push(oldMarker)
@@ -363,7 +365,7 @@ describe('afficherMarqueurs (exposed)', () => {
   it('configure les événements click sur chaque marqueur', async () => {
     // Réinitialiser les mocks car afficherMarqueurs est appelé au montage
     vi.clearAllMocks()
-    
+
     const markerChain = {
       addTo: vi.fn(() => markerChain),
       bindPopup: vi.fn(() => markerChain),
@@ -377,17 +379,17 @@ describe('afficherMarqueurs (exposed)', () => {
       properties: {},
       comments: []
     }
-    
+
     L.marker.mockImplementation(() => markerChain)
 
     await wrapper.vm.afficherMarqueurs()
 
     expect(markerChain.on).toHaveBeenCalledWith('click', expect.any(Function))
-    
+
     // Simuler un clic sur le marqueur (assigner les propriétés d'abord)
     markerChain.properties = { titre: 'Test' }
     markerChain.clickHandler()
-    
+
     expect(wrapper.vm.selectedMarqueur).toStrictEqual(markerChain)
   })
 
@@ -395,7 +397,7 @@ describe('afficherMarqueurs (exposed)', () => {
     // Réinitialiser les mocks car afficherMarqueurs est appelé au montage
     vi.clearAllMocks()
     L.marker.mockImplementation(() => defaultMarkerChain)
-    
+
     mockMarqueurStore.marqueurs = [
       {
         // Pas de geometry
@@ -416,7 +418,7 @@ describe('afficherMarqueurs (exposed)', () => {
   it('gère les erreurs du store gracieusement', async () => {
     // Vider la liste de marqueurs d'abord
     wrapper.vm.marqueurs.splice(0)
-    
+
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     mockMarqueurStore.getMarqueurs.mockRejectedValueOnce(new Error('Erreur réseau'))
 
@@ -424,7 +426,7 @@ describe('afficherMarqueurs (exposed)', () => {
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('afficherMarqueurs error:', expect.any(Error))
     expect(wrapper.vm.marqueurs).toHaveLength(0)
-    
+
     consoleErrorSpy.mockRestore()
   })
 })
