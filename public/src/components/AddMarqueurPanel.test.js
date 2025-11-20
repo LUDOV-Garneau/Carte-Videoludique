@@ -32,9 +32,10 @@ vi.mock('../stores/useMarqueur.js', () => ({
   useMarqueurStore: vi.fn(() => mockMarqueurStore)
 }))
 
+
 import { uploadMultipleImages, cleanupImages } from '../utils/cloudinary.js'
 import { geocodeAddress } from '../utils/geocode.js'
-import { useMarqueurStore } from '../stores/useMarqueur.js'
+import { useMarqueurStore } from '../stores/useMarqueur.js';
 
 describe('AddMarqueurPanel.vue', () => {
   let wrapper
@@ -116,7 +117,7 @@ describe('AddMarqueurPanel.vue', () => {
     })
 
     await wrapper.find('.panel__close').trigger('click')
-    
+
     expect(wrapper.emitted('close')).toBeTruthy()
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
@@ -287,7 +288,7 @@ describe('AddMarqueurPanel.vue', () => {
           adresse: '123 Rue Test, Québec',
         })
       )
-      
+
       expect(wrapper.emitted('marqueur-added')).toBeTruthy()
       expect(wrapper.emitted('close')).toBeTruthy()
     })
@@ -299,11 +300,11 @@ describe('AddMarqueurPanel.vue', () => {
       await wrapper.find('#titre').setValue('Mon lieu avec images')
       await wrapper.find('#description').setValue('Description')
       await wrapper.find('#adresse').setValue('123 Rue Test')
-      
+
       // Simuler des fichiers - accéder directement à la ref
       const files = [new File([''], 'test1.jpg'), new File([''], 'test2.jpg')]
       wrapper.vm.files.splice(0, wrapper.vm.files.length, ...files)
-      
+
       // Mock réponses
       uploadMultipleImages.mockResolvedValueOnce([
         { publicId: 'img1', url: 'http://example.com/img1.jpg' },
@@ -322,7 +323,7 @@ describe('AddMarqueurPanel.vue', () => {
           ]
         })
       )
-      
+
       expect(wrapper.emitted('marqueur-added')).toBeTruthy()
       expect(wrapper.emitted('close')).toBeTruthy()
     })
@@ -330,7 +331,7 @@ describe('AddMarqueurPanel.vue', () => {
     it('ne fait rien si la validation échoue', async () => {
       // Formulaire invalide (pas de titre)
       await wrapper.find('#description').setValue('Description seulement')
-      
+
       await wrapper.vm.sendRequest()
 
       expect(uploadMultipleImages).not.toHaveBeenCalled()
@@ -340,40 +341,40 @@ describe('AddMarqueurPanel.vue', () => {
 
     it('nettoie les images et relance erreur si API échoue', async () => {
       const marqueurStore = useMarqueurStore()
-      
+
       // Remplir formulaire valide
       await wrapper.find('#titre').setValue('Mon lieu')
       await wrapper.find('#description').setValue('Description')
       await wrapper.find('#adresse').setValue('123 Rue Test')
       await wrapper.find('#lat').setValue('46.8139')
       await wrapper.find('#lng').setValue('-71.2082')
-      
+
       // Simuler upload d'images réussi
       const files = [new File([''], 'test.jpg')]
       wrapper.vm.files.splice(0, wrapper.vm.files.length, ...files)
       uploadMultipleImages.mockResolvedValueOnce([
         { publicId: 'img1', url: 'http://example.com/img1.jpg' }
       ])
-      
+
       // Mock échec API
       marqueurStore.ajouterMarqueur.mockRejectedValueOnce(new Error('Erreur serveur'))
 
       await expect(wrapper.vm.sendRequest()).rejects.toThrow('Erreur serveur')
-      
+
       expect(cleanupImages).toHaveBeenCalledWith(['img1'])
       expect(wrapper.emitted('close')).toBeFalsy()
     })
 
     it('gère les erreurs de réseau', async () => {
       const marqueurStore = useMarqueurStore()
-      
+
       // Remplir formulaire valide
       await wrapper.find('#titre').setValue('Mon lieu')
       await wrapper.find('#description').setValue('Description')
       await wrapper.find('#adresse').setValue('123 Rue Test')
       await wrapper.find('#lat').setValue('46.8139')
       await wrapper.find('#lng').setValue('-71.2082')
-      
+
       // Mock erreur réseau
       marqueurStore.ajouterMarqueur.mockRejectedValueOnce(new Error('Network error'))
 

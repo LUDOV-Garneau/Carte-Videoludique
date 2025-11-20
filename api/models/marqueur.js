@@ -58,7 +58,7 @@ const MarqueurSchema = new mongoose.Schema(
       images: { type: [ImageSchema], default: [] },
       status: {
         type: String,
-        enum: ["pending", "approved", "rejected"],
+        enum: ["pending", "edit-request", "approved", "rejected"],
         default: "pending",
         index: true
       },
@@ -84,20 +84,20 @@ MarqueurSchema.path("geometry.coordinates").validate(function (coords) {
 
 // Sortie JSON propre pour Leaflet
 MarqueurSchema.set("toJSON", {
-  versionKey: false,
   transform: function (doc, ret) {
-    return {
-      type: ret.type,
-      geometry: ret.geometry,
-      properties: {
-        id: ret._id,
-        ...ret.properties,
-        createdAt: ret.createdAt,
-        updatedAt: ret.updatedAt
-      }
-    };
+    ret.id = ret._id;        // ajoute id lisible
+    delete ret._id;          // cache _id pour éviter la confusion
+    delete ret.__v;          // enlève le versionKey Mongo
+
+    // on s'assure que properties.id existe aussi
+    if (ret.properties) {
+      ret.properties.id = ret.id;
+    }
+
+    return ret;
   }
 });
+
 
 module.exports =
   mongoose.models.Marqueur || mongoose.model("Marqueur", MarqueurSchema);

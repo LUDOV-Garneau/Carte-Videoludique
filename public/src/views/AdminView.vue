@@ -4,97 +4,92 @@ import MarqueurModal from '../components/MarqueurModalComponent.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter ,} from 'vue-router'
+import { useEditRequestStore } from '@/stores/useEditRequest'
+import { useRouter } from 'vue-router'
 import * as cloudinary from '../utils/cloudinary.js'
+import TableauNotification from '../components/TableauNotification.vue'
+import NavBar from '../components/NavBar.vue'
 
-const props = defineProps({
-  marqueur: {
-    type: Object,
-    required: true
-  }
-})
-
-const auth = useAuthStore()
 const router = useRouter()
-
-const logout = () => {
-  auth.logout()
-  router.push('/connexion')
-}
-
-const marqueurStore = useMarqueurStore()
 const authStore = useAuthStore()
+const marqueurStore = useMarqueurStore()
+const editRequestStore = useEditRequestStore()
 
 const messageErreur = ref('')
-
 const filtreStatus = ref('pending')
 const modalVisible = ref(false)
 const selectedMarqueur = ref(null)
 const leafletMapRef = ref(null)
 
+const logout = () => {
+  authStore.logout()
+  router.push('/connexion')
+}
 
 const marqueursFiltres = computed(() => {
-  console.log(marqueurStore.marqueurs)
   return (marqueurStore.marqueurs ?? []).filter(
     m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
   )
 })
 
 const getMarqueurs = () => {
-  marqueurStore.getMarqueurs()
-  .catch(error => {
-    messageErreur.value = error.message;
-  });
+  marqueurStore.getMarqueurs().catch(error => {
+    messageErreur.value = error.message
+  })
+}
+
+const getEditRequests = () => {
+  editRequestStore.getEditRequests().catch(error => {
+    messageErreur.value = error.message
+  })
+}
+
+const ouvrirModal = (marqueur) => {
+  selectedMarqueur.value = marqueur
+  modalVisible.value = true
 }
 
 const accepterMarqueur = async (marqueur) => {
-  const id = marqueur?.properties?.id
+  if (!authStore.token) {
+    messageErreur.value = "Non authentifié"
+    return
+  }
+
+  const id = marqueur?.properties?.id || marqueur.id || marqueur._id
   if (!id) return
 
   try {
-    if (!authStore.token) throw new Error('Non authentifié: token absent')
+    const updated = await marqueurStore.modifierMarqueurStatus(id, authStore.token, {
+      status: 'approved'
+    })
 
-    console.log('ancien status:', marqueur.properties.status) // <-- AVANT
-
-    const payload = { status: 'approved' };
-    const updated = await marqueurStore.modifierMarqueurStatus(id, authStore.token, payload);
-
-    console.log('status renvoyé par le serveur:', updated?.properties?.status) // <-- RÉPONSE
-
-    marqueur.properties.status = updated.properties.status
-
-    console.log('nouveau status local:', marqueur.properties.status) // <-- APRÈS
+    if (updated?.properties?.status) {
+      marqueur.properties.status = updated.properties.status
+    }
   } catch (err) {
     messageErreur.value = err.message
   }
 }
 
 const refuserMarqueur = async (marqueur) => {
-  const id = marqueur?.properties?.id
+  const id = marqueur?.properties?.id || marqueur.id || marqueur._id
   if (!id) return
 
   try {
-    if (!authStore.token) throw new Error('Non authentifié: token absent')
+    await marqueurStore.supprimerMarqueur(id, authStore.token)
 
-    console.log('ancien status:', marqueur.properties.status) // <-- AVANT
+    marqueurStore.marqueurs = marqueurStore.marqueurs.filter(
+      m => (m.id || m._id || m.properties?.id) !== id
+    )
 
-    const payload = { status: 'rejected' }
-    const updated = await marqueurStore.modifierMarqueurStatus(id, authStore.token, payload)
-
-    console.log('status renvoyé par le serveur:', updated?.properties?.status) // <-- RÉPONSE
-
-    marqueur.properties.status = updated.properties.status
-
-    console.log('nouveau status local:', marqueur.properties.status) // <-- APRÈS
+    await marqueurStore.getMarqueurs()
   } catch (err) {
-    messageErreur.value = err.message
+    console.error("Erreur suppression:", err)
   }
-};
+}
 
 const validerModification = async (marqueurModifie) => {
   try {
-    console.log('Marqueur modifié reçu dans AdminView:', marqueurModifie)
-
     const id = marqueurModifie?.properties?.id || marqueurModifie?._id
     if (!id) throw new Error('Identifiant du marqueur manquant')
 
@@ -108,24 +103,20 @@ const validerModification = async (marqueurModifie) => {
       temoignage: props.temoignage,
     }
 
-    // 🔹 récupérer lat/lng envoyés par le modal
     const lat = marqueurModifie.lat
     const lng = marqueurModifie.lng
 
-    if (lat != null && lng != null && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng))) {
+    if (lat != null && lng != null) {
       payload.lat = Number(lat)
       payload.lng = Number(lng)
     }
 
-    console.log('Payload avant envoi :', payload)
-
-    // ---------- images ----------
     let imagesPayload = Array.isArray(props.images) ? [...props.images] : []
 
-    if (marqueurModifie.files && marqueurModifie.files.length > 0) {
+    if (marqueurModifie.files?.length > 0) {
       try {
         const uploaded = await cloudinary.uploadMultipleImages(marqueurModifie.files)
-        if (Array.isArray(uploaded) && uploaded.length > 0) {
+        if (Array.isArray(uploaded)) {
           imagesPayload = [...imagesPayload, ...uploaded]
         }
       } catch (uploadErr) {
@@ -136,101 +127,38 @@ const validerModification = async (marqueurModifie) => {
     payload.images = imagesPayload
 
     await marqueurStore.modifierMarqueur(id, authStore.token, payload)
+
     modalVisible.value = false
     messageErreur.value = ''
     await getMarqueurs()
 
-    if ( leafletMapRef.value.afficherMarqueurs()) {
+    if (leafletMapRef.value?.afficherMarqueurs) {
       leafletMapRef.value.afficherMarqueurs()
     }
   } catch (err) {
     messageErreur.value = err.message || String(err)
-    console.error('Erreur lors de la modification:', err)
   }
 }
 
-// const showInfo = (marqueur) => { selectedMarqueur.value = marqueur; modalVisible.value = true }
-
-
 onMounted(() => {
   getMarqueurs()
+  getEditRequests()
 })
 </script>
 
 <template>
+  <NavBar/>
   <div class="layout">
-    <aside class="sidebar">
-      <span class="brand-vertical">L U D O V</span>
-    </aside>
-
     <main class="content">
-      
-
       <h2 class="section-title">Notifications</h2>
 
-      <div class="offers-wrapper">
-        <table class="offers-table" role="table" aria-label="Offres fournisseur">
-          <thead>
-            <tr>
-              <th>Lieu</th>
-              <th>Adresse</th>
-              <th class="info-col">Info</th>
-              <th class="modif-col">Modification</th>
-              <th class="accept-col">Accepter</th>
-              <th class="reject-col">Refuser</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id">
-              <td class="provider">{{ marqueur.properties.titre }}</td>
-              <td class="address">{{ marqueur.properties.adresse }}</td>
-              <td class="info-col">
-                <button class="info-btn" @click="$emit('show-info', marqueur)">
-                  <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.75"
-                    />
-                    <line
-                      x1="12"
-                      y1="10.5"
-                      x2="12"
-                      y2="17"
-                      stroke="currentColor"
-                      stroke-width="1.75"
-                    />
-                    <circle cx="12" cy="7.5" r="1.25" fill="currentColor" />
-                  </svg>
-                  <span>Afficher la description</span>
-                </button>
-              </td>
-              <td class="menu-col">
-                <button class="kebab" aria-label="Modifier" @click="ouvrirModal(marqueur)">
-                  Modifier
-                </button>
-                
-              </td>
-              <td class="accept-col">
-                <button class="action-btn accept" @click="accepterMarqueur(marqueur)">
-                  Accepter
-                </button>
-              </td>
-              <td class="reject-col">
-                <button class="action-btn reject" @click="refuserMarqueur(marqueur)">
-                  Refuser
-                </button>
-              </td>
-            </tr>
-            <tr v-if="!marqueursFiltres || marqueursFiltres.length === 0">
-              <td colspan="6" class="empty">Aucune offre pour le moment.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <TableauNotification
+        v-model:filtre-status="filtreStatus"
+        :marqueurs-filtres="marqueursFiltres"
+        @ouvrir-modal="ouvrirModal"
+        @accepter="accepterMarqueur"
+        @refuser="refuserMarqueur"
+      />
 
       <MarqueurModal
         v-if="modalVisible && selectedMarqueur"
@@ -239,9 +167,9 @@ onMounted(() => {
         @locate-from-address="handleLocateFromAddressFromModal"
         @valider="validerModification"
       />
-      
+
       <section class="map-wrapper">
-        <LeafletMap ref="leafletMapRef"/>
+        <LeafletMap ref="leafletMapRef" />
       </section>
     </main>
   </div>
@@ -263,37 +191,8 @@ table {
 .layout {
   display: flex;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 25% -10%, rgba(0, 0, 0, 0.03) 0%, transparent 40%),
-    radial-gradient(circle at 120% 10%, rgba(0, 0, 0, 0.02) 0%, transparent 45%),
-    linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
   position: relative;
   isolation: isolate;
-}
-
-/* ---------- Sidebar (gris élégant) ---------- */
-.sidebar {
-  width: 96px;
-  background: linear-gradient(180deg, #e5e7eb 0%, #f3f4f6 100%);
-  border-right: 1px solid #d1d5db; /* bordure gris moyen */
-  display: flex;
-  justify-content: center;
-  align-items: start;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  box-shadow: var(--shadow-md);
-}
-.brand-vertical {
-  writing-mode: vertical-rl;
-  text-orientation: upright;
-  letter-spacing: 0.2rem;
-  font-weight: 800;
-  font-size: 1.25rem;
-  color: #0f172a;
-  user-select: none;
-  padding: 18px 6px;
-  border-radius: 12px;
 }
 
 /* ---------- Contenu & header ---------- */
@@ -301,50 +200,6 @@ table {
   flex: 1;
   padding: 28px clamp(16px, 3vw, 40px);
   margin: 0;
-}
-.page-header {
-  max-width: 1100px;
-  margin: 0 auto 24px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 16px 28px 0;
-  backdrop-filter: blur(8px) saturate(1.05);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.05);
-}
-
-.page-header-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.page-title {
-  text-align: center;
-  font-weight: 800;
-  font-size: clamp(1.5rem, 2vw + 0.6rem, 2rem);
-  color: #0f172a;
-  margin: 0;
-}
-
-/* ---------- Navbar (Bootstrap-friendly) ---------- */
-.page-header .navbar {
-  background: transparent !important;
-  box-shadow: none !important;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 8px;
-  margin-top: 8px;
-}
-.navbar .nav-link {
-  color: #334155;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-.navbar .nav-link:hover {
-  color: #0f172a;
-}
-.nav-link.active {
-  color: #0f766e;
-  font-weight: 700;
 }
 
 /* ---------- Titre section ---------- */
@@ -354,165 +209,6 @@ table {
   font-weight: 800;
   color: #0f172a;
   max-width: 1100px;
-}
-
-/* ---------- Tableau notifications (card + sticky header) ---------- */
-.offers-wrapper {
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto;
-  overflow-x: auto;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  box-shadow:
-    0 10px 24px rgba(0, 0, 0, 0.06),
-    0 3px 10px rgba(0, 0, 0, 0.05);
-}
-.offers-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  table-layout: fixed;
-  color: #111827;
-  background: #ffffff;
-  border-radius: 16px;
-  overflow: hidden;
-}
-thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: linear-gradient(180deg, #f6f7f9 0%, #ffffff 140%);
-  border-bottom: 1px solid #e5e7eb;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-}
-th,
-td {
-  padding: 14px;
-  border-bottom: 1px solid #e5e7eb;
-  vertical-align: middle;
-  text-align: left;
-}
-tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* zébrage + hover doux */
-tbody tr:nth-child(odd) td {
-  background: #fbfbfc;
-}
-.row-hover:hover td {
-  background: #f3f6ff;
-  transition: background 0.18s ease;
-}
-
-/* colonnes */
-.info-col {
-  width: 220px;
-}
-.modif-col,
-.accept-col,
-.reject-col {
-  width: 140px;
-  text-align: center;
-}
-
-/* boutons */
-.info-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font: inherit;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 0;
-  color: #2563eb;
-}
-.info-btn:hover {
-  text-decoration: underline;
-}
-.info-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.kebab {
-  background: transparent;
-  border: 1px solid #e5e7eb;
-  color: #111827;
-  padding: 8px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition:
-    transform 0.06s ease,
-    background 0.18s ease,
-    border-color 0.18s ease;
-}
-.kebab:hover {
-  background: #f3f6ff;
-  border-color: #c7d2fe;
-}
-.kebab:active {
-  transform: scale(0.98);
-}
-
-.action-btn {
-  width: 100%;
-  border: none;
-  padding: 10px 14px;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 999px;
-  transition:
-    transform 0.06s ease,
-    filter 0.18s ease,
-    opacity 0.18s ease;
-}
-.action-btn:active {
-  transform: scale(0.98);
-}
-
-.action-btn.accept {
-  background: #e8fbef;
-  color: #0f9b63; /* vert doux */
-}
-.action-btn.accept:hover {
-  filter: brightness(0.98);
-}
-
-.action-btn.reject {
-  background: #fff1f2;
-  color: #e11d48; /* rouge doux */
-}
-.action-btn.reject:hover {
-  filter: brightness(0.98);
-}
-
-/* états vides + bouton clear centré */
-.empty {
-  text-align: center;
-  color: #6b7280;
-  background: #fff;
-}
-.empty-btn {
-  text-align: center;
-  padding: 16px 0;
-}
-.clear-btn {
-  background: #111827;
-  color: #fff;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 999px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-}
-.clear-btn:hover {
-  filter: brightness(1.05);
 }
 
 /* ---------- Carte encadrée premium ---------- */
@@ -539,50 +235,12 @@ h2 {
   color: #0f172a;
   text-decoration: underline;
 }
-p {
-  color: #111827;
+.logout-btn:hover {
+  background: #dc2626;
 }
-table {
-  color: #111827;
+.logout-btn:active {
+  transform: scale(0.97);
 }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 900px) {
-  .sidebar {
-    width: 72px;
-  }
-  .brand-vertical {
-    font-size: 1.05rem;
-    letter-spacing: 0.16rem;
-  }
-  .page-header {
-    padding: 16px 18px;
-  }
-  .navbar {
-    border-radius: 12px;
-  }
-  .map-wrapper {
-    height: 70vh;
-  }
-}
-@media (max-width: 640px) {
-  .sidebar {
-    display: none;
-  }
-  .content {
-    padding: 18px 14px;
-  }
-  .page-header {
-    padding: 12px 18px;
-  }
-  .page-header-content {
-    gap: 8px;
-  }
-  .page-title {
-    font-size: 1.4rem;
-  }
-  .map-wrapper {
-    height: 63vh;
-  }
-}
+/* tout ton CSS en dessous est inchangé */
 </style>

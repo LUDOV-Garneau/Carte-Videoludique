@@ -5,6 +5,7 @@ const express = require("express");
 const router = express.Router();
 
 const marqueurController = require("../controllers/marqueurController");
+const editRequestController = require("../controllers/editRequestController");
 
 const isAuth = require("../middlewares/isAuth");
 const optionalAuth = require("../middlewares/optionalAuth");
@@ -33,5 +34,12 @@ router.delete("/marqueurs/:marqueurId/commentaires/:commentId", marqueurControll
 
 // DELETE => /marqueurs/:marqueurId
 router.delete("/marqueurs/:marqueurId", isAuth, marqueurController.deleteMarqueur);
+
+// POST => /marqueurs/:marqueurId/edit-requests
+router.post(
+  "/marqueurs/:marqueurId/edit-requests",
+  optionalAuth, // ou isAuth si tu veux obliger la connexion
+  editRequestController.createEditRequest
+);
 
 module.exports = router;

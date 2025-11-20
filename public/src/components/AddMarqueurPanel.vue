@@ -119,7 +119,7 @@ function validateForm() {
         email: '',
         souvenir: '',
         adresse: '',
-    
+
     };
     // Vérif coordonnées complètes
     if (!form.value.lng && form.value.lat || form.value.lng && !form.value.lat) {
@@ -171,21 +171,21 @@ async function sendRequest() {
                 form.value.images = await cloudinary.uploadMultipleImages(files.value);
             }
             const created = await marqueurStore.ajouterMarqueur(form.value);
-            
+
             emit('marqueur-added', created);
             closePanel();
         }
     } catch (err) {
         if (form.value.images.length) {
-            try { 
-                await cloudinary.cleanupImages(form.value.images.map(img => img.publicId)); 
-            } catch (e) { 
-                console.warn('Rollback Cloudinary a échoué :', e); 
+            try {
+                await cloudinary.cleanupImages(form.value.images.map(img => img.publicId));
+            } catch (e) {
+                console.warn('Rollback Cloudinary a échoué :', e);
             }
         }
         console.error('sendRequest error:', err);
         throw err;
-    }    
+    }
 }
 
 /**
@@ -205,7 +205,7 @@ async function sendRequest() {
  *
  * @async
  * @function locateFromAddress
- * @returns {emit {lat: number, lng: number}} 
+ * @returns {emit {lat: number, lng: number}}
  * Coordonnées GPS de l’adresse localisée.
  * @throws {Error} En cas d’erreur réseau ou si l’API de géocodage échoue.
  *
@@ -217,7 +217,7 @@ async function sendRequest() {
 async function locateFromAddress() {
     const q = form.value.adresse;
     if (!q) return;
-    
+
     try {
         const pos = await geocodeAddress(q);
         if (!pos) return;
@@ -473,18 +473,18 @@ async function locateFromAddress() {
 
 /* Transition simple (fade + léger slide) */
 .panel-fade-enter-active,
-.panel-fade-leave-active { 
-  transition: opacity .18s ease, transform .18s ease; 
+.panel-fade-leave-active {
+  transition: opacity .18s ease, transform .18s ease;
 }
 
 .panel-fade-enter-from,
-.panel-fade-leave-to { 
-  opacity: 0; 
-  transform: translateX(8px); 
+.panel-fade-leave-to {
+  opacity: 0;
+  transform: translateX(8px);
 }
 
 .panel.left.panel-fade-enter-from,
-.panel.left.panel-fade-leave-to { 
-  transform: translateX(-8px); 
+.panel.left.panel-fade-leave-to {
+  transform: translateX(-8px);
 }
 </style>

@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, reactive } from 'vue';
-import { useMarqueurStore } from '../stores/useMarqueur';
+import { useMarqueurStore } from '../stores/useMarqueur.js';
+import { useEditRequestStore } from '../stores/useEditRequest';
 import { API_URL } from '../config';
-import { svg } from 'leaflet';
+// import { svg } from 'leaflet';
+import MarqueurModal from './MarqueurModalComponent.vue';
 
 // props and emits
 const props = defineProps({
@@ -14,14 +16,19 @@ const props = defineProps({
 const emits = defineEmits(['close']);
 
 const marqueurStore = useMarqueurStore();
+const editRequestStore = useEditRequestStore();
+
 const canDisplayPanel = computed(() => {
+    console.log('is commenting: ' + isCommenting);
     return props.isOpen && marqueurStore.marqueurActif !== null;
 });
 
 const marqueurProperties = computed(() => {
     return marqueurStore.marqueurActif?.properties || {};
 });
-const isCommenting = reactive(ref(false));3
+const isCommenting = reactive(ref(false));
+
+const isEditModalOpen = ref(false);
 
 const formData = ref({
 	auteur: '',
@@ -32,9 +39,38 @@ const formErrors = ref({
 	contenu: ''
 });
 
+function openModificationRequest() {
+	if(!marqueurStore.marqueurActif) return;
+	isEditModalOpen.value = true;
+}
 
 function closePanel() {
     emits('close');
+}
+
+
+async function handleEditRequestSubmit(payloadFromModal) {
+	try {
+		const original = marqueurStore.marqueurActif;
+		if (!original) return;
+
+		const marqueurId = original.properties?.id || original._id;
+
+		const props = payloadFromModal.properties || {};
+
+		const body = {
+			titre: props.titre,
+    		type: props.type,
+      		adresse: props.adresse,
+      		description: props.description,
+      		temoignage: props.temoignage,
+		}
+		await editRequestStore.createEditRequest(marqueurId, body);
+		isEditModalOpen.value = false;
+		console.log('Demande de modification soumise avec succès');
+	} catch (err) {
+		console.error('Erreur lors de la soumission de la demande de modification :', err);
+	}
 }
 
 function toggleCommenting() {
@@ -42,6 +78,7 @@ function toggleCommenting() {
 	formData.value.auteur = '';
 	formData.value.contenu = '';
 	console.log(marqueurStore.marqueurActif);
+  console.log('is commenting: ' + isCommenting.value);
 }
 
 function copyToClipboard(text) {
@@ -118,6 +155,9 @@ async function sendComment() {
 					<p>{{ marqueurProperties.description }}</p>
 					<span>Créé par : {{ marqueurProperties.createdByName }}</span>
 				</div>
+				<button class="btn-panel1" @click="openModificationRequest()">
+   					Demander une modification
+				</button>
 				<div class="panel__info-list">
 					<div v-if="marqueurProperties.adresse" class="info-item">
 						<svg class="info-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -144,7 +184,7 @@ async function sendComment() {
 				</div>
 				<div class="panel__section">
 					<h5>Témoignages</h5>
-					<button class="btn-add-comment" @click="toggleCommenting">Ajouter un témoignage</button>
+					<button v-if="!isCommenting" class="btn-panel1" @click="toggleCommenting">Ajouter un témoignage</button>
 					<form v-if="isCommenting" class="add-comment-form"  @submit.prevent="sendComment">
 						<div class="add-comment-nom">
 							<label for="auteur">Votre nom :</label>
@@ -156,9 +196,9 @@ async function sendComment() {
 							<button type="button" class="btn-cancel-comment" @click="toggleCommenting">Annuler</button>
 						</div>
 					</form>
-					<span class="no-comments" v-if="!marqueurStore.marqueurActif?.comments">Aucun témoignage</span>
-					<div v-else class="panel__comments">
-						<div v-for="(comment, index) in marqueurStore.marqueurActif?.comments || []" :key="index" class="info-item">
+					<span class="no-comments" v-if="marqueurStore.marqueurActif?.properties.comments.length === 0">Aucun témoignage</span>
+					<div v-else>
+						<div v-for="(comment, index) in marqueurStore.marqueurActif?.properties.comments || []" :key="index" class="panel__comments">
 							<span>Auteur(e) : {{ comment.auteur }}</span>
 							<p>{{ comment.contenu }}</p>
 						</div>
@@ -166,7 +206,14 @@ async function sendComment() {
 				</div>
             </div>
         </aside>
+
     </transition>
+	<MarqueurModal
+    	v-if="isEditModalOpen"
+    	:marqueur="marqueurStore.marqueurActif"
+    	@fermer="isEditModalOpen = false"
+    	@valider="handleEditRequestSubmit"
+  	/>
 </template>
 <style scoped>
 /* ---------- Panneau ---------- */
@@ -330,21 +377,22 @@ async function sendComment() {
 	width: 100%;
 	height: 100%;
 }
-
-.btn-add-comment {
-	display: block;
+.btn-panel1 {
+  	display: block;
 	width: auto;
-	height: 40px;
+	height: 30px;
 	border-radius: 25px;
-	padding: 0 16px;
-	margin: 16px auto;
-	border: 2px solid #4CAF50;
+	padding: 0 12px;
+	margin: 12px auto;
+	border: 1px solid rgba(67, 160, 71, 0.35);
+	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
 	color: #4CAF50;
 	cursor: default;
 	font-weight: 600;
+	font-size: small;
 	transition: all 0.3s ease;
 }
-.btn-add-comment:hover {
+.btn-panel1:hover {
 	background: #4CAF50;
 	color: white;
 }
@@ -436,40 +484,46 @@ async function sendComment() {
 	cursor: default;
 }
 
+/* ---------- Commentaires ---------- */
+.panel__comments {
+	border-top: 1px solid #ccc;
+	padding: 8px 0;
+}
+
 /* Transition simple (fade + léger slide) */
 .panel-fade-enter-active,
-.panel-fade-leave-active { 
-  	transition: opacity .18s ease, transform .18s ease; 
+.panel-fade-leave-active {
+  	transition: opacity .18s ease, transform .18s ease;
 }
 
 .panel-fade-enter-from,
-.panel-fade-leave-to { 
-	opacity: 0; 
-	transform: translateX(8px); 
+.panel-fade-leave-to {
+	opacity: 0;
+	transform: translateX(8px);
 }
 
 .panel.left.panel-fade-enter-from,
-.panel.left.panel-fade-leave-to { 
-  	transform: translateX(-8px); 
+.panel.left.panel-fade-leave-to {
+  	transform: translateX(-8px);
 }
 
 ::-webkit-scrollbar {
   width: 10px;
 }
- 
+
 /* Fond de la track */
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 8px;
 }
- 
+
 /* La barre (thumb) */
 ::-webkit-scrollbar-thumb {
   background: #cfcfcf;
   border-radius: 8px;
   border: 2px solid #f1f1f1; /* pour créer un espace visuel */
 }
- 
+
 /* Effet au hover */
 ::-webkit-scrollbar-thumb:hover {
   background: #b6b6b6;

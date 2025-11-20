@@ -3,21 +3,21 @@ import { ref } from 'vue'
 import { API_URL } from '../config.js'
 import { useAuthStore } from './auth.js'
 
+export const useMarqueurStore = defineStore('marqueurs', () => {
 
-export const useMarqueurStore = defineStore('marqueur', () => {
-    const marqueurs = ref([]);
-    const marqueurActif = ref(null);
-    const authStore = useAuthStore();
+    const marqueurs = ref([])
+    const marqueurActif = ref(null)
+    const authStore = useAuthStore()
 
-    function ajouterMarqueur(payload){
-        // Construire les headers de base
-        const headers = {
-            "Content-Type": "application/json"
-        };
+    /* --------------------------------------------
+       AJOUTER UN MARQUEUR
+    -------------------------------------------- */
+    function ajouterMarqueur(payload) {
 
-        // Ajouter l'Authorization si l'admin est connecté
+        const headers = { "Content-Type": "application/json" }
+
         if (authStore.isAuthenticated && authStore.token) {
-            headers.Authorization = `Bearer ${authStore.token}`;
+            headers.Authorization = `Bearer ${authStore.token}`
         }
 
         return fetch(`${API_URL}/marqueurs`, {
@@ -26,71 +26,86 @@ export const useMarqueurStore = defineStore('marqueur', () => {
             body: JSON.stringify(payload),
         })
         .then(async (response) => {
-            if(response.status === 201){
-                return response.json()
-            } else {
-                const errorData = await response.json()
-                throw new Error(errorData.message || 'Erreur inconnue')
+            const data = await response.json()
+
+            if (response.status !== 201) {
+                throw new Error(data.message || 'Erreur inconnue')
             }
+
+            const mapped = {
+                ...data.data,
+                id: data.data._id
+            }
+
+            marqueurs.value.push(mapped)
+            return mapped
         })
-        .then(data => {
-            marqueurs.value.push(data.data)
-            return data.data
-        })
-        .catch(error => {
+        .catch((error) => {
             console.error('Erreur ajout marqueur:', error)
             throw error
         })
     }
 
-    function getMarqueurs(){
+    /* --------------------------------------------
+       GET TOUS LES MARQUEURS
+    -------------------------------------------- */
+    function getMarqueurs() {
         return fetch(`${API_URL}/marqueurs`, {
             method: 'GET',
-            headers: {
-                "Content-Type": "application/json"
-            }
+            headers: { "Content-Type": "application/json" }
         })
         .then(async (response) => {
-            if(response.status === 200){
-                return response.json()
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Erreur inconnue');
+            const data = await response.json()
+
+            if (response.status !== 200) {
+                throw new Error(data.message || 'Erreur inconnue')
             }
+
+            marqueurs.value = data.data.map(m => ({
+                ...m,
+                id: m._id
+            }))
+
+            return marqueurs.value
         })
-        .then(data => {
-            marqueurs.value = data.data
-            return marqueurs
-        })
-        .catch(error => {
+        .catch((error) => {
+            console.error("Erreur getMarqueurs:", error)
             throw error
         })
     }
 
+    /* --------------------------------------------
+       GET UN SEUL MARQUEUR
+    -------------------------------------------- */
     function getMarqueur(marqueurId) {
         return fetch(`${API_URL}/marqueurs/${marqueurId}`, {
             method: 'GET',
-            headers: {
-                "Content-Type": "application/json"
-            }
+            headers: { "Content-Type": "application/json" }
         })
         .then(async (response) => {
-            if(response.ok)
-                return response.json()
-            else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Erreur inconnue');
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erreur inconnue')
             }
+
+            marqueurActif.value = {
+                ...data.data,
+                id: data.data._id
+            }
+
+            return marqueurActif.value
         })
-        .then(data => {
-            marqueurActif.value = data.data
-            return marqueurActif
-        })
-        .catch(error => {
+        .catch((error) => {
+            console.error("Erreur getMarqueur:", error)
             throw error
         })
     }
-    function modifierMarqueur(marqueurId, token, payload){
+
+    /* --------------------------------------------
+       MODIFIER MARQUEUR COMPLET
+    -------------------------------------------- */
+    function modifierMarqueur(marqueurId, token, payload) {
         return fetch(`${API_URL}/marqueurs/${marqueurId}`, {
             method: 'PUT',
             headers: {
@@ -100,64 +115,94 @@ export const useMarqueurStore = defineStore('marqueur', () => {
             body: JSON.stringify(payload)
         })
         .then(async (response) => {
-            if(response.ok) {
-                return response.json();
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Erreur inconnue');
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erreur inconnue')
             }
+
+            if (marqueurActif.value) {
+                Object.assign(marqueurActif.value.properties, data.data)
+            }
+
+            return data.data
         })
-        .then((result) => {
-            // MAJ locale : recharger la liste après succès
-            if (marqueurs.value) {
-                const idx = marqueurs.value.findIndex(m => (m._id ?? m.id) === marqueurId)
-                if (idx !== -1) {
-                    marqueurs.value[idx] = result.data
-                }
-            }
-            
-            // MAJ du marqueur actif si c'est le même
-            if (marqueurActif.value && (marqueurActif.value._id ?? marqueurActif.value.id) === marqueurId) {
-                marqueurActif.value = result.data
-            }
-            
-            return result.data;
-        })
-        .catch(error => {
+        .catch((error) => {
+            console.error("Erreur modifierMarqueur:", error)
             throw error
         })
     }
-    function modifierMarqueurStatus(marqueurId, token, status){
+
+    /* --------------------------------------------
+       MODIFIER STATUT (APPROUVE / REJETÉ)
+    -------------------------------------------- */
+    function modifierMarqueurStatus(marqueurId, token, status) {
+
         return fetch(`${API_URL}/marqueurs/${marqueurId}/status`, {
             method: 'PUT',
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + token
             },
-             body: JSON.stringify(status)
+            body: JSON.stringify(status)
         })
-        .then((response) => {
-            return response.json().then((data) => {
-                if (!response.ok) {
-                    throw new Error(data.message || 'Erreur inconnue');
-                }
-                return data;
-            });
-        })
-        .then((data) => {
-            const updated = data.data;
-            const newStatus = updated?.properties?.status;
+        .then(async (response) => {
+            const data = await response.json()
 
-            if (marqueurActif.value && newStatus) {
-                marqueurActif.value.properties.status = newStatus;
+            if (!response.ok) {
+                throw new Error(data.message || 'Erreur inconnue')
             }
 
-            return updated;
+            // 🔥 Cas SUPPRESSION locale
+            if (data.message?.includes("supprim")) {
+                marqueurs.value = marqueurs.value.filter(m => m.id !== marqueurId)
+                return null
+            }
+
+            // 🔥 Mise à jour normale
+            const updated = {
+                ...data.data,
+                id: data.data._id
+            }
+
+            const index = marqueurs.value.findIndex(m => m.id === marqueurId)
+            if (index !== -1) marqueurs.value[index] = updated
+
+            if (marqueurActif.value?.id === marqueurId) {
+                marqueurActif.value.properties.status = updated.properties.status
+            }
+
+            return updated
         })
         .catch((error) => {
-            console.error('Erreur lors de la mise à jour du marqueur :', error.message);
-            throw error;
-        });
+            console.error("Erreur modifierMarqueurStatus:", error)
+            throw error
+        })
+    }
+
+    /* --------------------------------------------
+       SUPPRIMER UN MARQUEUR
+    -------------------------------------------- */
+    function supprimerMarqueur(id, token) {
+        return fetch(`${API_URL}/marqueurs/${id}`, {
+            method: 'DELETE',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            }
+        })
+        .then(async (response) => {
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erreur inconnue')
+            }
+
+            // 🔥 supprimer localement (IMPORTANT)
+            marqueurs.value = marqueurs.value.filter(m => m.id !== id)
+
+            return data
+        })
     }
 
     return {
@@ -167,7 +212,8 @@ export const useMarqueurStore = defineStore('marqueur', () => {
         getMarqueurs,
         getMarqueur,
         modifierMarqueur,
-        modifierMarqueurStatus
+        modifierMarqueurStatus,
+        supprimerMarqueur
     }
 
 }, {
