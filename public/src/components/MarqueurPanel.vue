@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, reactive } from 'vue';
+import { ref, computed } from 'vue';
 import { useMarqueurStore } from '../stores/useMarqueur.js';
 import { useEditRequestStore } from '../stores/useEditRequest';
 import { API_URL } from '../config';
@@ -25,7 +25,7 @@ const canDisplayPanel = computed(() => {
 const marqueurProperties = computed(() => {
     return marqueurStore.marqueurActif?.properties || {};
 });
-const isCommenting = reactive(ref(false));
+const isCommenting = ref(false);
 
 const isEditModalOpen = ref(false);
 
@@ -77,6 +77,7 @@ function toggleCommenting() {
 	formData.value.auteur = '';
 	formData.value.contenu = '';
 	console.log(marqueurStore.marqueurActif);
+	console.log('isCommenting:', isCommenting.value);
 }
 
 function copyToClipboard(text) {
@@ -127,6 +128,7 @@ async function sendComment() {
                 throw new Error(errorData.message || 'Erreur inconnue')
 			}
 			const responseData = await response.json();
+			marqueurStore.marqueurActif.properties.comments.push(responseData.data);
 			console.log('Commentaire envoyé avec succès :', responseData.data);
 			toggleCommenting();
 		}
