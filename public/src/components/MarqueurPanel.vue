@@ -78,7 +78,6 @@ function toggleCommenting() {
 	formData.value.auteur = '';
 	formData.value.contenu = '';
 	console.log(marqueurStore.marqueurActif);
-  console.log('is commenting: ' + isCommenting.value);
 }
 
 function copyToClipboard(text) {
