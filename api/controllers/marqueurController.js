@@ -285,8 +285,8 @@ exports.addCommentMarqueur = async (req, res, next) => {
     marqueur.properties.comments.push(comment);
     await marqueur.save();
 
-    res.status(200).json(formatSuccessResponse(
-      200,
+    res.status(201).json(formatSuccessResponse(
+      201,
       "Témoignage ajouté avec succès.",
       comment,
       req.originalUrl
