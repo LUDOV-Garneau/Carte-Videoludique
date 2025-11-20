@@ -80,6 +80,10 @@ async function handleMarqueurAdded() {
 	await afficherMarqueurs();
 	closeCreatePanel();
 }
+async function handleMarqueurDeleted() {
+  await afficherMarqueurs();
+  closeInfoPanel();
+}
 
 function handlelocateFromAddress({ lat, lng }) {
 	if (currentMarqueur.value) {
@@ -118,7 +122,6 @@ async function afficherMarqueurs() {
         marqueur.addTo(map);
 
         marqueur.properties = properties;
-        marqueur.comments = comments;
 
         marqueur.on('click', (e) => {
           selectedMarqueur.value = marqueur;
@@ -331,6 +334,7 @@ onUnmounted(() => {
   <MarqueurPanel
     :is-open="infoPanelOpen"
     @close="closeInfoPanel"
+    @marqueur-deleted="handleMarqueurDeleted"
   />
 </template>
 
