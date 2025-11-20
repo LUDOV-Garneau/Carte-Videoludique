@@ -3,26 +3,32 @@ import { jwtDecode } from "jwt-decode";
 import { ref, computed } from 'vue'
 
 export const useAuthStore = defineStore('auth', () => {
-  //récupérer le token depuis localStorage si on l'utilise
-  const token = ref(localStorage.getItem('jwt') || null);
-  console.log(token.value)
-
   function setToken(newToken) {
     token.value = newToken
     localStorage.setItem('jwt', newToken)
   }
+
+  const token = ref(localStorage.getItem('jwt') || null);
  
-  // Décode les infos utilisateur à partir du token
   const decodedToken = computed(() => {
-    if (token.value) {
+    if (!token.value) return null
+   
       try {
-        return jwtDecode(token.value)
+        const decoded = jwtDecode(token.value)
+
+        const now = Date.now() / 1000
+
+        if (decoded.exp && decoded.exp < now) {
+          logout()
+          return null
+        }
+
+        return decoded
       } catch (e) {
+        logout()
         return null
-      }
     }
-    return null
-  });
+  })
 
   // Obtenir le nom d'admin depuis le token décodé
   const name = computed(() => {
@@ -43,8 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   function logout() {
     token.value = null
-    // Supprimer le token de localStorage
-    localStorage.removeItem('jwt'); // Supprimer le token de localStorage
+    localStorage.removeItem('jwt'); 
   }
 
   return {
