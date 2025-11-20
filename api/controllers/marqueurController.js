@@ -281,13 +281,14 @@ exports.addCommentMarqueur = async (req, res, next) => {
       ));
     }
 
-    marqueur.properties.comments.push({ auteur: auteur || "Anonyme", contenu: texte });
+    const comment = { auteur: auteur || "Anonyme", contenu: texte };
+    marqueur.properties.comments.push(comment);
     await marqueur.save();
 
-    res.status(200).json(formatSuccessResponse(
-      200,
+    res.status(201).json(formatSuccessResponse(
+      201,
       "Témoignage ajouté avec succès.",
-      marqueur,
+      comment,
       req.originalUrl
     ));
   } catch (err) {
