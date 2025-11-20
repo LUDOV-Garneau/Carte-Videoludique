@@ -19,6 +19,7 @@ const marqueurStore = useMarqueurStore();
 const editRequestStore = useEditRequestStore();
 
 const canDisplayPanel = computed(() => {
+    console.log('is commenting: ' + isCommenting);
     return props.isOpen && marqueurStore.marqueurActif !== null;
 });
 
@@ -77,6 +78,7 @@ function toggleCommenting() {
 	formData.value.auteur = '';
 	formData.value.contenu = '';
 	console.log(marqueurStore.marqueurActif);
+  console.log('is commenting: ' + isCommenting.value);
 }
 
 function copyToClipboard(text) {
