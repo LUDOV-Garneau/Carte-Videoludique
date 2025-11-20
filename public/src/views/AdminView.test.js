@@ -94,25 +94,27 @@ describe('AdminView.vue', () => {
   })
 
   it('met à jour le statut du marqueur en "approved" quand accepterMarqueur() est appelé', async () => {
-    wrapper = mount(AdminView, {
-      global: { plugins: [pinia], stubs: { LeafletMap: LeafletMapStub } }
-    })
-
-    const marqueur = {
-      properties: { id: '123', status: 'pending' }
-    }
-
-    const updatedMarqueur = { properties: { id: '123', status: 'approved' } }
-
-    const spy = vi
-      .spyOn(marqueurStore, 'modifierMarqueurStatus')
-      .mockResolvedValue(updatedMarqueur)
-
-    await wrapper.vm.accepterMarqueur(marqueur)
-
-    expect(spy).toHaveBeenCalledWith('123', authStore.token, { status: 'approved' })
-    expect(marqueur.properties.status).toBe('approved')
+  wrapper = mount(AdminView, {
+    global: { plugins: [pinia], stubs: { LeafletMap: LeafletMapStub } }
   })
+
+  const marqueur = {
+    properties: { id: '123', status: 'pending' }
+  }
+
+  const updatedMarqueur = { properties: { id: '123', status: 'approved' } }
+
+  // IMPORTANT : spyon sur l’instance de store déjà créée dans beforeEach
+  const spy = vi
+    .spyOn(marqueurStore, 'modifierMarqueurStatus')
+    .mockResolvedValue(updatedMarqueur)
+
+  await wrapper.vm.accepterMarqueur(marqueur)
+
+  expect(spy).toHaveBeenCalledTimes(1)
+  expect(spy).toHaveBeenCalledWith('123', authStore.token, { status: 'approved' })
+  expect(marqueur.properties.status).toBe('approved')
+})
 
   it('supprime le marqueur et rafraîchit la liste quand refuserMarqueur() est appelé', async () => {
   wrapper = mount(AdminView, {
