@@ -29,13 +29,13 @@ const mockMarqueurStore = {
 }
 
 vi.mock('../stores/useMarqueur.js', () => ({
-  useMarqueursStore: vi.fn(() => mockMarqueurStore)
+  useMarqueurStore: vi.fn(() => mockMarqueurStore)
 }))
 
 
 import { uploadMultipleImages, cleanupImages } from '../utils/cloudinary.js'
 import { geocodeAddress } from '../utils/geocode.js'
-import { useMarqueursStore } from '../stores/useMarqueur.js';
+import { useMarqueurStore } from '../stores/useMarqueur.js';
 
 describe('AddMarqueurPanel.vue', () => {
   let wrapper
@@ -262,7 +262,7 @@ describe('AddMarqueurPanel.vue', () => {
         }
       })
 
-      const marqueurStore = useMarqueursStore()
+      const marqueurStore = useMarqueurStore()
       vi.spyOn(marqueurStore, 'ajouterMarqueur').mockResolvedValue({
         id: 1,
         message: 'Marqueur créé'
@@ -270,7 +270,7 @@ describe('AddMarqueurPanel.vue', () => {
     })
 
     it('envoie avec succès un formulaire valide sans images', async () => {
-      const marqueurStore = useMarqueursStore()
+      const marqueurStore = useMarqueurStore()
 
       // Remplir le formulaire correctement
       await wrapper.find('#titre').setValue('Mon lieu')
@@ -294,7 +294,7 @@ describe('AddMarqueurPanel.vue', () => {
     })
 
     it('envoie avec succès un formulaire valide avec images', async () => {
-      const marqueurStore = useMarqueursStore()
+      const marqueurStore = useMarqueurStore()
 
       // Remplir le formulaire
       await wrapper.find('#titre').setValue('Mon lieu avec images')
@@ -340,7 +340,7 @@ describe('AddMarqueurPanel.vue', () => {
     })
 
     it('nettoie les images et relance erreur si API échoue', async () => {
-      const marqueurStore = useMarqueursStore()
+      const marqueurStore = useMarqueurStore()
 
       // Remplir formulaire valide
       await wrapper.find('#titre').setValue('Mon lieu')
@@ -366,7 +366,7 @@ describe('AddMarqueurPanel.vue', () => {
     })
 
     it('gère les erreurs de réseau', async () => {
-      const marqueurStore = useMarqueursStore()
+      const marqueurStore = useMarqueurStore()
 
       // Remplir formulaire valide
       await wrapper.find('#titre').setValue('Mon lieu')

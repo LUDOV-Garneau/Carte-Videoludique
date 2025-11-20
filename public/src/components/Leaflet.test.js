@@ -102,7 +102,7 @@ const mockMarqueurStore = {
 }
 
 vi.mock('../stores/useMarqueur.js', () => ({
-  useMarqueursStore: vi.fn(() => mockMarqueurStore)
+  useMarqueurStore: vi.fn(() => mockMarqueurStore)
 }))
 
 

@@ -281,7 +281,7 @@ exports.addCommentMarqueur = async (req, res, next) => {
       ));
     }
 
-    marqueur.comments.push({ auteur: auteur || "Anonyme", texte });
+    marqueur.properties.comments.push({ auteur: auteur || "Anonyme", contenu: texte });
     await marqueur.save();
 
     res.status(200).json(formatSuccessResponse(
