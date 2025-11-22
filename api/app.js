@@ -13,7 +13,10 @@ const cors = require("cors");
 //   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 //   allowedHeaders: ['Content-Type', 'Authorization']
 // }));
-app.use(cors())
+app.use(cors({
+  origin: 'http://test-nodejs.local/',
+  credentials: true,
+}))
 app.use(express.json());
 
 app.use((req, res, next) => {
