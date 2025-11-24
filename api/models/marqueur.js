@@ -25,11 +25,11 @@ const MarqueurSchema = new mongoose.Schema(
     geometry: {
       type: { type: String, enum: ["Point"], required: true, default: "Point" },
       coordinates: {
-        type: [Number], // [lng, lat]
+        type: [Number], // [lat, lng]
         required: true,
         validate: [
           arr => arr.length === 2,
-          "geometry.coordinates doit être [lng, lat]"
+          "geometry.coordinates doit être [lat, lng]"
         ]
       }
     },
@@ -78,7 +78,7 @@ MarqueurSchema.index({ geometry: "2dsphere" });
 
 // Validation des coordonnées
 MarqueurSchema.path("geometry.coordinates").validate(function (coords) {
-  const [lng, lat] = coords;
+  const [lat, lng] = coords;
   return lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90;
 }, "Coordonnées invalides (lng/lat).");
 

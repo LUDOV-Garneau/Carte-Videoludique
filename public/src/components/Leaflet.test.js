@@ -348,8 +348,8 @@ describe('afficherMarqueurs (exposed)', () => {
 
     expect(mockMarqueurStore.getMarqueurs).toHaveBeenCalledTimes(1)
     expect(L.marker).toHaveBeenCalledTimes(2)
-    expect(L.marker).toHaveBeenCalledWith([45.5, -73.56])
-    expect(L.marker).toHaveBeenCalledWith([45.51, -73.57])
+    expect(L.marker).toHaveBeenCalledWith([-73.56, 45.5])
+    expect(L.marker).toHaveBeenCalledWith([-73.57, 45.51])
 
     expect(wrapper.vm.marqueurs).toHaveLength(2)
   })
