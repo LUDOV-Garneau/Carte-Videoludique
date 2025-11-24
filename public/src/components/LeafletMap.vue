@@ -39,9 +39,10 @@ const selectedMarqueur = ref(null);
 const currentMarqueur = ref(null);
 const currentAdresse = ref('');
 
-const WORLD_BOUNDS = L.latLngBounds(
-  [-85.05112878, -180],  // Sud-Ouest
-  [85.05112878, 180]     // Nord-Est
+
+const QUEBEC_BOUND = L.latLngBounds(
+  [40, -90], // Sud-Ouest (un peu sous Montréal, et plus vers l'Ontario)
+  [63, -50]  // Nord-Est (plus loin dans le Labrador / Atlantique)  
 )
 
 function openCreatePanel() {
@@ -161,14 +162,19 @@ defineExpose({
  * @returns {void}
  */
 function initMap() {
-  map = L.map(mapEl.value, {
+  map = L.map(mapEl.value, { 
+    center: [52.5, -71.0],
+    zoom: 5,               
+    minZoom: 5,            
+    maxZoom: 19,
+
     zoomControl: true,
     zoomAnimation: false,
-    maxBounds: WORLD_BOUNDS,
+    maxBounds: QUEBEC_BOUND,
     maxBoundsViscosity: 1.0,
-    minZoom: 2
+    
   })
-  .setView([45.5017, -73.5673], 12)
+  .setView([52.5, -71.0], 5);
 }
 
 function focusOn(lat, lng) {
@@ -189,7 +195,7 @@ function addTileLayer() {
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
     noWrap: true,
-    bounds: WORLD_BOUNDS,
+    bounds: QUEBEC_BOUND,
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     subdomains: 'abcd'
   }).addTo(map)
@@ -212,37 +218,53 @@ function setupMapClickHandler() {
 	map.on('click', async (e) => {
 		if (!createPanelOpen.value) return
 
-    if(!WORLD_BOUNDS.contains(e.latlng)) {
-      alert('Veuillez sélectionner un emplacement à l’intérieur des limites du monde.');
-      return;
-    }
-
 		const { lat, lng } = e.latlng
 		if (currentMarqueur.value) map.removeLayer(currentMarqueur.value)
 
 		latitude.value = lat.toFixed(5);
 		longitude.value = lng.toFixed(5);
 
-		currentMarqueur.value = L.marker([lat, lng])
+    currentMarqueur.value = L.marker([lat, lng])
 			.addTo(map)
 			.bindPopup(`Proposition<br>${lat.toFixed(5)}, ${lng.toFixed(5)}`)
 			.openPopup();
-
 		map.setView([lat, lng], 18);
 
-		try {
-		const { address } = await reverseGeocode(lat, lng)
-		const ligne = [
-			address.house_number, address.road,
-			address.city || address.town || address.village,
-			address.state, address.postcode, address.country
-		].filter(Boolean).join(', ')
-		currentAdresse.value = ligne;
+		verifyAdressInQuebec(lat, lng)
+	});
+}
+
+async function verifyAdressInQuebec(lat, lng) {
+  try {
+		  const { address } = await reverseGeocode(lat, lng)
+
+      if (!address) {
+        map.removeLayer(currentMarqueur.value)
+        currentMarqueur.value = null
+        currentAdresse.value = ''
+        alert('Impossible de déterminer une adresse')
+        closeCreatePanel()
+        return
+     }
+
+		  const ligne = [
+			  address.house_number, address.road,
+			  address.city || address.town || address.village,
+			  address.state, address.postcode, address.country
+		  ].filter(Boolean).join(', ')
+
+      if(!ligne.includes("Québec")) {
+        map.setView([lat, lng], 5)
+        map.removeLayer(currentMarqueur.value)
+        alert("hors quebec")
+        closeCreatePanel()     
+      }
+      else{ currentAdresse.value = ligne; }
+		
 		} catch (err) {
 		console.error(err)
 		currentAdresse.value = '';
 		}
-	});
 }
 
 /**

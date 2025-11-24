@@ -1,4 +1,27 @@
 "use strict";
+// /**
+//  * Vérifie si un point est à l'intérieur d'un polygone Leaflet.
+//  * @param {L.LatLng} point - Coordonnées du clic
+//  * @param {L.Polygon} polygon - Polygone Leaflet
+//  * @returns {boolean}
+//  */
+// export function isInPolygon(point, polygon) {
+//   const latlngs = polygon.getLatLngs()[0]
+//   const x = point.lng
+//   const y = point.lat
+//   let inside = false
+
+//   for (let i = 0, j = latlngs.length - 1; i < latlngs.length; j = i++) {
+//     const xi = latlngs[i].lng, yi = latlngs[i].lat
+//     const xj = latlngs[j].lng, yj = latlngs[j].lat
+
+//     const intersect =
+//       yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi
+//     if (intersect) inside = !inside
+//   }
+
+//   return inside
+// }
 
 /**
  * Effectue une géocodification inverse (coordonnées → adresse) à l’aide du service Nominatim d’OpenStreetMap.
@@ -78,39 +101,73 @@ async function reverseGeocode(lat, lng) {
  *   console.log('Adresse introuvable');
  * }
  */
+// async function geocodeAddress(q) {
+//   if (!q || !q.trim()) return null
+//   const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(q)}`
+//   const resp = await fetch(url, {
+//     headers: {
+//       'Accept-Language': 'fr',
+//       'User-Agent': 'CarteVideoludique/1.0 (contact@example.com)',
+//     },
+//   })
+//   if (!resp.ok) throw new Error('Geocode error')
+//   const [res] = await resp.json()
+//   if (!res) return null
+//   return { lat: parseFloat(res.lat), lng: parseFloat(res.lon) }
+// }
+
 async function geocodeAddress(q) {
-  if (!q || !q.trim()) return null
-  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(q)}`
+  const query = buildQuebecQuery(q)
+  if (!query) return null
+
+  const url =
+    'https://nominatim.openstreetmap.org/search?' +
+    new URLSearchParams({
+      q: query,
+      format: 'jsonv2',
+      limit: '1',
+      countrycodes: 'ca',
+      addressdetails: '1'
+    }).toString()
+
   const resp = await fetch(url, {
     headers: {
       'Accept-Language': 'fr',
       'User-Agent': 'CarteVideoludique/1.0 (contact@example.com)',
     },
   })
+
   if (!resp.ok) throw new Error('Geocode error')
-  const [res] = await resp.json()
+
+  const data = await resp.json()
+  const res = data[0]
   if (!res) return null
+
   return { lat: parseFloat(res.lat), lng: parseFloat(res.lon) }
 }
 
 async function fetchAdresseSuggestions(suggestion, showSuggestion, rawQuery) {
-  const query = (rawQuery || '').trim()
+  const base = (rawQuery || '').trim()
 
-  if (!query || query.length < 3) {
+  if (!base || base.length < 3) {
     suggestion.value = []
     showSuggestion.value = false
     return
   }
 
-  // On peut ajouter un contexte Québec, Canada pour aider Nominatim
-  const fullQuery = `${query}, Québec, Canada`
+  const fullQuery = buildQuebecQuery(base)
+  if (!fullQuery) {
+    suggestion.value = []
+    showSuggestion.value = false
+    return
+  }
 
   const params = new URLSearchParams({
     q: fullQuery,
     format: 'json',
     addressdetails: '1',
     limit: '5',
-    countrycodes: 'ca'
+    countrycodes: 'ca',
   })
 
   const url = 'https://nominatim.openstreetmap.org/search?' + params.toString()
@@ -119,13 +176,13 @@ async function fetchAdresseSuggestions(suggestion, showSuggestion, rawQuery) {
     const resp = await fetch(url, {
       headers: {
         'Accept-Language': 'fr',
-        'User-Agent': 'CarteVideoludique/1.0 (contact@example.com)'
-      }
+        'User-Agent': 'CarteVideoludique/1.0 (contact@exemple.com)',
+      },
     })
 
     let data = await resp.json()
 
-    // Sécurité : garder seulement le Canada (au cas où)
+    // Sécurité : garder seulement le Canada
     data = data.filter(
       item => item.address && item.address.country_code === 'ca'
     )
@@ -140,6 +197,21 @@ async function fetchAdresseSuggestions(suggestion, showSuggestion, rawQuery) {
     suggestion.value = []
     showSuggestion.value = false
   }
+}
+
+function buildQuebecQuery(input) {
+  const raw = (input || '').trim()
+  if (!raw) return null
+
+  const lower = raw.toLowerCase()
+
+  // Si l'utilisateur a déjà mis "québec" ou "quebec", on ne rajoute rien
+  if (lower.includes('québec') || lower.includes('quebec')) {
+    return raw
+  }
+  console.log(`${raw}, Québec, QC, Canada`)
+  // Sinon on force le contexte géographique
+  return `${raw}, Québec, QC, Canada`
 }
 
 export { reverseGeocode, geocodeAddress, fetchAdresseSuggestions };
