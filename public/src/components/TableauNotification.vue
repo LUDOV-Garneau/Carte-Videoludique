@@ -8,7 +8,7 @@ const authStore = useAuthStore()
 
 const props = defineProps({
     filtreStatus: { type: String, default: 'pending' },
-    marqueursFiltres: { type: Array, default: () => [] } 
+    marqueursFiltres: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits([
@@ -59,7 +59,7 @@ onMounted(() => {
     loadEditRequests()
   }
 })
-   
+
 </script>
 
 <template>
@@ -97,12 +97,19 @@ onMounted(() => {
           <th class="reject-col">Refuser</th>
         </tr>
       </thead>
+
       <tbody>
-        <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id || marqueur._id">
+        <!-- ✅ C’EST ICI QUE L’ÉVÈNEMENT DE FOCUS EST AJOUTÉ -->
+        <tr
+          v-for="marqueur in marqueursFiltres"
+          :key="marqueur.id || marqueur._id"
+          class="row-hover"
+          @click="emit('focus-marqueur', marqueur)"
+        >
           <td class="provider">{{ marqueur.properties.titre }}</td>
           <td class="address">{{ marqueur.properties.adresse }}</td>
 
-          <td class="info-col">
+          <td class="info-col" @click.stop>
             <button class="info-btn" @click="emit('show-info', marqueur)">
               <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <circle
@@ -127,7 +134,7 @@ onMounted(() => {
             </button>
           </td>
 
-          <td class="menu-col">
+          <td class="menu-col" @click.stop>
             <button
               class="kebab"
               aria-label="Modifier"
@@ -137,20 +144,14 @@ onMounted(() => {
             </button>
           </td>
 
-          <td class="accept-col">
-            <button
-              class="action-btn accept"
-              @click="accepterLocal(marqueur)"
-            >
+          <td class="accept-col" @click.stop>
+            <button class="action-btn accept" @click="accepterLocal(marqueur)">
               Accepter
             </button>
           </td>
 
-          <td class="reject-col">
-            <button
-              class="action-btn reject"
-              @click="refuserLocal(marqueur)"
-            >
+          <td class="reject-col" @click.stop>
+            <button class="action-btn reject" @click="refuserLocal(marqueur)">
               Refuser
             </button>
           </td>
@@ -172,6 +173,7 @@ onMounted(() => {
           <th class="reject-col">Refuser</th>
         </tr>
       </thead>
+
       <tbody>
         <tr
           v-for="req in editRequestStore.editRequests"
@@ -179,24 +181,17 @@ onMounted(() => {
         >
           <td>{{ req.proposedProperties?.titre || req.marqueur?.properties?.titre }}</td>
           <td>
-            <!-- Tu pourras ici afficher un résumé des diff (adresse, description, etc.) -->
             {{ req.proposedProperties?.adresse }}<br />
             {{ req.proposedProperties?.description }}
           </td>
           <td class="info-col">
-            <button class="info-btn">
-              Voir détails
-            </button>
+            <button class="info-btn">Voir détails</button>
           </td>
           <td class="accept-col">
-            <button class="action-btn accept">
-              Accepter
-            </button>
+            <button class="action-btn accept">Accepter</button>
           </td>
           <td class="reject-col">
-            <button class="action-btn reject">
-              Refuser
-            </button>
+            <button class="action-btn reject">Refuser</button>
           </td>
         </tr>
 
