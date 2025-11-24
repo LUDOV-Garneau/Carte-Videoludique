@@ -6,6 +6,7 @@ import { defineComponent } from 'vue'
 import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '../stores/auth'
 
+// Stub par défaut utilisé dans la majorité des tests
 const LeafletMapStub = defineComponent({
   name: 'LeafletMap',
   template: '<div data-testid="map"></div>',
@@ -18,6 +19,7 @@ vi.mock('jwt-decode', () => ({
     role: 'Gestionnaire'
   }))
 }))
+
 describe('AdminView.vue', () => {
   let wrapper
   let pinia
@@ -100,69 +102,33 @@ describe('AdminView.vue', () => {
     expect(wrapper.get('[data-testid="map"]').exists()).toBe(true)
   })
 
-  // it('met à jour le statut du marqueur en "approved" quand accepterMarqueur() est appelé', async () => {
-  //   wrapper = mount(AdminView, {
-  //     global: { plugins: [pinia], stubs: { LeafletMap: LeafletMapStub } }
-  //   })
-
-  //   // ⚠️ TRÈS IMPORTANT : on récupère les stores APRÈS le mount,
-  //   // pour être sûr d’avoir la même instance que le composant
-  //   const marqueurStore = useMarqueurStore()
-  //   const authStore = useAuthStore()
-
-  //   authStore.token = null
-
-  //   const marqueur = {
-  //     properties: { id: '123', status: 'pending' }
-  //   }
-
-  //   const updatedMarqueur = { properties: { id: '123', status: 'approved' } }
-
-  //   // on remplace l’action par un spy
-  //   marqueurStore.modifierMarqueurStatus = vi
-  //     .fn()
-  //     .mockResolvedValue(updatedMarqueur)
-
-  //   await wrapper.vm.accepterMarqueur(marqueur)
-
-  //   expect(marqueurStore.modifierMarqueurStatus).toHaveBeenCalledTimes(1)
-  //   expect(marqueurStore.modifierMarqueurStatus).toHaveBeenCalledWith(
-  //     '123',
-  //     authStore.token,
-  //     { status: 'approved' }
-  //   )
-  //   expect(marqueur.properties.status).toBe('approved')
-  // })
-
   it('supprime le marqueur et rafraîchit la liste quand refuserMarqueur() est appelé', async () => {
-  wrapper = mount(AdminView, {
-    global: { plugins: [pinia], stubs: { LeafletMap: LeafletMapStub } }
+    wrapper = mount(AdminView, {
+      global: { plugins: [pinia], stubs: { LeafletMap: LeafletMapStub } }
+    })
+
+    const marqueur = { properties: { id: '456' } }
+
+    marqueurStore.marqueurs = [
+      { properties: { id: '123' } },
+      { properties: { id: '456' } },
+      { properties: { id: '789' } }
+    ]
+
+    const spyDelete = vi
+      .spyOn(marqueurStore, 'supprimerMarqueur')
+      .mockResolvedValue(true)
+
+    const spyGet = vi
+      .spyOn(marqueurStore, 'getMarqueurs')
+      .mockResolvedValue([])
+
+    await wrapper.vm.refuserMarqueur(marqueur)
+
+    expect(spyDelete).toHaveBeenCalledWith('456', authStore.token)
+    expect(marqueurStore.marqueurs.find(m => m.properties.id === '456')).toBeUndefined()
+    expect(spyGet).toHaveBeenCalledTimes(1)
   })
-  const marqueur = { properties: { id: '456' } }
-
-  marqueurStore.marqueurs = [
-    { properties: { id: '123' } },
-    { properties: { id: '456' } },
-    { properties: { id: '789' } }
-  ]
-
-  const spyDelete = vi
-    .spyOn(marqueurStore, 'supprimerMarqueur')
-    .mockResolvedValue(true)
-
-  const spyGet = vi
-    .spyOn(marqueurStore, 'getMarqueurs')
-    .mockResolvedValue([])
-
-  await wrapper.vm.refuserMarqueur(marqueur)
-
-  expect(spyDelete).toHaveBeenCalledWith('456', authStore.token)
-
-  expect(marqueurStore.marqueurs.find(m => m.properties.id === '456')).toBeUndefined()
-
-  expect(spyGet).toHaveBeenCalledTimes(1)
-})
-
 
   it('affiche une erreur si aucun token n’est disponible', async () => {
     authStore.token = null
@@ -174,5 +140,38 @@ describe('AdminView.vue', () => {
     await wrapper.vm.accepterMarqueur(marqueur)
 
     expect(wrapper.vm.messageErreur).toContain('Non authentifié')
+  })
+
+  // ------------------------------------------------------------
+  // centrerCarte()
+  // ------------------------------------------------------------
+  it('centre la carte via focusOn(lat, lng) lorsque centrerCarte() est appelé', async () => {
+    const focusOnMock = vi.fn()
+
+    // Stub spécial uniquement pour CE test
+    const LeafletMapExposeStub = defineComponent({
+      name: 'LeafletMap',
+      template: '<div data-testid="map"></div>',
+      setup(props, { expose }) {
+        expose({ focusOn: focusOnMock })
+      }
+    })
+
+    wrapper = mount(AdminView, {
+      global: {
+        plugins: [pinia],
+        stubs: { LeafletMap: LeafletMapExposeStub }
+      }
+    })
+
+    // Marqueur de test
+    const fakeMarker = {
+      geometry: { coordinates: [-73.5673, 45.5017] }
+    }
+
+    wrapper.vm.centrerCarte(fakeMarker)
+
+    expect(focusOnMock).toHaveBeenCalledTimes(1)
+    expect(focusOnMock).toHaveBeenCalledWith(45.5017, -73.5673)
   })
 })
