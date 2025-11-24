@@ -37,6 +37,7 @@ vi.mock('leaflet', () => {
     remove: vi.fn(),
     getContainer: vi.fn(() => ({ style: {} })),
     getZoom: vi.fn(() => 13),
+    flyTo: vi.fn(() => map)     // <---- AJOUT POUR TESTER focusOn()
   }
 
   const tileLayerChain = { addTo: vi.fn(() => tileLayerChain) }
@@ -87,7 +88,7 @@ vi.mock('leaflet', () => {
     DomUtil,
     DomEvent,
     Marker,
-    latLngBounds, 
+    latLngBounds,
   }
 
   return { default: L, onHandlers, map }
@@ -101,7 +102,6 @@ import L, { onHandlers, map as mapApi } from 'leaflet'
 import LeafletMap from './LeafletMap.vue'
 
 // Mock du store pour les tests restants
-// Mock du store pour les tests restants
 const mockMarqueurStore = {
   marqueurs: [],
   getMarqueurs: vi.fn(() => Promise.resolve()),
@@ -112,7 +112,6 @@ const mockMarqueurStore = {
 vi.mock('../stores/useMarqueur.js', () => ({
   useMarqueurStore: vi.fn(() => mockMarqueurStore)
 }))
-
 
 import { createPinia } from 'pinia'
 
@@ -436,5 +435,41 @@ describe('afficherMarqueurs (exposed)', () => {
     expect(wrapper.vm.marqueurs).toHaveLength(0)
 
     consoleErrorSpy.mockRestore()
+  })
+})
+
+/* -------------------------------------------------- */
+/* 🟢 TESTS AJOUTÉS POUR focusOn() + BOUNDS.contains */
+/* -------------------------------------------------- */
+
+describe('focusOn (exposed)', () => {
+  let wrapper
+
+  beforeEach(() => {
+    const pinia = createPinia()
+    wrapper = mount(LeafletMap, {
+      global: { plugins: [pinia] }
+    })
+  })
+
+  afterEach(() => {
+    wrapper.unmount()
+  })
+
+  it('appelle map.flyTo() quand les coordonnées sont dans les limites', () => {
+    wrapper.vm.focusOn(45.5, -73.5)
+
+    expect(mapApi.flyTo).toHaveBeenCalledWith([45.5, -73.5], 16)
+  })
+
+  it('NE centre PAS la carte si bounds.contains() retourne false', () => {
+    // Forcer contains() => false
+    L.latLngBounds.mockReturnValue({
+      contains: vi.fn(() => false)
+    })
+
+    wrapper.vm.focusOn(2000, 2000)
+
+    expect(mapApi.flyTo).not.toHaveBeenCalled()
   })
 })
