@@ -89,8 +89,8 @@ const centrerCarte = (marqueur) => {
 
   const [lng, lat] = marqueur.geometry.coordinates
 
-  if (leafletMapRef.value?.focusOn) {
-    leafletMapRef.value.focusOn(lat, lng)
+  if (leafletMapRef.value?.map) {
+    leafletMapRef.value.map.flyTo([lat, lng], 16)
   }
 }
 
