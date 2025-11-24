@@ -105,7 +105,6 @@ function handlelocateFromAddress({ lat, lng }) {
 async function afficherMarqueurs() {
   try {
     await marqueurStore.getMarqueurs();
-
     marqueurs.value.forEach(marqueur => {
       map.removeLayer(marqueur);
     });
@@ -113,9 +112,8 @@ async function afficherMarqueurs() {
 
     marqueurStore.marqueurs.forEach(marqueurData => {
       if (marqueurData.geometry && marqueurData.geometry.coordinates) {
-        const [lng, lat] = marqueurData.geometry.coordinates;
+        const [lat, lng] = marqueurData.geometry.coordinates;
         const properties = marqueurData.properties;
-        const comments = marqueurData.comments || [];
 
         const marqueur = L.marker([lat, lng]);
         if (properties.status === 'pending') marqueur.setOpacity(0.5);
@@ -134,6 +132,7 @@ async function afficherMarqueurs() {
         marqueurs.value.push(marqueur);
       }
     });
+    console.log(map.Marker);
   } catch (err) {
     console.error('afficherMarqueurs error:', err);
   }

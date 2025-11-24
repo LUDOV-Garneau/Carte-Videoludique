@@ -36,7 +36,7 @@ exports.createMarqueur = async (req, res, next) => {
       type: "Feature",
       geometry: {
         type: "Point",
-        coordinates: [parseFloat(form.lng), parseFloat(form.lat)]
+        coordinates: [parseFloat(form.lat), parseFloat(form.lng)]
       },
       properties: {
         titre: form.titre,

@@ -245,15 +245,15 @@ async function locateFromAddress() {
             <div class="panel__body">
                 <form class="form" @submit.prevent="sendRequest">
                     <div class="form-group">
-                        <label for="lng">Longitude</label>
-                        <input type="number" id="lng" v-model.number="form.lng" placeholder="Longitude" inputmode="decimal" min="-180" max="180" step="any" class="form-inputText"/>
-                        <span class="error" v-if="formErrors.lng">{{ formErrors.lng }}</span>
-                    </div>
-
-                    <div class="form-group">
                         <label for="lat">Latitude</label>
                         <input type="number" id="lat" v-model.number="form.lat" placeholder="Latitude" inputmode="decimal" min="-90" max="90" step="any" class="form-inputText"/>
                         <span class="error" v-if="formErrors.lat">{{ formErrors.lat }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lng">Longitude</label>
+                        <input type="number" id="lng" v-model.number="form.lng" placeholder="Longitude" inputmode="decimal" min="-180" max="180" step="any" class="form-inputText"/>
+                        <span class="error" v-if="formErrors.lng">{{ formErrors.lng }}</span>
                     </div>
 
                     <div class="form-group">
