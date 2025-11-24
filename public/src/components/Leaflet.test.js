@@ -450,25 +450,24 @@ describe('focusOn (exposed)', () => {
     wrapper = mount(LeafletMap, {
       global: { plugins: [pinia] }
     })
+    mapApi.flyTo.mockClear()
   })
 
   afterEach(() => {
     wrapper.unmount()
   })
 
-  it('appelle map.flyTo() quand les coordonnées sont dans les limites', () => {
+  it('appelle map.flyTo() avec les bonnes coordonnées', () => {
     wrapper.vm.focusOn(45.5, -73.5)
 
+    expect(mapApi.flyTo).toHaveBeenCalledTimes(1)
     expect(mapApi.flyTo).toHaveBeenCalledWith([45.5, -73.5], 16)
   })
 
-  it('NE centre PAS la carte si bounds.contains() retourne false', () => {
-    // Forcer contains() => false
-    L.latLngBounds.mockReturnValue({
-      contains: vi.fn(() => false)
-    })
+  it("n'appelle PAS flyTo si la map n'est pas définie", () => {
+    wrapper.vm.map = null
 
-    wrapper.vm.focusOn(2000, 2000)
+    wrapper.vm.focusOn(45.5, -73.5)
 
     expect(mapApi.flyTo).not.toHaveBeenCalled()
   })
