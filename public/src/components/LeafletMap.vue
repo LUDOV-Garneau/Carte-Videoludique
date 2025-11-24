@@ -149,6 +149,7 @@ defineExpose({
   currentMarqueur,
   selectedMarqueur,
   map,
+  focusOn
 });
 
 /**
@@ -161,7 +162,7 @@ defineExpose({
  * @returns {void}
  */
 function initMap() {
-  map = L.map(mapEl.value, { 
+  map = L.map(mapEl.value, {
     zoomControl: true,
     zoomAnimation: false,
     maxBounds: WORLD_BOUNDS,
@@ -169,6 +170,11 @@ function initMap() {
     minZoom: 2
   })
   .setView([45.5017, -73.5673], 12)
+}
+
+function focusOn(lat, lng) {
+  if (!map) return
+  map.flyTo([lat, lng], 16)
 }
 
 /**

@@ -7,16 +7,17 @@ const editRequestStore = useEditRequestStore()
 const authStore = useAuthStore()
 
 const props = defineProps({
-    filtreStatus: { type: String, default: 'pending' },
-    marqueursFiltres: { type: Array, default: () => [] } 
+  filtreStatus: { type: String, default: 'pending' },
+  marqueursFiltres: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits([
-    'update:filtreStatus',
-    'ouvrir-modal',
-    'accepter-marqueur',
-    'refuser-marqueur',
-    'show-info',
+  'update:filtreStatus',
+  'ouvrir-modal',
+  'accepter-marqueur',
+  'refuser-marqueur',
+  'show-info',
+  'focus-marqueur'
 ])
 
 const setFiltre = (status) => {
@@ -35,6 +36,10 @@ const refuserLocal = (marqueur) => {
   emit('refuser-marqueur', marqueur)
 }
 
+const focusMarqueur = (marqueur) => {
+  emit('focus-marqueur', marqueur)
+}
+
 const loadEditRequests = async () => {
   try {
     const token = authStore.token
@@ -44,6 +49,7 @@ const loadEditRequests = async () => {
     console.error('Erreur lors de la récupération des demandes de modification :', error)
   }
 }
+
 watch(
   () => props.filtreStatus,
   (newVal) => {
@@ -54,12 +60,10 @@ watch(
 )
 
 onMounted(() => {
-  console.log('Filtre status:', props.filtreStatus)
   if (props.filtreStatus === 'edit-request') {
     loadEditRequests()
   }
 })
-   
 </script>
 
 <template>
@@ -72,6 +76,7 @@ onMounted(() => {
         >
           Demande d'ajout
         </button>
+
         <button
           :class="{ active: filtreStatus === 'edit-request' }"
           @click="setFiltre('edit-request')"
@@ -81,6 +86,7 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- TABLE DES DEMANDES D'AJOUT -->
     <table
       v-if="filtreStatus === 'pending'"
       class="offers-table"
@@ -97,60 +103,42 @@ onMounted(() => {
           <th class="reject-col">Refuser</th>
         </tr>
       </thead>
+
       <tbody>
-        <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id || marqueur._id">
+        <tr
+          v-for="marqueur in marqueursFiltres"
+          :key="marqueur.id || marqueur._id"
+          class="row-hover"
+          @click="focusMarqueur(marqueur)"
+        >
           <td class="provider">{{ marqueur.properties.titre }}</td>
           <td class="address">{{ marqueur.properties.adresse }}</td>
 
-          <td class="info-col">
+          <td class="info-col" @click.stop>
             <button class="info-btn" @click="emit('show-info', marqueur)">
               <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                />
-                <line
-                  x1="12"
-                  y1="10.5"
-                  x2="12"
-                  y2="17"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                />
+                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.75" />
+                <line x1="12" y1="10.5" x2="12" y2="17" stroke="currentColor" stroke-width="1.75" />
                 <circle cx="12" cy="7.5" r="1.25" fill="currentColor" />
               </svg>
               <span>Afficher la description</span>
             </button>
           </td>
 
-          <td class="menu-col">
-            <button
-              class="kebab"
-              aria-label="Modifier"
-              @click="ouvrirModalLocal(marqueur)"
-            >
+          <td class="menu-col" @click.stop>
+            <button class="kebab" aria-label="Modifier" @click="ouvrirModalLocal(marqueur)">
               Modifier
             </button>
           </td>
 
-          <td class="accept-col">
-            <button
-              class="action-btn accept"
-              @click="accepterLocal(marqueur)"
-            >
+          <td class="accept-col" @click.stop>
+            <button class="action-btn accept" @click="accepterLocal(marqueur)">
               Accepter
             </button>
           </td>
 
-          <td class="reject-col">
-            <button
-              class="action-btn reject"
-              @click="refuserLocal(marqueur)"
-            >
+          <td class="reject-col" @click.stop>
+            <button class="action-btn reject" @click="refuserLocal(marqueur)">
               Refuser
             </button>
           </td>
@@ -162,6 +150,7 @@ onMounted(() => {
       </tbody>
     </table>
 
+    <!-- TABLE DES DEMANDES DE MODIFICATION -->
     <table v-if="filtreStatus === 'edit-request'">
       <thead>
         <tr>
@@ -172,31 +161,25 @@ onMounted(() => {
           <th class="reject-col">Refuser</th>
         </tr>
       </thead>
+
       <tbody>
-        <tr
-          v-for="req in editRequestStore.editRequests"
-          :key="req._id"
-        >
+        <tr v-for="req in editRequestStore.editRequests" :key="req._id">
           <td>{{ req.proposedProperties?.titre || req.marqueur?.properties?.titre }}</td>
           <td>
-            <!-- Tu pourras ici afficher un résumé des diff (adresse, description, etc.) -->
-            {{ req.proposedProperties?.adresse }}<br />
+            {{ req.proposedProperties?.adresse }}<br>
             {{ req.proposedProperties?.description }}
           </td>
+
           <td class="info-col">
-            <button class="info-btn">
-              Voir détails
-            </button>
+            <button class="info-btn">Voir détails</button>
           </td>
+
           <td class="accept-col">
-            <button class="action-btn accept">
-              Accepter
-            </button>
+            <button class="action-btn accept">Accepter</button>
           </td>
+
           <td class="reject-col">
-            <button class="action-btn reject">
-              Refuser
-            </button>
+            <button class="action-btn reject">Refuser</button>
           </td>
         </tr>
 
@@ -209,6 +192,7 @@ onMounted(() => {
     </table>
   </div>
 </template>
+
 
 <style scoped>
 .offers-wrapper {

@@ -84,6 +84,16 @@ const refuserMarqueur = async (marqueur) => {
   }
 }
 
+const centrerCarte = (marqueur) => {
+  if (!marqueur?.geometry?.coordinates) return
+
+  const [lng, lat] = marqueur.geometry.coordinates
+
+  if (leafletMapRef.value?.focusOn) {
+    leafletMapRef.value.focusOn(lat, lng)
+  }
+}
+
 const validerModification = async (marqueurModifie) => {
   try {
     const id = marqueurModifie?.properties?.id || marqueurModifie?._id
@@ -138,7 +148,7 @@ const validerModification = async (marqueurModifie) => {
 
 onMounted(() => {
   getMarqueurs()
-  
+
 })
 </script>
 
@@ -154,6 +164,7 @@ onMounted(() => {
         @ouvrir-modal="ouvrirModal"
         @accepter-marqueur="accepterMarqueur"
         @refuser-marqueur="refuserMarqueur"
+        @focus-marqueur="centrerCarte"
       />
 
       <MarqueurModal
