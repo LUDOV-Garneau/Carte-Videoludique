@@ -90,12 +90,8 @@ const centrerCarte = (marqueur) => {
   const [lng, lat] = marqueur.geometry.coordinates
 
   if (leafletMapRef.value?.map) {
-    leafletMapRef.value.map.setView([lat, lng], 16)
+    leafletMapRef.value.map.flyTo([lat, lng], 16)
   }
-
-  // BONUS : ouvrir le panneau d’info sur ce marqueur
-  selectedMarqueur.value = marqueur
-  modalVisible.value = true
 }
 
 const validerModification = async (marqueurModifie) => {
