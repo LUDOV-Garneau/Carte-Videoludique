@@ -17,6 +17,7 @@ const emit = defineEmits([
     'accepter-marqueur',
     'refuser-marqueur',
     'show-info',
+    'focus-marqueur'
 ])
 
 const setFiltre = (status) => {
@@ -33,6 +34,10 @@ const accepterLocal = (marqueur) => {
 
 const refuserLocal = (marqueur) => {
   emit('refuser-marqueur', marqueur)
+}
+
+const focusMarqueur = (marqueur) => {
+  emit('focus-marqueur', marqueur)
 }
 
 const loadEditRequests = async () => {
