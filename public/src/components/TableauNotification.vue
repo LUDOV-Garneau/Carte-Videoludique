@@ -193,10 +193,6 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
-/* (Ton style original inchangé) */
-</style>
-
 
 <style scoped>
 .offers-wrapper {
