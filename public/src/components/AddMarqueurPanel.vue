@@ -234,7 +234,7 @@ async function locateFromAddress() {
     emit('locate-address', { lat, lng })
   } catch (e) {
     console.error('Erreur locateFromAddress :', e)
-    formErrors.value.adresse = 'Erreur lors de la localisation de l’adresse.'
+    formErrors.value.adresse = 'Adresse introuvable.'
   }
 }
 </script>

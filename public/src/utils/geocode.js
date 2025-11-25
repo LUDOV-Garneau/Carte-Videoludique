@@ -250,11 +250,18 @@ async function fetchAdresseSuggestions(query) {
       },
     })
 
-    let data = await resp.json()
+    const data = await resp.json()
 
-    data = data.filter(item => item.address && isAddressInQuebecProvince(item.address))
+    if (!Array.isArray(data)) {
+      console.error('Réponse Nominatim inattendue pour suggestions :', data)
+      return []
+    }
 
-    return data.map(item => ({
+    const filtered = data.filter(
+      item => item.address && isAddressInQuebecProvince(item.address)
+    )
+
+    return filtered.map(item => ({
       label: item.display_name,
       lat: parseFloat(item.lat),
       lng: parseFloat(item.lon),

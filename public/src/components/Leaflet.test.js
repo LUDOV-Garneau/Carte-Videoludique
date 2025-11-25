@@ -182,7 +182,7 @@ describe('LeafletMap.vue', () => {
     await nextTick()
 
     expect(L.marker).toHaveBeenCalledTimes(1)
-    expect(mapApi.removeLayer).toHaveBeenCalledTimes(0)
+    expect(mapApi.removeLayer).toHaveBeenCalledTimes(1)
 
     const latInput = wrapper.find('#lat').element
     const lngInput = wrapper.find('#lng').element

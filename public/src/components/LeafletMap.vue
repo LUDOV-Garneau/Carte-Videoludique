@@ -41,8 +41,8 @@ const currentAdresse = ref('');
 
 
 const QUEBEC_BOUND = L.latLngBounds(
-  [40, -90], // Sud-Ouest (un peu sous Montréal, et plus vers l'Ontario)
-  [63, -50]  // Nord-Est (plus loin dans le Labrador / Atlantique)  
+  [40, -90],
+  [63, -50]   
 )
 
 function openCreatePanel() {
