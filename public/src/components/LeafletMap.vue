@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import L from 'leaflet'
-import { reverseGeocode } from '../utils/geocode.js'
+import { reverseGeocode, isAddressInQuebecProvince } from '../utils/geocode.js'
 import AddMarqueurPanel from './AddMarqueurPanel.vue'
 import MarqueurPanel from './MarqueurPanel.vue'
 import { useMarqueurStore } from '../stores/useMarqueur.js'
@@ -234,37 +234,63 @@ function setupMapClickHandler() {
 	});
 }
 
+/**
+ * Cette fonction vérifie si l'adresse est dans la province de Québec.
+ * Si oui, elle ajoute le marqueur sur la carte
+ * Sinon, elle retire le marqueur et affiche un message à l'utilisateur
+ * 
+ * @param lat La coordonnée de latitude du marqueur
+ * @param lng La coordonnée de longitude du marqueur
+ */
 async function verifyAdressInQuebec(lat, lng) {
   try {
-		  const { address } = await reverseGeocode(lat, lng)
+    const result = await reverseGeocode(lat, lng)
+    const addr = result.address
 
-      if (!address) {
+    if (!addr) {
+      if (currentMarqueur.value) {
         map.removeLayer(currentMarqueur.value)
         currentMarqueur.value = null
-        currentAdresse.value = ''
-        alert('Impossible de déterminer une adresse')
-        closeCreatePanel()
-        return
-     }
-
-		  const ligne = [
-			  address.house_number, address.road,
-			  address.city || address.town || address.village,
-			  address.state, address.postcode, address.country
-		  ].filter(Boolean).join(', ')
-
-      if(!ligne.includes("Québec")) {
-        map.setView([lat, lng], 5)
-        map.removeLayer(currentMarqueur.value)
-        alert("hors quebec")
-        closeCreatePanel()     
       }
-      else{ currentAdresse.value = ligne; }
-		
-		} catch (err) {
-		console.error(err)
-		currentAdresse.value = '';
-		}
+      currentAdresse.value = ''
+      alert('Impossible de déterminer une adresse.')
+      closeCreatePanel()
+      return
+    }
+
+    if (!isAddressInQuebecProvince(addr)) {
+      if (currentMarqueur.value) {
+        map.removeLayer(currentMarqueur.value)
+        currentMarqueur.value = null
+      }
+      currentAdresse.value = ''
+      map.setView([lat, lng], 5)
+      alert("L'adresse doit être située dans la province de Québec, Canada.")
+      closeCreatePanel()
+      return
+    }
+
+    const ligne = [
+      addr.house_number,
+      addr.road,
+       addr.village || addr.municipality,
+      addr.state,
+      addr.postcode,
+      addr.country
+    ].filter(Boolean).join(', ')
+    // addr.city ||  addr.town ||
+    currentAdresse.value = ligne
+
+  } catch (err) {
+    console.error(err)
+    if (currentMarqueur.value) {
+      map.removeLayer(currentMarqueur.value)
+      currentMarqueur.value = null
+    }
+    currentAdresse.value = ''
+    alert("Erreur lors de la vérification de l'adresse.")
+    closeCreatePanel()
+  }
 }
 
 /**

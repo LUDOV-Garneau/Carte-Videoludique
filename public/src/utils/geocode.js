@@ -1,27 +1,65 @@
 "use strict";
-// /**
-//  * Vérifie si un point est à l'intérieur d'un polygone Leaflet.
-//  * @param {L.LatLng} point - Coordonnées du clic
-//  * @param {L.Polygon} polygon - Polygone Leaflet
-//  * @returns {boolean}
-//  */
-// export function isInPolygon(point, polygon) {
-//   const latlngs = polygon.getLatLngs()[0]
-//   const x = point.lng
-//   const y = point.lat
-//   let inside = false
+const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
+const MIN_CHAR = 3
 
-//   for (let i = 0, j = latlngs.length - 1; i < latlngs.length; j = i++) {
-//     const xi = latlngs[i].lng, yi = latlngs[i].lat
-//     const xj = latlngs[j].lng, yj = latlngs[j].lat
+function getMainLocality(address) {
+  return normalize(
+    address.city ||
+    address.town ||
+    address.village ||
+    address.municipality ||
+    ''
+  )
+}
 
-//     const intersect =
-//       yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi
-//     if (intersect) inside = !inside
-//   }
+/** Cette fonction normalise l'ecriture de la chaine ecrite par l'utilisateur */
+function normalize(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') 
+    .replace(/^ville de /, '')
+    .replace(/-/g, ' ')
+    .trim();
+}
 
-//   return inside
-// }
+function extractExpectedCity(input) {
+  if (!input) return null
+  const parts = input.split(',').map(p => p.trim()).filter(Boolean)
+  if (parts.length === 0) return null
+  return parts[parts.length - 1]
+}
+
+function isAddressInQuebecProvince(address) {
+  if (!address) return false
+
+  const stateNorm   = normalize(address.state)
+  const countryNorm = normalize(address.country)
+  const code        = (address.country_code || '').toLowerCase()
+
+  const isCanada = code === 'ca' || countryNorm.includes('canada')
+  const isQuebec = stateNorm.includes('quebec')
+
+  return isCanada && isQuebec
+}
+
+function buildQuebecQuery(input) {
+  const raw = (input || '').trim()
+  if (!raw) return null
+
+  const lower = raw.toLowerCase()
+
+  if (
+    lower.includes('québec') ||
+    lower.includes('quebec') ||
+    lower.includes('canada') ||
+    lower.includes(',')
+  ) {
+    return raw
+  }
+
+  // sinon on aide juste un peu Nominatim
+  return `${raw}, Québec, Canada`
+}
 
 /**
  * Effectue une géocodification inverse (coordonnées → adresse) à l’aide du service Nominatim d’OpenStreetMap.
@@ -101,34 +139,23 @@ async function reverseGeocode(lat, lng) {
  *   console.log('Adresse introuvable');
  * }
  */
-// async function geocodeAddress(q) {
-//   if (!q || !q.trim()) return null
-//   const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(q)}`
-//   const resp = await fetch(url, {
-//     headers: {
-//       'Accept-Language': 'fr',
-//       'User-Agent': 'CarteVideoludique/1.0 (contact@example.com)',
-//     },
-//   })
-//   if (!resp.ok) throw new Error('Geocode error')
-//   const [res] = await resp.json()
-//   if (!res) return null
-//   return { lat: parseFloat(res.lat), lng: parseFloat(res.lon) }
-// }
-
 async function geocodeAddress(q) {
-  const query = buildQuebecQuery(q)
+  const base = (q || '').trim()
+  if (!base) return null
+
+  const expectedCityRaw  = extractExpectedCity(base)
+  const expectedCityNorm = normalize(expectedCityRaw)
+
+  const query = buildQuebecQuery(base)
   if (!query) return null
 
-  const url =
-    'https://nominatim.openstreetmap.org/search?' +
-    new URLSearchParams({
-      q: query,
-      format: 'jsonv2',
-      limit: '1',
-      countrycodes: 'ca',
-      addressdetails: '1'
-    }).toString()
+  const url = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
+    q: query,
+    format: 'jsonv2',
+    limit: '10',
+    countrycodes: 'ca',
+    addressdetails: '1'
+  }).toString()}`
 
   const resp = await fetch(url, {
     headers: {
@@ -140,27 +167,70 @@ async function geocodeAddress(q) {
   if (!resp.ok) throw new Error('Geocode error')
 
   const data = await resp.json()
-  const res = data[0]
-  if (!res) return null
+  if (!Array.isArray(data) || data.length === 0) return null
 
-  return { lat: parseFloat(res.lat), lng: parseFloat(res.lon) }
+  const candidates = data.filter(d => isAddressInQuebecProvince(d.address))
+  if (candidates.length === 0) return null
+
+  candidates.sort((a, b) =>
+    scoreCandidate(a, expectedCityNorm) - scoreCandidate(b, expectedCityNorm)
+  )
+
+  const best = candidates[0]
+  const bestScore = scoreCandidate(best, expectedCityNorm)
+  console.log(' Best candidate:', getMainLocality(best.address), 'score:', bestScore)
+
+  if (expectedCityNorm && bestScore > 1) {
+    console.warn('Aucun résultat dans la ville attendue, adresse refusée.')
+    return null
+  }
+
+  return {
+    lat: parseFloat(best.lat),
+    lng: parseFloat(best.lon),
+  }
 }
 
-async function fetchAdresseSuggestions(suggestion, showSuggestion, rawQuery) {
-  const base = (rawQuery || '').trim()
+function scoreCandidate(d, expectedCityNorm) {
+  const a = d.address
+  const mainLocality = getMainLocality(a)
+  const districtNorm = normalize(a.city_district)
+  const suburbNorm   = normalize(a.suburb)
+  const stateNorm    = normalize(a.state)
 
-  if (!base || base.length < 3) {
-    suggestion.value = []
-    showSuggestion.value = false
-    return
+  console.log('Expected :', expectedCityNorm)
+  console.log('mainLocality :', mainLocality)
+  console.log('district/suburb :', districtNorm, suburbNorm)
+  console.log('stateNorm :', stateNorm)
+
+  if (!expectedCityNorm) return 3
+
+  // ✅ Cas particulier : si l'utilisateur tape "Québec"
+  // on accepte "Vieux-Québec", "Haute-Ville", "Saint-Roch", etc.
+  if (expectedCityNorm === 'quebec') {
+    if (
+      mainLocality === 'quebec' ||
+      districtNorm?.includes('quebec') ||
+      suburbNorm?.includes('quebec') ||
+      a.city === 'Québec' // sécurité au cas où
+    ) {
+      return 0
+    }
   }
+
+  if (mainLocality === expectedCityNorm) return 0
+  if (mainLocality.includes(expectedCityNorm)) return 1
+  if (districtNorm?.includes(expectedCityNorm) || suburbNorm?.includes(expectedCityNorm)) return 1
+  if (stateNorm?.includes(expectedCityNorm)) return 2
+  return 3
+}
+
+async function fetchAdresseSuggestions(query) {
+  const base = (query || '').trim()
+  if (!base || base.length < MIN_CHAR) return []
 
   const fullQuery = buildQuebecQuery(base)
-  if (!fullQuery) {
-    suggestion.value = []
-    showSuggestion.value = false
-    return
-  }
+  if (!fullQuery) return []
 
   const params = new URLSearchParams({
     q: fullQuery,
@@ -170,7 +240,7 @@ async function fetchAdresseSuggestions(suggestion, showSuggestion, rawQuery) {
     countrycodes: 'ca',
   })
 
-  const url = 'https://nominatim.openstreetmap.org/search?' + params.toString()
+  const url = `${NOMINATIM_URL}?${params.toString()}`
 
   try {
     const resp = await fetch(url, {
@@ -182,36 +252,18 @@ async function fetchAdresseSuggestions(suggestion, showSuggestion, rawQuery) {
 
     let data = await resp.json()
 
-    // Sécurité : garder seulement le Canada
-    data = data.filter(
-      item => item.address && item.address.country_code === 'ca'
-    )
+    data = data.filter(item => item.address && isAddressInQuebecProvince(item.address))
 
-    suggestion.value = data
-    showSuggestion.value = data.length > 0
+    return data.map(item => ({
+      label: item.display_name,
+      lat: parseFloat(item.lat),
+      lng: parseFloat(item.lon),
+      raw: item,
+    }))
   } catch (error) {
-    console.error(
-      "Erreur lors de la récupération des suggestions d'adresse : ",
-      error
-    )
-    suggestion.value = []
-    showSuggestion.value = false
+    console.error('Erreur getAdresseSuggestions :', error)
+    return []
   }
 }
 
-function buildQuebecQuery(input) {
-  const raw = (input || '').trim()
-  if (!raw) return null
-
-  const lower = raw.toLowerCase()
-
-  // Si l'utilisateur a déjà mis "québec" ou "quebec", on ne rajoute rien
-  if (lower.includes('québec') || lower.includes('quebec')) {
-    return raw
-  }
-  console.log(`${raw}, Québec, QC, Canada`)
-  // Sinon on force le contexte géographique
-  return `${raw}, Québec, QC, Canada`
-}
-
-export { reverseGeocode, geocodeAddress, fetchAdresseSuggestions };
+export { reverseGeocode, geocodeAddress, fetchAdresseSuggestions, isAddressInQuebecProvince };

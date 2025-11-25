@@ -213,7 +213,6 @@ async function valider() {
 //#endregion
 
 async function onAdresseInput(value) {
-
   adresse.value = value
 
   if (!value || value.length < 3) {
@@ -222,52 +221,51 @@ async function onAdresseInput(value) {
     return
   }
 
-  await fetchAdresseSuggestions(suggestions, showSuggestions, adresse.value)
-
   try {
-    const coords = await geocodeAddress(adresse.value)
-    console.log('Coords from geocode:', coords)
-
-    if (coords) {
-      latitude.value  = coords.lat
-      longitude.value = coords.lng
-    }
-    console.log("latitude.value =", latitude.value)
-    console.log("longitude.value =", longitude.value)
-
-    emit('locate-from-address', coords)
-   
+    const results = await fetchAdresseSuggestions(adresse.value)
+    suggestions.value = results
+    showSuggestions.value = results.length > 0
   } catch (err) {
-    console.error('Erreur geocode :', err)
+    console.error('Erreur fetchAdresseSuggestions :', err)
+    suggestions.value = []
+    showSuggestions.value = false
   }
 }
 
 function selectSuggestion(item) {
-  adresse.value = item.display_name
-  // Nominatim renvoie `lat` et `lon` en strings; on les convertit en nombres
-  if (item && item.lat !== undefined && item.lon !== undefined) {
-    const lat = parseFloat(item.lat)
-    const lng = parseFloat(item.lon)
+  // on met le joli label dans le champ texte
+  adresse.value = item.label
+
+  if (item && item.lat != null && item.lng != null) {
+    const lat = Number(item.lat)
+    const lng = Number(item.lng)
+
     if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
       latitude.value = lat
       longitude.value = lng
-      // informer le parent qu'on a une position (utile pour aperçu carte)
+
       emit('locate-from-address', { lat, lng })
     }
   }
+
   showSuggestions.value = false
   suggestions.value = []
 }
 
 function formatSuggestion(item) {
-  const a = item.address || {}
+  const a = (item.raw && item.raw.address) ? item.raw.address : {}
 
   const ligne1 = [
     a.house_number,
     a.road
   ].filter(Boolean).join(' ')
 
-  const ville = a.city || a.town || a.village || a.municipality
+  const ville =
+    a.city ||
+    a.town ||
+    a.village ||
+    a.municipality
+
   const ligne2 = [
     ville,
     a.state,

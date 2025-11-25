@@ -215,23 +215,27 @@ async function sendRequest() {
  * // → Ajoute un marqueur à la position correspondante et centre la carte.
  */
 async function locateFromAddress() {
-    const q = form.value.adresse;
-    if (!q) return;
+  const q = (form.value.adresse || '').trim()
+  if (!q) return
 
-    try {
-        const pos = await geocodeAddress(q);
-        if (!pos) return;
+  try {
+    const pos = await geocodeAddress(q)
 
-        const { lat, lng } = pos;
-        form.value.lat = Number(lat.toFixed(5));
-        form.value.lng = Number(lng.toFixed(5));
-
-        // Informer le parent pour mettre à jour le marqueur sur la carte
-        emit('locate-address', { lat, lng });
-    } catch (e) {
-        console.error(e);
-        formErrors.value.adresse = 'Adresse introuvable.';
+    if (!pos) {
+      console.warn(`Aucune position trouvée pour "${q}"`)
+      formErrors.value.adresse = "Adresse introuvable ou hors Québec."
+      return
     }
+
+    const { lat, lng } = pos
+    form.value.lat = Number(lat.toFixed(5))
+    form.value.lng = Number(lng.toFixed(5))
+
+    emit('locate-address', { lat, lng })
+  } catch (e) {
+    console.error('Erreur locateFromAddress :', e)
+    formErrors.value.adresse = 'Erreur lors de la localisation de l’adresse.'
+  }
 }
 </script>
 <template>
@@ -258,8 +262,16 @@ async function locateFromAddress() {
 
                     <div class="form-group">
                         <label for="adresse">Adresse</label>
-                        <input type="text" id="adresse" v-model.trim="form.adresse" placeholder="123 Rue Saint-Jean, Québec, QC, Canada" class="form-inputText"/>
+
+                        <input 
+                          type="text" 
+                          id="adresse" 
+                          v-model.trim="form.adresse" 
+                          placeholder="123 Rue Saint-Jean, Québec, QC, Canada" 
+                          class="form-inputText"
+                          />
                         <span class="error" v-if="formErrors.adresse">{{ formErrors.adresse }}</span>
+
                         <button type="button" class="btn-locate" @click="locateFromAddress">Localiser</button>
                     </div>
 
