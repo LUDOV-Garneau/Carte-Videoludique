@@ -166,7 +166,7 @@ describe('AdminView.vue', () => {
 
     // Marqueur de test
     const fakeMarker = {
-      geometry: { coordinates: [-73.5673, 45.5017] }
+      geometry: { coordinates: [45.5017, -73.5673] }
     }
 
     wrapper.vm.centrerCarte(fakeMarker)
