@@ -87,7 +87,7 @@ const refuserMarqueur = async (marqueur) => {
 const centrerCarte = (marqueur) => {
   if (!marqueur?.geometry?.coordinates) return
 
-  const [lng, lat] = marqueur.geometry.coordinates
+  const [lat, lng] = marqueur.geometry.coordinates
 
   if (leafletMapRef.value?.focusOn) {
     leafletMapRef.value.focusOn(lat, lng)
