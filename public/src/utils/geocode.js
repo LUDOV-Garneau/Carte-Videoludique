@@ -2,15 +2,15 @@
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 const MIN_CHAR = 3
 
-function getMainLocality(address) {
-  return normalize(
-    address.city ||
-    address.town ||
-    address.village ||
-    address.municipality ||
-    ''
-  )
-}
+// function getMainLocality(address) {
+//   return normalize(
+//     address.city ||
+//     address.town ||
+//     address.village ||
+//     address.municipality ||
+//     ''
+//   )
+// }
 
 /** Cette fonction normalise l'ecriture de la chaine ecrite par l'utilisateur */
 function normalize(str) {
@@ -22,12 +22,12 @@ function normalize(str) {
     .trim();
 }
 
-function extractExpectedCity(input) {
-  if (!input) return null
-  const parts = input.split(',').map(p => p.trim()).filter(Boolean)
-  if (parts.length === 0) return null
-  return parts[parts.length - 1]
-}
+// function extractExpectedCity(input) {
+//   if (!input) return null
+//   const parts = input.split(',').map(p => p.trim()).filter(Boolean)
+//   if (parts.length === 0) return null
+//   return parts[parts.length - 1]
+// }
 
 function isAddressInQuebecProvince(address) {
   if (!address) return false
@@ -48,6 +48,7 @@ function buildQuebecQuery(input) {
 
   const lower = raw.toLowerCase()
 
+  // Si l'adresse contient déjà des informations de localisation, on la garde telle quelle
   if (
     lower.includes('québec') ||
     lower.includes('quebec') ||
@@ -57,103 +58,74 @@ function buildQuebecQuery(input) {
     return raw
   }
 
-  // sinon on aide juste un peu Nominatim
+  // Sinon on aide Nominatim en ajoutant le contexte québécois
   return `${raw}, Québec, Canada`
 }
 
 /**
- * Effectue une géocodification inverse (coordonnées → adresse) à l’aide du service Nominatim d’OpenStreetMap.
- *
- * Cette fonction interroge l’API publique de Nominatim pour obtenir une adresse
- * correspondant à des coordonnées GPS (latitude et longitude).
- * Les résultats sont renvoyés en français et incluent :
- *  - une représentation complète de l’adresse (`display_name`),
- *  - un objet détaillé des composants d’adresse (`address`).
- *
- * ⚠️ Remarque :
- * - L’API Nominatim est publique, il est donc recommandé d’inclure un User-Agent identifiable.
- * - Le service impose des limites de taux (~1 requête/seconde).
+ * Effectue une géocodification inverse (coordonnées → adresse) à l'aide du service Nominatim d'OpenStreetMap.
  *
  * @async
  * @function reverseGeocode
- * @param {number} lat - Latitude en degrés décimaux.
- * @param {number} lng - Longitude en degrés décimaux.
+ * @param {Object} params - Paramètres de géocodification inverse
+ * @param {number} params.lat - Latitude en degrés décimaux
+ * @param {number} params.lng - Longitude en degrés décimaux
  * @returns {Promise<{ full: string, address: object }>}
- * Objet contenant :
- *  - `full` : chaîne textuelle complète de l’adresse (ex. `"123 Rue Saint-Jean, Québec, Canada"`)
- *  - `address` : objet détaillé incluant les clés `road`, `city`, `postcode`, `country`, etc.
- * @throws {Error} Si la requête HTTP échoue ou si la réponse n’est pas valide.
+ * @throws {Error} Si la requête HTTP échoue ou si la réponse n'est pas valide
  *
  * @example
- * const { full, address } = await reverseGeocode(46.8139, -71.2082);
- * console.log(full);
- * // → "Rue Saint-Jean, Québec, G1R 1R5, Canada"
+ * const { full, address } = await reverseGeocode({ lat: 46.8139, lng: -71.2082 });
  */
-async function reverseGeocode(lat, lng) {
+async function reverseGeocode({ lat, lng }) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${lat}&lon=${lng}`
   const resp = await fetch(url, {
     headers: {
-      // 🔸 Mieux pour obtenir des libellés en français
       'Accept-Language': 'fr',
-      // 🔸 Recommandé par Nominatim: mettre un identifiant + contact
-      'User-Agent': 'CarteVideoludique/1.0 (contact@example.com)'
-    }
+      'User-Agent': 'CarteVideoludique/1.0 (contact@example.com)',
+    },
   })
+
   if (!resp.ok) throw new Error('Reverse geocode error')
   const data = await resp.json()
+  const a = data.address || {}
+
+  const ligne = [
+    a.house_number,
+    a.road,
+    a.suburb || a.city_district,
+    a.city || a.town,
+    a.state,
+    a.postcode,
+    a.country,
+  ].filter(Boolean).join(', ')
+
   return {
-    full: data.display_name || '',
-    address: data.address || {}
+    full: ligne,
+    address: a,
   }
 }
 
 /**
- * Effectue une géocodification directe (adresse → coordonnées GPS) à l’aide du service Nominatim d’OpenStreetMap.
- *
- * Cette fonction interroge l’API publique de Nominatim pour obtenir les coordonnées
- * (latitude et longitude) correspondant à une adresse textuelle donnée.
- *
- * Elle retourne uniquement le premier résultat trouvé (paramètre `limit=1`).
- *
- * ⚠️ Remarque :
- * - L’API Nominatim est publique et sujette à des limites de taux (~1 requête/seconde).
- * - Le paramètre `User-Agent` est requis pour identifier ton application.
- * - Si aucune correspondance n’est trouvée, la fonction retourne `null`.
+ * Effectue une géocodification directe (adresse → coordonnées GPS) à l'aide du service Nominatim d'OpenStreetMap.
  *
  * @async
  * @function geocodeAddress
- * @param {string} q - L’adresse à rechercher (ex. `"350 rue des Lilas Ouest, Québec"`).
+ * @param {Object} params - Paramètres de géocodification
+ * @param {string} params.address - L'adresse à rechercher
  * @returns {Promise<{ lat: number, lng: number } | null>}
- * Objet contenant :
- *  - `lat` : latitude en degrés décimaux
- *  - `lng` : longitude en degrés décimaux
- * ou `null` si aucune adresse correspondante n’a été trouvée.
- * @throws {Error} Si la requête HTTP échoue ou si la réponse du service est invalide.
+ * @throws {Error} Si la requête HTTP échoue ou si la réponse du service est invalide
  *
  * @example
- * const coords = await geocodeAddress('350 rue des Lilas Ouest, Québec');
- * if (coords) {
- *   console.log(coords.lat, coords.lng);
- *   // → 46.8139, -71.2082
- * } else {
- *   console.log('Adresse introuvable');
- * }
+ * const coords = await geocodeAddress({ address: '350 rue des Lilas Ouest, Québec' });
  */
-async function geocodeAddress(q) {
-  const base = (q || '').trim()
-  if (!base) return null
-
-  const expectedCityRaw  = extractExpectedCity(base)
-  const expectedCityNorm = normalize(expectedCityRaw)
-
-  const query = buildQuebecQuery(base)
+async function geocodeAddress({ address }) {
+  const query = (address || '').trim()
   if (!query) return null
 
   const url = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
     q: query,
     format: 'jsonv2',
-    limit: '10',
-    countrycodes: 'ca',
+    limit: '1',
     addressdetails: '1'
   }).toString()}`
 
@@ -169,61 +141,56 @@ async function geocodeAddress(q) {
   const data = await resp.json()
   if (!Array.isArray(data) || data.length === 0) return null
 
-  const candidates = data.filter(d => isAddressInQuebecProvince(d.address))
-  if (candidates.length === 0) return null
-
-  candidates.sort((a, b) =>
-    scoreCandidate(a, expectedCityNorm) - scoreCandidate(b, expectedCityNorm)
-  )
-
-  const best = candidates[0]
-  const bestScore = scoreCandidate(best, expectedCityNorm)
-  console.log(' Best candidate:', getMainLocality(best.address), 'score:', bestScore)
-
-  if (expectedCityNorm && bestScore > 1) {
-    console.warn('Aucun résultat dans la ville attendue, adresse refusée.')
-    return null
-  }
-
+  const result = data[0]
   return {
-    lat: parseFloat(best.lat),
-    lng: parseFloat(best.lon),
+    lat: parseFloat(result.lat),
+    lng: parseFloat(result.lon),
   }
 }
 
-function scoreCandidate(d, expectedCityNorm) {
-  const a = d.address
-  const mainLocality = getMainLocality(a)
-  const districtNorm = normalize(a.city_district)
-  const suburbNorm   = normalize(a.suburb)
-  const stateNorm    = normalize(a.state)
+// function scoreCandidate(d, expectedCityNorm) {
+//   const a = d.address
+//   const mainLocality = getMainLocality(a)
+//   const districtNorm = normalize(a.city_district)
+//   const suburbNorm   = normalize(a.suburb)
+//   const stateNorm    = normalize(a.state)
 
-  console.log('Expected :', expectedCityNorm)
-  console.log('mainLocality :', mainLocality)
-  console.log('district/suburb :', districtNorm, suburbNorm)
-  console.log('stateNorm :', stateNorm)
+//   console.log('  Expected:', expectedCityNorm)
+//   console.log('  mainLocality:', mainLocality)
+//   console.log('  district/suburb:', districtNorm, '/', suburbNorm)
+//   console.log('  stateNorm:', stateNorm)
+//   console.log('  ---')
 
-  if (!expectedCityNorm) return 3
+//   // Si aucune ville n'est attendue, on accepte n'importe quel résultat québécois
+//   if (!expectedCityNorm) return 0
 
-  // ✅ Cas particulier : si l'utilisateur tape "Québec"
-  // on accepte "Vieux-Québec", "Haute-Ville", "Saint-Roch", etc.
-  if (expectedCityNorm === 'quebec') {
-    if (
-      mainLocality === 'quebec' ||
-      districtNorm?.includes('quebec') ||
-      suburbNorm?.includes('quebec') ||
-      a.city === 'Québec' // sécurité au cas où
-    ) {
-      return 0
-    }
-  }
+//   // Cas spécial pour Québec (la ville)
+//   if (expectedCityNorm === 'quebec') {
+//     if (
+//       mainLocality === 'quebec' ||
+//       districtNorm?.includes('quebec') ||
+//       suburbNorm?.includes('quebec') ||
+//       a.city === 'Québec'
+//     ) {
+//       return 0
+//     }
+//   }
 
-  if (mainLocality === expectedCityNorm) return 0
-  if (mainLocality.includes(expectedCityNorm)) return 1
-  if (districtNorm?.includes(expectedCityNorm) || suburbNorm?.includes(expectedCityNorm)) return 1
-  if (stateNorm?.includes(expectedCityNorm)) return 2
-  return 3
-}
+//   // Correspondance exacte avec la localité principale
+//   if (mainLocality === expectedCityNorm) return 0
+  
+//   // Correspondance partielle avec la localité principale
+//   if (mainLocality.includes(expectedCityNorm) || expectedCityNorm.includes(mainLocality)) return 1
+  
+//   // Correspondance avec un district ou suburb
+//   if (districtNorm?.includes(expectedCityNorm) || suburbNorm?.includes(expectedCityNorm)) return 1
+  
+//   // Correspondance avec l'état (Québec)
+//   if (stateNorm?.includes(expectedCityNorm)) return 2
+  
+//   // Aucune correspondance
+//   return 3
+// }
 
 async function fetchAdresseSuggestions(query) {
   const base = (query || '').trim()

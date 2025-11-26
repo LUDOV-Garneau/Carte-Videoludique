@@ -244,52 +244,59 @@ function setupMapClickHandler() {
  */
 async function verifyAdressInQuebec(lat, lng) {
   try {
-    const result = await reverseGeocode(lat, lng)
-    const addr = result.address
+    const result = await reverseGeocode({lat, lng});
+    const addr = result.address;
 
     if (!addr) {
       if (currentMarqueur.value) {
-        map.removeLayer(currentMarqueur.value)
-        currentMarqueur.value = null
+        map.removeLayer(currentMarqueur.value);
+        currentMarqueur.value = null;
       }
-      currentAdresse.value = ''
-      alert('Impossible de déterminer une adresse.')
-      closeCreatePanel()
-      return
+      currentAdresse.value = '';
+      alert('Impossible de déterminer une adresse.');
+      closeCreatePanel();
+      return;
     }
 
     if (!isAddressInQuebecProvince(addr)) {
       if (currentMarqueur.value) {
-        map.removeLayer(currentMarqueur.value)
-        currentMarqueur.value = null
+        map.removeLayer(currentMarqueur.value);
+        currentMarqueur.value = null;
       }
-      currentAdresse.value = ''
-      map.setView([lat, lng], 5)
-      alert("L'adresse doit être située dans la province de Québec, Canada.")
-      closeCreatePanel()
-      return
+      currentAdresse.value = '';
+      map.setView([lat, lng], 5);
+      alert("L'adresse doit être située dans la province de Québec, Canada.");
+      closeCreatePanel();
+      return;
     }
+
+    const quartier = addr.suburb || addr.city_district;
+    const ville =
+      addr.city || addr.town || addr.village || addr.municipality;
 
     const ligne = [
       addr.house_number,
       addr.road,
-       addr.village || addr.municipality,
+      quartier, 
+      ville,
       addr.state,
       addr.postcode,
-      addr.country
-    ].filter(Boolean).join(', ')
-    // addr.city ||  addr.town ||
-    currentAdresse.value = ligne
+      addr.country,
+    ]
+      .filter(Boolean)
+      .join(', ');
+
+    currentAdresse.value = ligne;
 
   } catch (err) {
-    console.error(err)
+    console.error(err);
     if (currentMarqueur.value) {
-      map.removeLayer(currentMarqueur.value)
-      currentMarqueur.value = null
+      map.removeLayer(currentMarqueur.value);
+      currentMarqueur.value = null;
     }
-    currentAdresse.value = ''
-    alert("Erreur lors de la vérification de l'adresse.")
-    closeCreatePanel()
+    currentAdresse.value = '';
+    alert("Erreur lors de la vérification de l'adresse.");
+    closeCreatePanel();
   }
 }
 
