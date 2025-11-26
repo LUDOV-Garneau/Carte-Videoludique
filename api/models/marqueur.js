@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-
 // Optionnel : sous-schéma pour les commentaires
 const CommentSchema = new mongoose.Schema({
   auteur: { type: String, trim: true },
@@ -51,6 +50,7 @@ const MarqueurSchema = new mongoose.Schema(
         ],
         default: "Autres"
       },
+      categorie: { type: mongoose.Schema.Types.ObjectId, ref: "Categorie" },
       adresse: { type: String, trim: true, maxlength: 150 },
       description: { type: String, trim: true, maxlength: 1000 },
       temoignage: { type: String, trim: true },
