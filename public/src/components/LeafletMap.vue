@@ -6,6 +6,9 @@ import AddMarqueurPanel from './AddMarqueurPanel.vue'
 import MarqueurPanel from './MarqueurPanel.vue'
 import { useMarqueurStore } from '../stores/useMarqueur.js'
 
+import 'leaflet.fullscreen'
+import 'leaflet.fullscreen/Control.FullScreen.css'
+
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
@@ -172,6 +175,13 @@ function initMap() {
     zoomAnimation: false,
     maxBounds: QUEBEC_BOUND,
     maxBoundsViscosity: 1.0,
+
+    fullscreenControl: true,
+    fullscreenControlOptions: {
+      position: 'topleft', 
+      title: 'Plein écran',
+      titleCancel: 'Quitter le plein écran'
+    }
     
   })
   .setView([52.5, -71.0], 5);
@@ -341,6 +351,8 @@ function addCustomControl() {
   map.addControl(controlAjoutMarqueur)
 }
 
+
+
 /**
  * Configure les raccourcis clavier globaux liés à la carte.
  *
@@ -358,6 +370,7 @@ function setupKeyboardShortcuts() {
   window.addEventListener('keydown', onKey)
   map.__onKey = onKey
 }
+
 
 onMounted(async() => {
   initMap()
@@ -542,5 +555,40 @@ onUnmounted(() => {
 :deep(.btn-ajout-marqueur:hover) {
   background-color: #4CAF50;
   color: white;
+}
+
+.leaflet-fullscreen-icon {
+	background-image: url('icon-fullscreen.svg');
+	background-size: 26px 52px;
+}
+
+.leaflet-fullscreen-icon.leaflet-fullscreen-on {
+	background-position: 0 -26px;
+}
+
+.leaflet-touch .leaflet-fullscreen-icon {
+	background-position: 2px 2px;
+}
+
+.leaflet-touch .leaflet-fullscreen-icon.leaflet-fullscreen-on {
+	background-position: 2px -24px;
+}
+
+/* Safari still needs this vendor-prefix: https://caniuse.com/mdn-css_selectors_fullscreen */
+/* stylelint-disable-next-line selector-no-vendor-prefix */
+.leaflet-container:-webkit-full-screen,
+.leaflet-container:fullscreen {
+	width: 100% !important;
+	height: 100% !important;
+	z-index: 99999;
+}
+
+.leaflet-pseudo-fullscreen {
+	position: fixed !important;
+	width: 100% !important;
+	height: 100% !important;
+	top: 0 !important;
+	left: 0 !important;
+	z-index: 99999;
 }
 </style>
