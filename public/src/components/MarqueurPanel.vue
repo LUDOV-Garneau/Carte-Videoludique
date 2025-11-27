@@ -3,9 +3,12 @@ import { ref, computed, watch } from 'vue';
 import { useAuthStore } from '../stores/auth.js';
 import { useMarqueurStore } from '../stores/useMarqueur.js';
 import { useEditRequestStore } from '../stores/useEditRequest';
+import { useLightbox } from '../composables/useLightbox.js';
+
 import { API_URL } from '../config';
 // import { svg } from 'leaflet';
 import MarqueurModal from './MarqueurModalComponent.vue';
+import ImageLightBox from './ImageLightBox.vue';
 
 // props and emits
 const props = defineProps({
@@ -19,6 +22,7 @@ const emits = defineEmits(['close', 'marqueur-deleted']);
 const marqueurStore = useMarqueurStore();
 const authStore = useAuthStore();
 const editRequestStore = useEditRequestStore();
+const lightbox = useLightbox();
 
 const canDisplayPanel = computed(() => {
     return props.isOpen && marqueurStore.marqueurActif !== null;
@@ -27,6 +31,7 @@ const canDisplayPanel = computed(() => {
 const marqueurProperties = computed(() => {
     return marqueurStore.marqueurActif?.properties || {};
 });
+
 const isCommenting = ref(false);
 const isDeletingMarqueur = ref(false);
 const isEditModalOpen = ref(false);
@@ -55,6 +60,9 @@ function setActiveTab(tab) {
 	activeTab.value = tab;
 }
 
+function openLightboxAt(index) {
+	lightbox.openLightbox(marqueurStore.marqueurActif?.properties.images || [], index);
+}
 
 async function handleEditRequestSubmit(payloadFromModal) {
 	try {
@@ -248,7 +256,14 @@ async function sendComment() {
 					</div>
 				</div>
 				<div v-else-if="activeTab === 'images'">
-					<img class="panel__images" v-for="image in marqueurStore.marqueurActif.properties.images || []" :key="image.publicId" :src="image.url" :alt="'Image du lieu du marqueur'" />
+					<img 
+						v-for="(image, index) in marqueurStore.marqueurActif?.properties.images || []" 
+						:key="image.publicId" 
+						:src="image.url" 
+						:alt="'Image du lieu du marqueur'" 
+						class="panel__images" 
+						@click="openLightboxAt(index)" 
+					/>
 				</div>
             </div>
         </aside>
@@ -260,6 +275,14 @@ async function sendComment() {
     	@fermer="isEditModalOpen = false"
     	@valider="handleEditRequestSubmit"
   	/>
+	<ImageLightBox
+		v-if="lightbox.isOpen"
+		:images="lightbox.images.value"
+		v-model:currentIndex="lightbox.currentIndex.value"
+		:currentIndex="lightbox.currentIndex"
+		@close="lightbox.closeLightbox"
+	/>
+
 </template>
 <style scoped>
 /* ---------- Panneau ---------- */
@@ -387,6 +410,12 @@ async function sendComment() {
 	width: 100%;
 	margin: 0;
 	object-fit: cover;
+	cursor: pointer;
+	transition: opacity 0.3s ease;
+}
+
+.panel__images:hover {
+	opacity: 0.8;
 }
 
 /* ---------- Info list ---------- */
