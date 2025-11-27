@@ -300,6 +300,22 @@ async function locateFromAddress() {
   }
 }
 
+/**
+ * Gère la saisie d’une adresse dans le champ de formulaire et propose des suggestions en temps réel.
+ *
+ * Cette fonction :
+ *  - Met à jour la valeur de l’adresse saisie,
+ *  - Lance une recherche de suggestions via {@link fetchAdresseSuggestions} lorsque la saisie contient au moins 3 caractères,
+ *  - Met à jour la liste `suggestions` et le booléen `showSuggestions` selon les résultats,
+ *  - Vide les suggestions si la saisie est trop courte ou en cas d’erreur réseau.
+ *
+ * Elle est appelée à chaque changement dans le champ d’adresse (`@input` ou `v-model`).
+ *
+ * @async
+ * @function onAdresseInput
+ * @param {string} value - La valeur actuelle du champ d’adresse saisie par l’utilisateur.
+ * @returns {Promise<void>} Ne retourne rien, mais met à jour les réactifs `suggestions` et `showSuggestions`.
+ */
 async function onAdresseInput(value) {
   form.value.adresse = value
 
@@ -320,6 +336,17 @@ async function onAdresseInput(value) {
   }
 }
 
+/**
+ * Vérifie si une adresse saisie par l'utilisateur correspond
+ * à une adresse déjà présente sur la carte.
+ *
+ * Cette fonction effectue une comparaison insensible à la casse
+ * entre l'adresse fournie et celles déjà enregistrées dans
+ * `marqueurStore.marqueurs`.
+ *
+ * @param {string} adresse - L'adresse saisie par l'utilisateur.
+ * @returns {boolean} `true` si l'adresse existe déjà sur la carte, sinon `false`.
+ */
 function addressAlreadyExist(adresse) {
   const lower = adresse.trim().toLowerCase()
   return marqueurStore.marqueurs.some(m =>
@@ -328,26 +355,13 @@ function addressAlreadyExist(adresse) {
 }
 
 /**
- * Gère la sélection d’une suggestion d’adresse dans la liste déroulante.
- *
- * Cette fonction :
- *  - Met à jour le champ d’adresse (`adresse.value`) avec le libellé choisi,
- *  - Convertit les coordonnées (`lat`, `lng`) de la suggestion en nombres,
- *  - Met à jour les valeurs réactives `latitude` et `longitude`,
- *  - Émet l’événement `locate-from-address` vers le composant parent afin de centrer la carte sur l’adresse sélectionnée,
- *  - Vide et masque la liste des suggestions.
- *
- * @function selectSuggestion
- * @param {Object} item - L’objet représentant la suggestion sélectionnée.
- * @param {string} item.label - Le texte affiché dans la suggestion.
- * @param {number|string} [item.lat] - La latitude associée à la suggestion.
- * @param {number|string} [item.lng] - La longitude associée à la suggestion.
- * @returns {void}
- *
- * @emits locate-from-address
+ * Gère la sélection d’une suggestion d’adresse.
+ * - Met à jour le champ d’adresse.
+ * - Met à jour les coordonnées.
+ * - Émet un événement pour centrer la carte.
+ * - Ferme immédiatement la liste des suggestions.
  */
 function selectSuggestion(item) {
-  // on met le joli label dans le champ texte
   form.value.adresse = item.label
 
   if (item && item.lat != null && item.lng != null) {
@@ -357,15 +371,34 @@ function selectSuggestion(item) {
     if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
       form.value.latitude = lat
       form.value.longitude = lng
-
-      emit('locate-from-address', { lat, lng })
+      locateFromAddress({ lat, lng }) 
     }
   }
-
   showSuggestions.value = false
   suggestions.value = []
 }
 
+/**
+ * Formate une suggestion d’adresse en une chaîne lisible pour l’affichage.
+ *
+ * Cette fonction :
+ *  - Extrait les informations pertinentes de `item.raw.address` (numéro, rue, ville, province, code postal, pays),
+ *  - Construit une représentation textuelle sur une ou deux lignes,
+ *  - Retourne une chaîne prête à être affichée dans la liste des suggestions (ex. : `123 Rue Saint-Jean – Québec, QC, Canada`).
+ *
+ * @function formatSuggestion
+ * @param {Object} item - L’objet représentant une suggestion d’adresse.
+ * @param {Object} [item.raw] - Données brutes de la suggestion provenant du service de géocodage.
+ * @param {Object} [item.raw.address] - Détails de l’adresse retournée par l’API (Nominatim).
+ * @param {string} [item.raw.address.house_number] - Numéro civique.
+ * @param {string} [item.raw.address.road] - Nom de la rue.
+ * @param {string} [item.raw.address.city] - Ville (ou équivalent).
+ * @param {string} [item.raw.address.state] - Province ou région.
+ * @param {string} [item.raw.address.postcode] - Code postal.
+ * @param {string} [item.raw.address.country] - Pays.
+ * @returns {string} Une version formatée de l’adresse (lisible et compacte).
+
+ */
 function formatSuggestion(item) {
   const a = (item.raw && item.raw.address) ? item.raw.address : {}
 
@@ -395,6 +428,20 @@ function formatSuggestion(item) {
   return [ligne1, ligne2].filter(Boolean).join(' – ')
 }
 
+/**
+ * Masque la liste de suggestions d’adresses après une courte temporisation.
+ *
+ * Cette fonction :
+ *  - Utilise un `setTimeout` pour laisser le temps à d'autres gestionnaires d'événements,
+ *    comme `selectSuggestion`, de se déclencher avant de masquer la liste.
+ *  - Vérifie si le focus est toujours à l’intérieur du conteneur `.adresse-wrapper`
+ *    (champ d’adresse ou liste de suggestions).
+ *    Si c’est le cas, la liste reste visible.
+ *  - Sinon, elle cache la liste des suggestions (`showSuggestions.value = false`).
+ *
+ * @function hideSuggestions
+ * @returns {void}
+ */
 function hideSuggestions() {
   // On laisse d'abord les autres handlers (selectSuggestion) se déclencher
   setTimeout(() => {

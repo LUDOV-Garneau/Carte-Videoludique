@@ -284,26 +284,13 @@ async function onAdresseInput(value) {
 }
 
 /**
- * Gère la sélection d’une suggestion d’adresse dans la liste déroulante.
- *
- * Cette fonction :
- *  - Met à jour le champ d’adresse (`adresse.value`) avec le libellé choisi,
- *  - Convertit les coordonnées (`lat`, `lng`) de la suggestion en nombres,
- *  - Met à jour les valeurs réactives `latitude` et `longitude`,
- *  - Émet l’événement `locate-from-address` vers le composant parent afin de centrer la carte sur l’adresse sélectionnée,
- *  - Vide et masque la liste des suggestions.
- *
- * @function selectSuggestion
- * @param {Object} item - L’objet représentant la suggestion sélectionnée.
- * @param {string} item.label - Le texte affiché dans la suggestion.
- * @param {number|string} [item.lat] - La latitude associée à la suggestion.
- * @param {number|string} [item.lng] - La longitude associée à la suggestion.
- * @returns {void}
- *
- * @emits locate-from-address
+ * Gère la sélection d’une suggestion d’adresse.
+ * - Met à jour le champ d’adresse.
+ * - Met à jour les coordonnées.
+ * - Émet un événement pour centrer la carte.
+ * - Ferme immédiatement la liste des suggestions.
  */
 function selectSuggestion(item) {
-  // on met le joli label dans le champ texte
   adresse.value = item.label
 
   if (item && item.lat != null && item.lng != null) {
@@ -313,11 +300,11 @@ function selectSuggestion(item) {
     if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
       latitude.value = lat
       longitude.value = lng
-
       emit('locate-from-address', { lat, lng })
     }
   }
 
+  // 👇 Fermeture immédiate après sélection
   showSuggestions.value = false
   suggestions.value = []
 }
