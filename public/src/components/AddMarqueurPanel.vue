@@ -275,6 +275,11 @@ async function locateFromAddress() {
   const q = (form.value.adresse || '').trim()
   if (!q) return
 
+  if(addressAlreadyExist(q)){
+    formErrors.value.adresse = "Cette adresse existe déjà dans sur la carte"
+    return
+  }
+
   try {
     const pos = await geocodeAddress({ address: q })
 
@@ -313,6 +318,13 @@ async function onAdresseInput(value) {
     suggestions.value = []
     showSuggestions.value = false
   }
+}
+
+function addressAlreadyExist(adresse) {
+  const lower = adresse.trim().toLowerCase()
+  return marqueurStore.marqueurs.some(m =>
+    (m.properties?.adresse ?? '').trim().toLowerCase() === lower
+  )
 }
 
 /**
