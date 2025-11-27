@@ -57,25 +57,31 @@ describe('MarqueurModalComponent', () => {
     expect(descTextarea.element.value).toBe(baseMarqueur.properties.description)
   })
 
-  it("appelle geocode et émet 'locate-from-address' quand on tape une adresse", async () => {
+  it("appelle fetchAdresseSuggestions et émet 'locate-from-address' quand on choisit une suggestion", async () => {
     const wrapper = mount(MarqueurModal, {
-      attachTo: document.body,  
-      props: {
-        marqueur: baseMarqueur,
-      },
+      attachTo: document.body,
+      props: { marqueur: baseMarqueur },
     })
 
     const adresseInput = wrapper.get('#adresseMarqueur')
 
+    // tape une adresse
     await adresseInput.setValue('1304 Boulevard du Mont-Royal')
     await adresseInput.trigger('input')
-
     await flushPromises()
 
     expect(fetchAdresseSuggestions).toHaveBeenCalled()
-    expect(geocodeAddress).toHaveBeenCalledWith(
-      '1304 Boulevard du Mont-Royal'
-    )
+
+    // on simule une suggestion retournée par l'API
+    const fakeItem = {
+      label: '1304 Boulevard du Mont-Royal, Montréal, Québec',
+      lat: 45.5121273,
+      lng: -73.6023346,
+      raw: {}
+    }
+
+    // on appelle directement la méthode (ou on déclenche un mousedown sur un <li>)
+    await wrapper.vm.selectSuggestion(fakeItem)
 
     const emits = wrapper.emitted('locate-from-address')
     expect(emits).toBeTruthy()
@@ -83,6 +89,27 @@ describe('MarqueurModalComponent', () => {
       lat: 45.5121273,
       lng: -73.6023346,
     })
+  })
+
+  it("appelle geocodeAddress dans valider() quand lat/lng sont vides", async () => {
+    geocodeAddress.mockResolvedValue({
+      lat: 45.5121273,
+      lng: -73.6023346,
+    })
+
+    const wrapper = mount(MarqueurModal, {
+      props: { marqueur: baseMarqueur },
+    })
+
+    await wrapper.get('#titreMarqueur').setValue('Titre test')
+    await wrapper.get('#typeMarqueur').setValue('Autres')
+    await wrapper.get('#adresseMarqueur').setValue('1304 Boulevard du Mont-Royal')
+    await wrapper.get('#descriptionMarqueur').setValue('Une description')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(geocodeAddress).toHaveBeenCalledWith('1304 Boulevard du Mont-Royal')
   })
 
   it("émet 'valider' avec les champs mis à jour et lat/lng", async () => {

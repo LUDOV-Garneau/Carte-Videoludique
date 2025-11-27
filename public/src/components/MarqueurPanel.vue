@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { useAuthStore } from '../stores/auth.js';
 import { useMarqueurStore } from '../stores/useMarqueur.js';
 import { useEditRequestStore } from '../stores/useEditRequest';
@@ -67,18 +67,15 @@ function openLightboxAt(index) {
 async function handleEditRequestSubmit(payloadFromModal) {
 	try {
 		const original = marqueurStore.marqueurActif;
-		if (!original) return;
-
-		const marqueurId = original.properties?.id || original._id;
-
-		const props = payloadFromModal.properties || {};
-
+		if (!original) return;	
+		const marqueurId = original.properties?.id || original._id;	
+		const props = payloadFromModal.properties || {};	
 		const body = {
 			titre: props.titre,
-    		type: props.type,
-      		adresse: props.adresse,
-      		description: props.description,
-      		temoignage: props.temoignage,
+			type: props.type,
+	  		adresse: props.adresse,
+	  		description: props.description,
+	  		temoignage: props.temoignage,
 		}
 		await editRequestStore.createEditRequest(marqueurId, body);
 		isEditModalOpen.value = false;

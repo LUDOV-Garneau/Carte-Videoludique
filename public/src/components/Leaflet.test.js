@@ -113,6 +113,17 @@ vi.mock('../stores/useMarqueur.js', () => ({
   useMarqueurStore: vi.fn(() => mockMarqueurStore)
 }))
 
+vi.mock('../utils/geocode.js', () => ({
+  reverseGeocode: vi.fn().mockResolvedValue({
+    address: {
+      city: 'Québec',
+      state: 'Québec',
+      country: 'Canada'
+    }
+  }),
+  isAddressInQuebecProvince: vi.fn().mockReturnValue(true)
+}))
+
 import { createPinia } from 'pinia'
 
 // Espions window listeners
@@ -173,11 +184,12 @@ describe('LeafletMap.vue', () => {
   it('ajoute un marqueur au clic carte et met à jour les coordonnées', async () => {
     const wrapper = mount(LeafletMap)
 
-    // Ouvre le panneau (la garde panelOpen bloque sinon)
+    // ouvrir le panneau d’ajout
     const ajoutBtn = document.querySelector('.btn-ajout-marqueur')
     ajoutBtn.__handlers?.click?.({})
     await nextTick()
 
+    // 1er clic sur la carte
     onHandlers.click?.({ latlng: { lat: 45.5, lng: -73.56 } })
     await nextTick()
 
@@ -189,6 +201,7 @@ describe('LeafletMap.vue', () => {
     expect(latInput.value).not.toBe('')
     expect(lngInput.value).not.toBe('')
 
+    // 2e clic sur la carte
     onHandlers.click?.({ latlng: { lat: 45.6, lng: -73.57 } })
     await nextTick()
 

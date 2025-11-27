@@ -15,7 +15,7 @@ vi.mock('@/stores/auth', () => ({
 }))
 
 // Mock global de fetch
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 describe('Inscription.vue', () => {
   beforeEach(() => {

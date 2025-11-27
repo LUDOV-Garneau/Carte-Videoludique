@@ -1,15 +1,17 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import L from 'leaflet'
-import { reverseGeocode } from '../utils/geocode.js'
+import { reverseGeocode, isAddressInQuebecProvince } from '../utils/geocode.js'
 import AddMarqueurPanel from './AddMarqueurPanel.vue'
 import MarqueurPanel from './MarqueurPanel.vue'
 import { useMarqueurStore } from '../stores/useMarqueur.js'
 
+import 'leaflet.fullscreen'
+import 'leaflet.fullscreen/Control.FullScreen.css'
+
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
-
 
 const DefaultIcon = L.icon({
   iconUrl: markerIcon,
@@ -39,69 +41,194 @@ const selectedMarqueur = ref(null);
 const currentMarqueur = ref(null);
 const currentAdresse = ref('');
 
-const WORLD_BOUNDS = L.latLngBounds(
-  [-85.05112878, -180],  // Sud-Ouest
-  [85.05112878, 180]     // Nord-Est
+const QUEBEC_BOUND = L.latLngBounds(
+  [40, -90],
+  [63, -50]   
 )
 
-function openCreatePanel() {
-  createPanelOpen.value = true
-  const container = map?.getContainer?.()
-  if(container?.style) container.style.cursor = 'crosshair'
-  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none'
+/**
+ * Initialise la carte Leaflet et la centre sur Montréal.
+ *
+ * Cette fonction crée une instance de carte Leaflet, associée à l’élément DOM `mapEl`,
+ * avec le zoom activé et une vue initiale centrée sur Montréal (45.5017, -73.5673).
+ *
+ * @function initMap
+ * @returns {void}
+ */
+function initMap() {
+  map = L.map(mapEl.value, { 
+    center: [52.5, -71.0],
+    zoom: 5,               
+    minZoom: 5,            
+    maxZoom: 19,
+
+    zoomControl: true,
+    zoomAnimation: false,
+    maxBounds: QUEBEC_BOUND,
+    maxBoundsViscosity: 1.0,
+
+    fullscreenControl: true,
+    fullscreenControlOptions: {
+      position: 'topleft', 
+      title: 'Plein écran',
+      titleCancel: 'Quitter le plein écran'
+    }
+    
+  })
+  .setView([52.5, -71.0], 5);
 }
-function closeCreatePanel() {
-  createPanelOpen.value = false
-  const container = map?.getContainer?.()
-  if (container?.style) container.style.cursor = 'grab'
-  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = ''
-  if (currentMarqueur.value) {
-    map.removeLayer(currentMarqueur.value)
-    currentMarqueur.value = null
+
+/**
+ * Ajoute la couche de tuiles (fond de carte) à la carte Leaflet.
+ *
+ * Utilise les tuiles « light_all » de CARTO basées sur OpenStreetMap.
+ * Fournit un maximum de zoom de 19 et affiche les attributions nécessaires.
+ *
+ * @function addTileLayer
+ * @returns {void}
+ */
+function addTileLayer() {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    noWrap: true,
+    bounds: QUEBEC_BOUND,
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    subdomains: 'abcd'
+  }).addTo(map)
+}
+
+/**
+ * Centre la carte sur les coordonnées spécifiées avec une animation fluide.
+ *
+ * @function focusOn
+ * @param {number} lat - Latitude du point à centrer.
+ * @param {number} lng - Longitude du point à centrer.
+ * @param {number} [zoom=16] - Niveau de zoom optionnel (par défaut 16).
+ * @returns {void}
+ */
+function focusOn(lat, lng) {
+  if (!map) return
+  map.flyTo([lat, lng], 16)
+}
+
+/**
+ * Configure le comportement du clic sur la carte.
+ *
+ * Lorsqu’un clic se produit :
+ *  - Si le panneau est ouvert, place un marqueur à l’endroit cliqué.
+ *  - Supprime tout marqueur précédent.
+ *  - Met à jour les champs `latitude`, `longitude`.
+ *  - Fait une géocodification inverse pour remplir `form.adresse`.
+ *
+ * @async
+ * @function setupMapClickHandler
+ * @returns {Promise<void>} Promise résolue lorsque le gestionnaire de clic est attaché.
+ */
+function setupMapClickHandler() {
+	map.on('click', async (e) => {
+		if (!createPanelOpen.value) return
+
+		const { lat, lng } = e.latlng
+		if (currentMarqueur.value) map.removeLayer(currentMarqueur.value)
+
+		latitude.value = lat.toFixed(5);
+		longitude.value = lng.toFixed(5);
+
+    currentMarqueur.value = L.marker([lat, lng])
+			.addTo(map)
+			.bindPopup(`Proposition<br>${lat.toFixed(5)}, ${lng.toFixed(5)}`)
+			.openPopup();
+		map.setView([lat, lng], 18);
+
+		verifyAdressInQuebec(lat, lng)
+	});
+}
+
+/**
+ * Cette fonction vérifie si l'adresse est dans la province de Québec.
+ * Si oui, elle ajoute le marqueur sur la carte
+ * Sinon, elle retire le marqueur et affiche un message à l'utilisateur
+ * 
+ * @param lat La coordonnée de latitude du marqueur
+ * @param lng La coordonnée de longitude du marqueur
+ */
+async function verifyAdressInQuebec(lat, lng) {
+  try {
+    const result = await reverseGeocode({lat, lng});
+    const addr = result.address;
+
+    if (!addr) {
+      if (currentMarqueur.value) {
+        map.removeLayer(currentMarqueur.value);
+        currentMarqueur.value = null;
+      }
+      currentAdresse.value = '';
+      alert('Impossible de déterminer une adresse.');
+      closeCreatePanel();
+      return;
+    }
+
+    if (!isAddressInQuebecProvince(addr)) {
+      if (currentMarqueur.value) {
+        map.removeLayer(currentMarqueur.value);
+        currentMarqueur.value = null;
+      }
+      currentAdresse.value = '';
+      map.setView([lat, lng], 5);
+      alert("L'adresse doit être située dans la province de Québec, Canada.");
+      closeCreatePanel();
+      return;
+    }
+
+    const quartier = addr.suburb || addr.city_district;
+    const ville =
+      addr.city || addr.town || addr.village || addr.municipality;
+
+    const ligne = [
+      addr.house_number,
+      addr.road,
+      quartier, 
+      ville,
+      addr.state,
+      addr.postcode,
+      addr.country,
+    ]
+      .filter(Boolean)
+      .join(', ');
+
+    currentAdresse.value = ligne;
+
+  } catch (err) {
+    console.error(err);
+    if (currentMarqueur.value) {
+      map.removeLayer(currentMarqueur.value);
+      currentMarqueur.value = null;
+    }
+    currentAdresse.value = '';
+    alert("Erreur lors de la vérification de l'adresse.");
+    closeCreatePanel();
   }
-  latitude.value = ''
-  longitude.value = ''
-  currentAdresse.value = ''
 }
 
-function openInfoPanel() {
-  if (createPanelOpen.value) closeCreatePanel();
-  infoPanelOpen.value = true;
-  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none';
-}
-function closeInfoPanel() {
-  infoPanelOpen.value = false;
-  selectedMarqueur.value = null;
-  marqueurStore.marqueurActif = null;
-  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = '';
-}
-
-async function handleMarqueurAdded() {
-	await afficherMarqueurs();
-	closeCreatePanel();
-}
-async function handleMarqueurDeleted() {
-  await afficherMarqueurs();
-  closeInfoPanel();
-}
-
-function handlelocateFromAddress({ lat, lng }) {
-	if (currentMarqueur.value) {
-		map.removeLayer(currentMarqueur.value);
-		currentMarqueur.value = null;
-	}
-
-	currentMarqueur.value = L.marker({lat, lng})
-		.addTo(map)
-		.bindPopup('Adresse localisée')
-		.openPopup();
-
-	latitude.value = lat.toFixed(5);
-	longitude.value = lng.toFixed(5);
-
-	map.setView({lat, lng}, 15);
-}
-
+/**
+ * Affiche tous les marqueurs sur la carte Leaflet.
+ *
+ * Cette fonction :
+ *  - Récupère la liste des marqueurs depuis le store (`marqueurStore`),
+ *  - Supprime les anciens marqueurs de la carte,
+ *  - Crée et ajoute un nouveau `L.marker` pour chaque entrée de données,
+ *  - Configure l'opacité selon le statut (`pending` = semi-transparent),
+ *  - Attache un événement de clic sur chaque marqueur pour :
+ *      → le définir comme marqueur sélectionné (`selectedMarqueur`),
+ *      → charger ses données détaillées via `marqueurStore.getMarqueur(id)`,
+ *      → ouvrir le panneau d'information (`openInfoPanel()`),
+ *      → et recentrer la carte sur le marqueur.
+ * 
+ * @async
+ * @function afficherMarqueurs
+ * @returns {Promise<void>} Promesse résolue lorsque les marqueurs sont affichés.
+ * 
+ */
 async function afficherMarqueurs() {
   try {
     await marqueurStore.getMarqueurs();
@@ -138,111 +265,95 @@ async function afficherMarqueurs() {
   }
 }
 
-defineExpose({
-  afficherMarqueurs,
-  handlelocateFromAddress,
-
-  latitude,
-  longitude,
-  marqueurs,
-  currentMarqueur,
-  selectedMarqueur,
-  map,
-  focusOn
-});
-
 /**
- * Initialise la carte Leaflet et la centre sur Montréal.
- *
- * Cette fonction crée une instance de carte Leaflet, associée à l’élément DOM `mapEl`,
- * avec le zoom activé et une vue initiale centrée sur Montréal (45.5017, -73.5673).
- *
- * @function initMap
- * @returns {void}
+ * Ouvre le panneau d'ajout d'un marqueur
  */
-function initMap() {
-  map = L.map(mapEl.value, {
-    zoomControl: true,
-    zoomAnimation: false,
-    maxBounds: WORLD_BOUNDS,
-    maxBoundsViscosity: 1.0,
-    minZoom: 2
-  })
-  .setView([45.5017, -73.5673], 12)
-}
-
-function focusOn(lat, lng) {
-  if (!map) return
-  map.flyTo([lat, lng], 16)
+function openCreatePanel() {
+  createPanelOpen.value = true
+  const container = map?.getContainer?.()
+  if(container?.style) container.style.cursor = 'crosshair'
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none'
 }
 
 /**
- * Ajoute la couche de tuiles (fond de carte) à la carte Leaflet.
- *
- * Utilise les tuiles « light_all » de CARTO basées sur OpenStreetMap.
- * Fournit un maximum de zoom de 19 et affiche les attributions nécessaires.
- *
- * @function addTileLayer
- * @returns {void}
+ * Ferme le panneau d'ajout d'un marqueur 
+ * et efface le contenu des champs si nécéssaire
  */
-function addTileLayer() {
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19,
-    noWrap: true,
-    bounds: WORLD_BOUNDS,
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    subdomains: 'abcd'
-  }).addTo(map)
+function closeCreatePanel() {
+  createPanelOpen.value = false
+  const container = map?.getContainer?.()
+  if (container?.style) container.style.cursor = 'grab'
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = ''
+  if (currentMarqueur.value) {
+    map.removeLayer(currentMarqueur.value)
+    currentMarqueur.value = null
+  }
+  latitude.value = ''
+  longitude.value = ''
+  currentAdresse.value = ''
 }
 
 /**
- * Configure le comportement du clic sur la carte.
- *
- * Lorsqu’un clic se produit :
- *  - Si le panneau est ouvert, place un marqueur à l’endroit cliqué.
- *  - Supprime tout marqueur précédent.
- *  - Met à jour les champs `latitude`, `longitude`.
- *  - Fait une géocodification inverse pour remplir `form.adresse`.
- *
- * @async
- * @function setupMapClickHandler
- * @returns {Promise<void>} Promise résolue lorsque le gestionnaire de clic est attaché.
+ * Ouvre le panneau d'information d'un marqueur.
+ * Ferme le panneau d'ajout s'il est ouvert et masque le bouton d'ajout.
  */
-function setupMapClickHandler() {
-	map.on('click', async (e) => {
-		if (!createPanelOpen.value) return
+function openInfoPanel() {
+  if (createPanelOpen.value) closeCreatePanel();
+  infoPanelOpen.value = true;
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none';
+}
 
-    if(!WORLD_BOUNDS.contains(e.latlng)) {
-      alert('Veuillez sélectionner un emplacement à l’intérieur des limites du monde.');
-      return;
-    }
+/**
+ * Ferme le panneau d'information d'un marqueur.
+ * Réinitialise la sélection et réaffiche le bouton d'ajout.
+ */
+function closeInfoPanel() {
+  infoPanelOpen.value = false;
+  selectedMarqueur.value = null;
+  marqueurStore.marqueurActif = null;
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = '';
+}
 
-		const { lat, lng } = e.latlng
-		if (currentMarqueur.value) map.removeLayer(currentMarqueur.value)
+/**
+ * Gère la mise à jour de la carte après l'ajout d'un marqueur.
+ * Recharge les marqueurs, nettoie le marqueur temporaire
+ * et ferme le panneau d'ajout.
+ */
+async function handleMarqueurAdded() {
+	await afficherMarqueurs();
+	closeCreatePanel();
+}
 
-		latitude.value = lat.toFixed(5);
-		longitude.value = lng.toFixed(5);
+/**
+ * Gère la mise à jour de la carte après la suppréssion d'un marqueur.
+ * Recharge les marqueurs, nettoie le marqueur temporaire
+ * et ferme le panneau d'ajout.
+ */
+async function handleMarqueurDeleted() {
+  await afficherMarqueurs();
+  closeInfoPanel();
+}
 
-		currentMarqueur.value = L.marker([lat, lng])
-			.addTo(map)
-			.bindPopup(`Proposition<br>${lat.toFixed(5)}, ${lng.toFixed(5)}`)
-			.openPopup();
+/**
+ * Localise une adresse sur la carte à partir de ses coordonnées.
+ * Supprime l'ancien marqueur, ajoute le nouveau et recadre la carte.
+ * @param {{ lat: number, lng: number }} coords
+ */
+function handlelocateFromAddress({ lat, lng }) {
+	if (currentMarqueur.value) {
+		map.removeLayer(currentMarqueur.value);
+		currentMarqueur.value = null;
+	}
 
-		map.setView([lat, lng], 18);
+	currentMarqueur.value = L.marker({lat, lng})
+		.addTo(map)
+		.bindPopup('Adresse localisée')
+		.openPopup();
 
-		try {
-		const { address } = await reverseGeocode(lat, lng)
-		const ligne = [
-			address.house_number, address.road,
-			address.city || address.town || address.village,
-			address.state, address.postcode, address.country
-		].filter(Boolean).join(', ')
-		currentAdresse.value = ligne;
-		} catch (err) {
-		console.error(err)
-		currentAdresse.value = '';
-		}
-	});
+	latitude.value = lat.toFixed(5);
+	longitude.value = lng.toFixed(5);
+
+	map.setView({lat, lng}, 15);
 }
 
 /**
@@ -320,13 +431,26 @@ onUnmounted(() => {
     map.remove()
   }
 });
+
+defineExpose({
+  afficherMarqueurs,
+  handlelocateFromAddress,
+
+  latitude,
+  longitude,
+  marqueurs,
+  currentMarqueur,
+  selectedMarqueur,
+  map,
+  focusOn
+});
 </script>
+
 
 <template>
 
   <div class="map" ref="mapEl"></div>
 
-	<!-- Composant panel d'ajout de marqueur -->
 	<AddMarqueurPanel
 		:is-open="createPanelOpen"
 		:coordinates="{ lat: latitude, lng: longitude }"
@@ -487,5 +611,40 @@ onUnmounted(() => {
 :deep(.btn-ajout-marqueur:hover) {
   background-color: #4CAF50;
   color: white;
+}
+
+.leaflet-fullscreen-icon {
+	background-image: url('icon-fullscreen.svg');
+	background-size: 26px 52px;
+}
+
+.leaflet-fullscreen-icon.leaflet-fullscreen-on {
+	background-position: 0 -26px;
+}
+
+.leaflet-touch .leaflet-fullscreen-icon {
+	background-position: 2px 2px;
+}
+
+.leaflet-touch .leaflet-fullscreen-icon.leaflet-fullscreen-on {
+	background-position: 2px -24px;
+}
+
+/* Safari still needs this vendor-prefix: https://caniuse.com/mdn-css_selectors_fullscreen */
+/* stylelint-disable-next-line selector-no-vendor-prefix */
+.leaflet-container:-webkit-full-screen,
+.leaflet-container:fullscreen {
+	width: 100% !important;
+	height: 100% !important;
+	z-index: 99999;
+}
+
+.leaflet-pseudo-fullscreen {
+	position: fixed !important;
+	width: 100% !important;
+	height: 100% !important;
+	top: 0 !important;
+	left: 0 !important;
+	z-index: 99999;
 }
 </style>

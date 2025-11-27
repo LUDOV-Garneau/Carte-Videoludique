@@ -17,7 +17,7 @@ vi.mock('@/config', () => ({
 
 describe('AccountsView', () => {
   beforeEach(() => {
-    global.fetch = vi.fn(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
         json: () =>

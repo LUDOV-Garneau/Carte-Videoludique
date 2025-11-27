@@ -221,7 +221,7 @@ describe('AddMarqueurPanel.vue', () => {
       await wrapper.vm.locateFromAddress()
       await nextTick()
 
-      expect(geocodeAddress).toHaveBeenCalledWith('123 Rue Saint-Jean, Québec, Canada')
+      expect(geocodeAddress).toHaveBeenCalledWith({ address: '123 Rue Saint-Jean, Québec, Canada'})
       expect(wrapper.vm.form.lat).toBe(46.8139)
       expect(wrapper.vm.form.lng).toBe(-71.2082)
       expect(wrapper.emitted('locate-address')).toBeTruthy()

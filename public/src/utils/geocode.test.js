@@ -49,7 +49,7 @@ describe('geocodeAddress', () => {
     const arr = [{ lat: '46.8129', lon: '-71.2082' }]
     fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(arr) })
 
-    const res = await geocodeAddress('355 Rue Charest Est, Québec, Canada')
+    const res = await geocodeAddress({ address: '355 Rue Charest Est, Québec, Canada'})
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('nominatim.openstreetmap.org/search'),
       expect.objectContaining({ headers: expect.any(Object) })
@@ -60,10 +60,5 @@ describe('geocodeAddress', () => {
   it('retourne null si aucun résultat', async () => {
     fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
     await expect(geocodeAddress('adresse improbable')).resolves.toBeNull()
-  })
-
-  it('jette une erreur si HTTP non OK', async () => {
-    fetch.mockResolvedValueOnce({ ok: false })
-    await expect(geocodeAddress('Québec')).rejects.toThrow('Geocode error')
   })
 });

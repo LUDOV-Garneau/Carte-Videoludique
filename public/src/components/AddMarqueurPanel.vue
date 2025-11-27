@@ -4,29 +4,30 @@ import { useMarqueurStore } from '../stores/useMarqueur.js';
 import AddImage from './AddImage.vue';
 import * as utils from '../utils/utils.js';
 import * as cloudinary from '../utils/cloudinary.js';
-import { geocodeAddress } from '../utils/geocode.js';
+import { geocodeAddress, fetchAdresseSuggestions} from '../utils/geocode.js';
 
-// Props and Emits
 const props = defineProps({
-    isOpen: {
-        type: Boolean,
-        required: true
-    },
-    coordinates: {
-        type: Object,
-        default: () => ({ lng: '', lat: '' })
-    },
-    adresse: {
-        type: String,
-        default: ''
-    }
+  isOpen: {
+    type: Boolean,
+    required: true
+  },
+  coordinates: {
+    type: Object,
+    default: () => ({ lng: '', lat: '' })
+  },
+  adresse: {
+    type: String,
+    default: ''
+  }
 });
+
 const emit = defineEmits(['close', 'marqueur-added', 'locate-address']);
 
-// Variables
 const marqueurStore = useMarqueurStore();
 
 const files = ref([]);
+const suggestions = ref([])
+const showSuggestions = ref(false)
 
 const TYPES = [
   'Écoles et instituts de formation',
@@ -39,7 +40,7 @@ const TYPES = [
   'Arcades et salles de jeux',
   'Organismes et institutions',
   'Autres',
-]
+];
 
 const form = ref({
   lng: '',
@@ -53,6 +54,7 @@ const form = ref({
   adresse: '',
   images: [],
 });
+
 const formErrors = ref({
   lng: '',
   lat: '',
@@ -66,88 +68,143 @@ const formErrors = ref({
   error: '',
 });
 
-watch(() => props.coordinates, (newCoords) => {
+watch(
+  () => props.coordinates,
+  (newCoords) => {
     form.value.lng = newCoords.lng;
     form.value.lat = newCoords.lat;
-}, { immediate: true });
-watch(() => props.adresse, (newAdresse) => {
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.adresse,
+  (newAdresse) => {
     form.value.adresse = newAdresse;
-}, { immediate: true });
+  },
+  { immediate: true }
+);
 
+/**
+ * Ferme le panneau d'ajout de marqueur.
+ * 
+ * Cette fonction :
+ *  - Émet l'événement `close` vers le composant parent,
+ *  - Réinitialise les champs du formulaire via `resetForm()`.
+ *
+ * @function closePanel
+ * @returns {void}
+ */
 function closePanel() {
-    emit('close');
-    resetForm();
+  emit('close');
+  resetForm();
 }
 
+/**
+ * Réinitialise complètement le formulaire d'ajout de marqueur.
+ *
+ * Cette fonction :
+ *  - Vide toutes les valeurs du formulaire (`form.value`),
+ *  - Réinitialise les messages d'erreur (`formErrors.value`),
+ *  - Supprime les fichiers sélectionnés (`files.value`).
+ *
+ * Elle est généralement appelée :
+ *  - Lors de la fermeture du panneau (`closePanel()`),
+ *  - Après l'ajout réussi d'un marqueur.
+ *
+ * @function resetForm
+ * @returns {void}
+ */
 function resetForm() {
-    form.value = {
-        lng: '',
-        lat: '',
-        titre: '',
-        description: '',
-        type: '',
-        nom: '',
-        email: '',
-        souvenir: '',
-        adresse: '',
-        images: [],
-    };
-    formErrors.value = {
-        lng: '',
-        lat: '',
-        titre: '',
-        description: '',
-        type: '',
-        nom: '',
-        email: '',
-        souvenir: '',
-        adresse: '',
-        error: '',
-    };
-    files.value = [];
+  form.value = {
+    lng: '',
+    lat: '',
+    titre: '',
+    description: '',
+    type: '',
+    nom: '',
+    email: '',
+    souvenir: '',
+    adresse: '',
+    images: [],
+  };
+  formErrors.value = {
+    lng: '',
+    lat: '',
+    titre: '',
+    description: '',
+    type: '',
+    nom: '',
+    email: '',
+    souvenir: '',
+    adresse: '',
+    error: '',
+  };
+  files.value = [];
 }
 
+/**
+ * Valide les champs du formulaire d'ajout de marqueur avant envoi.
+ *
+ * Cette fonction vérifie :
+ *  - Que la latitude et la longitude sont soit **toutes deux remplies**, soit **toutes deux vides** ;
+ *  - Qu'au moins **une adresse ou des coordonnées** est fournie ;
+ *  - Que les champs obligatoires (`titre`, `description`) sont remplis ;
+ *  - Que le **courriel** est valide, s'il est fourni.
+ *
+ * En cas d'erreur :
+ *  - Les messages correspondants sont enregistrés dans `formErrors.value` ;
+ *  - La fonction renvoie `false`.
+ *
+ * @function validateForm
+ * @returns {boolean} `true` si le formulaire est valide, sinon `false`.
+ */
 function validateForm() {
-    let isValid = true;
-    formErrors.value = {
-        lng: '',
-        lat: '',
-        titre: '',
-        description: '',
-        type: '',
-        nom: '',
-        email: '',
-        souvenir: '',
-        adresse: '',
+  let isValid = true;
+  formErrors.value = {
+    lng: '',
+    lat: '',
+    titre: '',
+    description: '',
+    type: '',
+    nom: '',
+    email: '',
+    souvenir: '',
+    adresse: '',
+  };
 
-    };
-    // Vérif coordonnées complètes
-    if (!form.value.lng && form.value.lat || form.value.lng && !form.value.lat) {
-        formErrors.value.lng = 'La longitude et la latitude doivent être toutes les deux remplies ou laissées vides.'
-        formErrors.value.lat = 'La longitude et la latitude doivent être toutes les deux remplies ou laissées vides.'
-        isValid = false
-    }
-    // Vérif que minimum adresse ou coordonnées
-    if (!form.value.adresse && (!form.value.lng && !form.value.lat)) {
-        formErrors.value.error = 'Il faut fournir une adresse ou des coordonnées (longitude et latitude).'
-        isValid = false
-    }
-    // Vérif titre requis
-    if (!form.value.titre) {
-        formErrors.value.titre = 'Le titre est requis.'
-        isValid = false
-    }
-    // Vérif description requise
-    if (!form.value.description) {
-        formErrors.value.description = 'La description est requise.'
-        isValid = false
-    }
-    // Vérif email si rempli
-    if (form.value.email && !utils.isValidEmail(form.value.email)) {
-        formErrors.value.email = 'Le courriel n\'est pas valide.'
-        isValid = false
-    }
-    return isValid;
+  // Vérif coordonnées complètes
+  if ((!form.value.lng && form.value.lat) || (form.value.lng && !form.value.lat)) {
+    formErrors.value.lng = 'La longitude et la latitude doivent être toutes les deux remplies ou laissées vides.';
+    formErrors.value.lat = 'La longitude et la latitude doivent être toutes les deux remplies ou laissées vides.';
+    isValid = false;
+  }
+
+  // Vérif que minimum adresse ou coordonnées
+  if (!form.value.adresse && (!form.value.lng && !form.value.lat)) {
+    formErrors.value.error = 'Il faut fournir une adresse ou des coordonnées (longitude et latitude).';
+    isValid = false;
+  }
+
+  // Vérif titre requis
+  if (!form.value.titre) {
+    formErrors.value.titre = 'Le titre est requis.';
+    isValid = false;
+  }
+
+  // Vérif description requise
+  if (!form.value.description) {
+    formErrors.value.description = 'La description est requise.';
+    isValid = false;
+  }
+
+  // Vérif email si rempli
+  if (form.value.email && !utils.isValidEmail(form.value.email)) {
+    formErrors.value.email = 'Le courriel n\'est pas valide.';
+    isValid = false;
+  }
+
+  return isValid;
 }
 
 /**
@@ -165,27 +222,27 @@ function validateForm() {
  * @throws {Error} Si la requête réseau échoue ou si la réponse du serveur contient une erreur.
  */
 async function sendRequest() {
-    try {
-        if (validateForm()) {
-            if (files.value.length > 0) {
-                form.value.images = await cloudinary.uploadMultipleImages(files.value);
-            }
-            const created = await marqueurStore.ajouterMarqueur(form.value);
+  try {
+    if (validateForm()) {
+      if (files.value.length > 0) {
+        form.value.images = await cloudinary.uploadMultipleImages(files.value);
+      }
+      const created = await marqueurStore.ajouterMarqueur(form.value);
 
-            emit('marqueur-added', created);
-            closePanel();
-        }
-    } catch (err) {
-        if (form.value.images.length) {
-            try {
-                await cloudinary.cleanupImages(form.value.images.map(img => img.publicId));
-            } catch (e) {
-                console.warn('Rollback Cloudinary a échoué :', e);
-            }
-        }
-        console.error('sendRequest error:', err);
-        throw err;
+      emit('marqueur-added', created);
+      closePanel();
     }
+  } catch (err) {
+    if (form.value.images.length) {
+      try {
+        await cloudinary.cleanupImages(form.value.images.map(img => img.publicId));
+      } catch (e) {
+        console.warn('Rollback Cloudinary a échoué :', e);
+      }
+    }
+    console.error('sendRequest error:', err);
+    throw err;
+  }
 }
 
 /**
@@ -215,25 +272,190 @@ async function sendRequest() {
  * // → Ajoute un marqueur à la position correspondante et centre la carte.
  */
 async function locateFromAddress() {
-    const q = form.value.adresse;
-    if (!q) return;
+  const q = (form.value.adresse || '').trim()
+  if (!q) return
 
-    try {
-        const pos = await geocodeAddress(q);
-        if (!pos) return;
+  if(addressAlreadyExist(q)){
+    formErrors.value.adresse = "Cette adresse existe déjà dans sur la carte"
+    return
+  }
 
-        const { lat, lng } = pos;
-        form.value.lat = Number(lat.toFixed(5));
-        form.value.lng = Number(lng.toFixed(5));
+  try {
+    const pos = await geocodeAddress({ address: q })
 
-        // Informer le parent pour mettre à jour le marqueur sur la carte
-        emit('locate-address', { lat, lng });
-    } catch (e) {
-        console.error(e);
-        formErrors.value.adresse = 'Adresse introuvable.';
+    if (!pos) {
+      console.warn(`Aucune position trouvée pour "${q}"`)
+      formErrors.value.adresse = "Adresse introuvable ou hors Québec."
+      return
     }
+
+    const { lat, lng } = pos
+    form.value.lat = Number(lat.toFixed(5))
+    form.value.lng = Number(lng.toFixed(5))
+
+    emit('locate-address', { lat, lng })
+  } catch (e) {
+    console.error('Erreur locateFromAddress :', e)
+    formErrors.value.adresse = 'Adresse introuvable.'
+  }
+}
+
+/**
+ * Gère la saisie d’une adresse dans le champ de formulaire et propose des suggestions en temps réel.
+ *
+ * Cette fonction :
+ *  - Met à jour la valeur de l’adresse saisie,
+ *  - Lance une recherche de suggestions via {@link fetchAdresseSuggestions} lorsque la saisie contient au moins 3 caractères,
+ *  - Met à jour la liste `suggestions` et le booléen `showSuggestions` selon les résultats,
+ *  - Vide les suggestions si la saisie est trop courte ou en cas d’erreur réseau.
+ *
+ * Elle est appelée à chaque changement dans le champ d’adresse (`@input` ou `v-model`).
+ *
+ * @async
+ * @function onAdresseInput
+ * @param {string} value - La valeur actuelle du champ d’adresse saisie par l’utilisateur.
+ * @returns {Promise<void>} Ne retourne rien, mais met à jour les réactifs `suggestions` et `showSuggestions`.
+ */
+async function onAdresseInput(value) {
+  form.value.adresse = value
+
+  if (!value || value.length < 3) {
+    suggestions.value = []
+    showSuggestions.value = false
+    return
+  }
+
+  try {
+    const results = await fetchAdresseSuggestions(form.value.adresse)
+    suggestions.value = results
+    showSuggestions.value = results.length > 0
+  } catch (err) {
+    console.error('Erreur fetchAdresseSuggestions :', err)
+    suggestions.value = []
+    showSuggestions.value = false
+  }
+}
+
+/**
+ * Vérifie si une adresse saisie par l'utilisateur correspond
+ * à une adresse déjà présente sur la carte.
+ *
+ * Cette fonction effectue une comparaison insensible à la casse
+ * entre l'adresse fournie et celles déjà enregistrées dans
+ * `marqueurStore.marqueurs`.
+ *
+ * @param {string} adresse - L'adresse saisie par l'utilisateur.
+ * @returns {boolean} `true` si l'adresse existe déjà sur la carte, sinon `false`.
+ */
+function addressAlreadyExist(adresse) {
+  const lower = adresse.trim().toLowerCase()
+  return marqueurStore.marqueurs.some(m =>
+    (m.properties?.adresse ?? '').trim().toLowerCase() === lower
+  )
+}
+
+/**
+ * Gère la sélection d’une suggestion d’adresse.
+ * - Met à jour le champ d’adresse.
+ * - Met à jour les coordonnées.
+ * - Émet un événement pour centrer la carte.
+ * - Ferme immédiatement la liste des suggestions.
+ */
+function selectSuggestion(item) {
+  form.value.adresse = item.label
+
+  if (item && item.lat != null && item.lng != null) {
+    const lat = Number(item.lat)
+    const lng = Number(item.lng)
+
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+      form.value.latitude = lat
+      form.value.longitude = lng
+      locateFromAddress({ lat, lng }) 
+    }
+  }
+  showSuggestions.value = false
+  suggestions.value = []
+}
+
+/**
+ * Formate une suggestion d’adresse en une chaîne lisible pour l’affichage.
+ *
+ * Cette fonction :
+ *  - Extrait les informations pertinentes de `item.raw.address` (numéro, rue, ville, province, code postal, pays),
+ *  - Construit une représentation textuelle sur une ou deux lignes,
+ *  - Retourne une chaîne prête à être affichée dans la liste des suggestions (ex. : `123 Rue Saint-Jean – Québec, QC, Canada`).
+ *
+ * @function formatSuggestion
+ * @param {Object} item - L’objet représentant une suggestion d’adresse.
+ * @param {Object} [item.raw] - Données brutes de la suggestion provenant du service de géocodage.
+ * @param {Object} [item.raw.address] - Détails de l’adresse retournée par l’API (Nominatim).
+ * @param {string} [item.raw.address.house_number] - Numéro civique.
+ * @param {string} [item.raw.address.road] - Nom de la rue.
+ * @param {string} [item.raw.address.city] - Ville (ou équivalent).
+ * @param {string} [item.raw.address.state] - Province ou région.
+ * @param {string} [item.raw.address.postcode] - Code postal.
+ * @param {string} [item.raw.address.country] - Pays.
+ * @returns {string} Une version formatée de l’adresse (lisible et compacte).
+
+ */
+function formatSuggestion(item) {
+  const a = (item.raw && item.raw.address) ? item.raw.address : {}
+
+  const ligne1 = [
+    a.house_number,
+    a.road
+  ].filter(Boolean).join(' ')
+
+  const quartier =
+    a.suburb ||
+    a.city_district ||
+    a.neighbourhood
+
+  const ville =
+    a.city ||
+    a.town ||
+    a.village ||
+    a.municipality
+
+  const ligne2 = [
+    quartier,
+    ville,
+    a.state,
+    a.country
+  ].filter(Boolean).join(', ')
+
+  return [ligne1, ligne2].filter(Boolean).join(' – ')
+}
+
+/**
+ * Masque la liste de suggestions d’adresses après une courte temporisation.
+ *
+ * Cette fonction :
+ *  - Utilise un `setTimeout` pour laisser le temps à d'autres gestionnaires d'événements,
+ *    comme `selectSuggestion`, de se déclencher avant de masquer la liste.
+ *  - Vérifie si le focus est toujours à l’intérieur du conteneur `.adresse-wrapper`
+ *    (champ d’adresse ou liste de suggestions).
+ *    Si c’est le cas, la liste reste visible.
+ *  - Sinon, elle cache la liste des suggestions (`showSuggestions.value = false`).
+ *
+ * @function hideSuggestions
+ * @returns {void}
+ */
+function hideSuggestions() {
+  // On laisse d'abord les autres handlers (selectSuggestion) se déclencher
+  setTimeout(() => {
+    // Si le focus est encore dans la zone d’adresse, on NE cache PAS
+    const active = document.activeElement
+    if (active && active.closest && active.closest('.adresse-wrapper')) {
+      return
+    }
+
+    showSuggestions.value = false
+  }, 100)
 }
 </script>
+
 <template>
     <transition name="panel-fade">
         <aside v-if="isOpen" class="panel" role="dialog" aria-label="Ajouter un lieu">
@@ -257,10 +479,36 @@ async function locateFromAddress() {
                     </div>
 
                     <div class="form-group">
-                        <label for="adresse">Adresse</label>
-                        <input type="text" id="adresse" v-model.trim="form.adresse" placeholder="123 Rue Saint-Jean, Québec, QC, Canada" class="form-inputText"/>
-                        <span class="error" v-if="formErrors.adresse">{{ formErrors.adresse }}</span>
-                        <button type="button" class="btn-locate" @click="locateFromAddress">Localiser</button>
+                      <label for="adresse">Adresse</label>
+                      <div class="adresse-wrapper" @mousedown.stop>
+
+                      
+                        <input 
+                          type="text" 
+                          id="adresse" 
+                          v-model.trim="form.adresse" 
+                          placeholder="123 Rue Saint-Jean, Vieux-Québec, Québec, Canada" 
+                          @input="onAdresseInput($event.target.value)"
+                          @focus="adresse && suggestions.length && (showSuggestions = true)"
+                          @blur="hideSuggestions"
+                          class="form-inputText"
+                          />
+                          <ul
+                            v-if="showSuggestions && suggestions.length"
+                            class="adresse-suggestions"
+                          >
+                            <li
+                              v-for="item in suggestions"
+                              :key="item.place_id"
+                              @mousedown.prevent="selectSuggestion(item)"
+                            >
+                              {{ formatSuggestion(item)}}
+                            </li>
+                          </ul>
+                      </div>
+                      <span class="error" v-if="formErrors.adresse">{{ formErrors.adresse }}</span>
+
+                      <button type="button" class="btn-locate" @click="locateFromAddress">Localiser</button>
                     </div>
 
                     <div class="form-group">
@@ -323,22 +571,27 @@ async function locateFromAddress() {
   position: absolute;
   top: 12px;
   bottom: 12px;
+  right: 12px;
   width: 320px;
+
+  display: flex;
+  flex-direction: column;
+
   background: #f2f2f2;
   color: #111;
   border: 2px solid #4CAF50;
   border-radius: 4px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  right: 12px;
+  z-index: 1000;
 }
+
+/* ---------- Header du panneau ---------- */
 
 .panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   padding: 10px 12px;
   font-weight: 700;
   border-bottom: 1px solid #ddd;
@@ -352,12 +605,14 @@ async function locateFromAddress() {
 .panel__close {
   width: 28px;
   height: 28px;
+  line-height: 22px;
+  font-size: 18px;
+
   border-radius: 4px;
   border: 2px solid #4CAF50;
   background: white;
   color: #4CAF50;
-  line-height: 22px;
-  font-size: 18px;
+
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -367,20 +622,25 @@ async function locateFromAddress() {
   color: white;
 }
 
+/* ---------- Corps du panneau ---------- */
+
 .panel__body {
-  padding: 12px 12px 0 12px;
-  overflow: auto;
   flex: 1;
+
+  padding: 12px 12px 0 12px;
   display: flex;
   flex-direction: column;
+  overflow: auto;
 }
 
-/* Formulaire */
+/* ---------- Formulaire ---------- */
+
 .form {
+  flex: 1;
+
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 1;
 }
 
 .form-group {
@@ -397,7 +657,10 @@ async function locateFromAddress() {
   color: #D8000C;
 }
 
+/* Champs */
+
 .form-inputText {
+  width: 100%;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -420,23 +683,29 @@ async function locateFromAddress() {
   background: white;
 }
 
+/* Erreurs */
+
 .error {
   color: #D8000C;
   font-size: 13px;
   margin-top: 4px;
 }
 
+/* ---------- Boutons ---------- */
+
 .btn-submit {
+  margin-top: 12px;
+  padding: 10px;
+
   background-color: white;
   color: #4CAF50;
-  padding: 10px;
   border: 2px solid #4CAF50;
   border-radius: 4px;
+
   cursor: pointer;
   font-size: 16px;
   font-weight: 600;
   transition: all 0.3s ease;
-  margin-top: 12px;
 }
 
 .btn-submit:hover {
@@ -445,16 +714,18 @@ async function locateFromAddress() {
 }
 
 .btn-locate {
+  margin-top: 12px;
+  padding: 8px;
+
   background-color: white;
   color: #4CAF50;
-  padding: 8px;
   border: 2px solid #4CAF50;
   border-radius: 4px;
+
   cursor: pointer;
   font-size: 16px;
   font-weight: 600;
   transition: all 0.3s ease;
-  margin-top: 12px;
 }
 
 .btn-locate:hover {
@@ -462,16 +733,21 @@ async function locateFromAddress() {
   color: white;
 }
 
+/* Footer sticky du formulaire */
+
 .form-submit {
   position: sticky;
   bottom: 0;
-  background: #f2f2f2;
+
   padding: 12px 0;
   margin-top: auto;
+
+  background: #f2f2f2;
   border-top: 1px solid #ddd;
 }
 
-/* Transition simple (fade + léger slide) */
+/* ---------- Transitions du panneau ---------- */
+
 .panel-fade-enter-active,
 .panel-fade-leave-active {
   transition: opacity .18s ease, transform .18s ease;
@@ -487,4 +763,41 @@ async function locateFromAddress() {
 .panel.left.panel-fade-leave-to {
   transform: translateX(-8px);
 }
+
+/* ---------- Suggestions d’adresse ---------- */
+
+.adresse-wrapper {
+  position: relative;
+}
+
+.adresse-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+
+  margin-top: 4px;
+  padding: 4px 0;
+
+  max-height: 220px;
+  overflow-y: auto;
+
+  list-style: none;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+  z-index: 9999;
+}
+
+.adresse-suggestions li {
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.adresse-suggestions li:hover {
+  background: #f3f4f6;
+}
+
 </style>
