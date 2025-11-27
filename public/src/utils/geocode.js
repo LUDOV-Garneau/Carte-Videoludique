@@ -148,50 +148,6 @@ async function geocodeAddress({ address }) {
   }
 }
 
-// function scoreCandidate(d, expectedCityNorm) {
-//   const a = d.address
-//   const mainLocality = getMainLocality(a)
-//   const districtNorm = normalize(a.city_district)
-//   const suburbNorm   = normalize(a.suburb)
-//   const stateNorm    = normalize(a.state)
-
-//   console.log('  Expected:', expectedCityNorm)
-//   console.log('  mainLocality:', mainLocality)
-//   console.log('  district/suburb:', districtNorm, '/', suburbNorm)
-//   console.log('  stateNorm:', stateNorm)
-//   console.log('  ---')
-
-//   // Si aucune ville n'est attendue, on accepte n'importe quel résultat québécois
-//   if (!expectedCityNorm) return 0
-
-//   // Cas spécial pour Québec (la ville)
-//   if (expectedCityNorm === 'quebec') {
-//     if (
-//       mainLocality === 'quebec' ||
-//       districtNorm?.includes('quebec') ||
-//       suburbNorm?.includes('quebec') ||
-//       a.city === 'Québec'
-//     ) {
-//       return 0
-//     }
-//   }
-
-//   // Correspondance exacte avec la localité principale
-//   if (mainLocality === expectedCityNorm) return 0
-  
-//   // Correspondance partielle avec la localité principale
-//   if (mainLocality.includes(expectedCityNorm) || expectedCityNorm.includes(mainLocality)) return 1
-  
-//   // Correspondance avec un district ou suburb
-//   if (districtNorm?.includes(expectedCityNorm) || suburbNorm?.includes(expectedCityNorm)) return 1
-  
-//   // Correspondance avec l'état (Québec)
-//   if (stateNorm?.includes(expectedCityNorm)) return 2
-  
-//   // Aucune correspondance
-//   return 3
-// }
-
 async function fetchAdresseSuggestions(query) {
   const base = (query || '').trim()
   if (!base || base.length < MIN_CHAR) return []

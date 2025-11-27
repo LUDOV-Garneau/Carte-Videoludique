@@ -6,24 +6,23 @@ import * as utils from '../utils/utils.js';
 import * as cloudinary from '../utils/cloudinary.js';
 import { geocodeAddress } from '../utils/geocode.js';
 
-// Props and Emits
 const props = defineProps({
-    isOpen: {
-        type: Boolean,
-        required: true
-    },
-    coordinates: {
-        type: Object,
-        default: () => ({ lng: '', lat: '' })
-    },
-    adresse: {
-        type: String,
-        default: ''
-    }
+  isOpen: {
+    type: Boolean,
+    required: true
+  },
+  coordinates: {
+    type: Object,
+    default: () => ({ lng: '', lat: '' })
+  },
+  adresse: {
+    type: String,
+    default: ''
+  }
 });
+
 const emit = defineEmits(['close', 'marqueur-added', 'locate-address']);
 
-// Variables
 const marqueurStore = useMarqueurStore();
 
 const files = ref([]);
@@ -39,7 +38,7 @@ const TYPES = [
   'Arcades et salles de jeux',
   'Organismes et institutions',
   'Autres',
-]
+];
 
 const form = ref({
   lng: '',
@@ -53,6 +52,7 @@ const form = ref({
   adresse: '',
   images: [],
 });
+
 const formErrors = ref({
   lng: '',
   lat: '',
@@ -66,88 +66,143 @@ const formErrors = ref({
   error: '',
 });
 
-watch(() => props.coordinates, (newCoords) => {
+watch(
+  () => props.coordinates,
+  (newCoords) => {
     form.value.lng = newCoords.lng;
     form.value.lat = newCoords.lat;
-}, { immediate: true });
-watch(() => props.adresse, (newAdresse) => {
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.adresse,
+  (newAdresse) => {
     form.value.adresse = newAdresse;
-}, { immediate: true });
+  },
+  { immediate: true }
+);
 
+/**
+ * Ferme le panneau d'ajout de marqueur.
+ * 
+ * Cette fonction :
+ *  - Émet l'événement `close` vers le composant parent,
+ *  - Réinitialise les champs du formulaire via `resetForm()`.
+ *
+ * @function closePanel
+ * @returns {void}
+ */
 function closePanel() {
-    emit('close');
-    resetForm();
+  emit('close');
+  resetForm();
 }
 
+/**
+ * Réinitialise complètement le formulaire d'ajout de marqueur.
+ *
+ * Cette fonction :
+ *  - Vide toutes les valeurs du formulaire (`form.value`),
+ *  - Réinitialise les messages d'erreur (`formErrors.value`),
+ *  - Supprime les fichiers sélectionnés (`files.value`).
+ *
+ * Elle est généralement appelée :
+ *  - Lors de la fermeture du panneau (`closePanel()`),
+ *  - Après l'ajout réussi d'un marqueur.
+ *
+ * @function resetForm
+ * @returns {void}
+ */
 function resetForm() {
-    form.value = {
-        lng: '',
-        lat: '',
-        titre: '',
-        description: '',
-        type: '',
-        nom: '',
-        email: '',
-        souvenir: '',
-        adresse: '',
-        images: [],
-    };
-    formErrors.value = {
-        lng: '',
-        lat: '',
-        titre: '',
-        description: '',
-        type: '',
-        nom: '',
-        email: '',
-        souvenir: '',
-        adresse: '',
-        error: '',
-    };
-    files.value = [];
+  form.value = {
+    lng: '',
+    lat: '',
+    titre: '',
+    description: '',
+    type: '',
+    nom: '',
+    email: '',
+    souvenir: '',
+    adresse: '',
+    images: [],
+  };
+  formErrors.value = {
+    lng: '',
+    lat: '',
+    titre: '',
+    description: '',
+    type: '',
+    nom: '',
+    email: '',
+    souvenir: '',
+    adresse: '',
+    error: '',
+  };
+  files.value = [];
 }
 
+/**
+ * Valide les champs du formulaire d'ajout de marqueur avant envoi.
+ *
+ * Cette fonction vérifie :
+ *  - Que la latitude et la longitude sont soit **toutes deux remplies**, soit **toutes deux vides** ;
+ *  - Qu'au moins **une adresse ou des coordonnées** est fournie ;
+ *  - Que les champs obligatoires (`titre`, `description`) sont remplis ;
+ *  - Que le **courriel** est valide, s'il est fourni.
+ *
+ * En cas d'erreur :
+ *  - Les messages correspondants sont enregistrés dans `formErrors.value` ;
+ *  - La fonction renvoie `false`.
+ *
+ * @function validateForm
+ * @returns {boolean} `true` si le formulaire est valide, sinon `false`.
+ */
 function validateForm() {
-    let isValid = true;
-    formErrors.value = {
-        lng: '',
-        lat: '',
-        titre: '',
-        description: '',
-        type: '',
-        nom: '',
-        email: '',
-        souvenir: '',
-        adresse: '',
+  let isValid = true;
+  formErrors.value = {
+    lng: '',
+    lat: '',
+    titre: '',
+    description: '',
+    type: '',
+    nom: '',
+    email: '',
+    souvenir: '',
+    adresse: '',
+  };
 
-    };
-    // Vérif coordonnées complètes
-    if (!form.value.lng && form.value.lat || form.value.lng && !form.value.lat) {
-        formErrors.value.lng = 'La longitude et la latitude doivent être toutes les deux remplies ou laissées vides.'
-        formErrors.value.lat = 'La longitude et la latitude doivent être toutes les deux remplies ou laissées vides.'
-        isValid = false
-    }
-    // Vérif que minimum adresse ou coordonnées
-    if (!form.value.adresse && (!form.value.lng && !form.value.lat)) {
-        formErrors.value.error = 'Il faut fournir une adresse ou des coordonnées (longitude et latitude).'
-        isValid = false
-    }
-    // Vérif titre requis
-    if (!form.value.titre) {
-        formErrors.value.titre = 'Le titre est requis.'
-        isValid = false
-    }
-    // Vérif description requise
-    if (!form.value.description) {
-        formErrors.value.description = 'La description est requise.'
-        isValid = false
-    }
-    // Vérif email si rempli
-    if (form.value.email && !utils.isValidEmail(form.value.email)) {
-        formErrors.value.email = 'Le courriel n\'est pas valide.'
-        isValid = false
-    }
-    return isValid;
+  // Vérif coordonnées complètes
+  if ((!form.value.lng && form.value.lat) || (form.value.lng && !form.value.lat)) {
+    formErrors.value.lng = 'La longitude et la latitude doivent être toutes les deux remplies ou laissées vides.';
+    formErrors.value.lat = 'La longitude et la latitude doivent être toutes les deux remplies ou laissées vides.';
+    isValid = false;
+  }
+
+  // Vérif que minimum adresse ou coordonnées
+  if (!form.value.adresse && (!form.value.lng && !form.value.lat)) {
+    formErrors.value.error = 'Il faut fournir une adresse ou des coordonnées (longitude et latitude).';
+    isValid = false;
+  }
+
+  // Vérif titre requis
+  if (!form.value.titre) {
+    formErrors.value.titre = 'Le titre est requis.';
+    isValid = false;
+  }
+
+  // Vérif description requise
+  if (!form.value.description) {
+    formErrors.value.description = 'La description est requise.';
+    isValid = false;
+  }
+
+  // Vérif email si rempli
+  if (form.value.email && !utils.isValidEmail(form.value.email)) {
+    formErrors.value.email = 'Le courriel n\'est pas valide.';
+    isValid = false;
+  }
+
+  return isValid;
 }
 
 /**
@@ -165,27 +220,27 @@ function validateForm() {
  * @throws {Error} Si la requête réseau échoue ou si la réponse du serveur contient une erreur.
  */
 async function sendRequest() {
-    try {
-        if (validateForm()) {
-            if (files.value.length > 0) {
-                form.value.images = await cloudinary.uploadMultipleImages(files.value);
-            }
-            const created = await marqueurStore.ajouterMarqueur(form.value);
+  try {
+    if (validateForm()) {
+      if (files.value.length > 0) {
+        form.value.images = await cloudinary.uploadMultipleImages(files.value);
+      }
+      const created = await marqueurStore.ajouterMarqueur(form.value);
 
-            emit('marqueur-added', created);
-            closePanel();
-        }
-    } catch (err) {
-        if (form.value.images.length) {
-            try {
-                await cloudinary.cleanupImages(form.value.images.map(img => img.publicId));
-            } catch (e) {
-                console.warn('Rollback Cloudinary a échoué :', e);
-            }
-        }
-        console.error('sendRequest error:', err);
-        throw err;
+      emit('marqueur-added', created);
+      closePanel();
     }
+  } catch (err) {
+    if (form.value.images.length) {
+      try {
+        await cloudinary.cleanupImages(form.value.images.map(img => img.publicId));
+      } catch (e) {
+        console.warn('Rollback Cloudinary a échoué :', e);
+      }
+    }
+    console.error('sendRequest error:', err);
+    throw err;
+  }
 }
 
 /**
@@ -238,6 +293,7 @@ async function locateFromAddress() {
   }
 }
 </script>
+
 <template>
     <transition name="panel-fade">
         <aside v-if="isOpen" class="panel" role="dialog" aria-label="Ajouter un lieu">
