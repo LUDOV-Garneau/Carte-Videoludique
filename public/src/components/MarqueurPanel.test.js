@@ -61,6 +61,27 @@ vi.mock('../config.js', () => ({
   API_URL: 'http://localhost:3000'
 }))
 
+// Mock du composable useLightbox
+const mockLightbox = {
+  isOpen: false,
+  currentIndex: 0,
+  images: [],
+  openLightbox: vi.fn((imgs, index) => {
+    mockLightbox.isOpen = true
+    mockLightbox.currentIndex = index
+    mockLightbox.images = imgs
+  }),
+  closeLightbox: vi.fn(() => {
+    mockLightbox.isOpen = false
+    mockLightbox.currentIndex = 0
+    mockLightbox.images = []
+  })
+}
+
+vi.mock('../composables/useLightbox.js', () => ({
+  useLightbox: () => mockLightbox
+}))
+
 describe('MarqueurPanel.vue', () => {
   let wrapper
   let pinia
@@ -68,6 +89,12 @@ describe('MarqueurPanel.vue', () => {
   beforeEach(() => {
     pinia = createPinia()
     setActivePinia(pinia)
+    
+    // Reset des mocks
+    vi.clearAllMocks()
+    mockLightbox.isOpen = false
+    mockLightbox.currentIndex = 0
+    mockLightbox.images = []
     
     // Reset des mocks
     vi.clearAllMocks()
@@ -332,6 +359,166 @@ describe('MarqueurPanel.vue', () => {
       expect(wrapper.vm.isEditModalOpen).toBe(false)
     })
 
+  })
+
+  describe('Onglets du menu', () => {
+    it('affiche l\'onglet Aperçu par défaut', () => {
+      wrapper = mountComponent()
+      
+      const buttons = wrapper.findAll('.panel__menu button')
+      const apercuButton = buttons[0] // Premier bouton
+      const imagesButton = buttons[1] // Deuxième bouton
+      
+      expect(apercuButton.classes()).toContain('active')
+      expect(imagesButton.classes()).not.toContain('active')
+      expect(wrapper.vm.activeTab).toBe('apercu')
+    })
+
+    it('change vers l\'onglet Images', async () => {
+      wrapper = mountComponent()
+      
+      const buttons = wrapper.findAll('.panel__menu button')
+      const imagesButton = buttons[1] // Deuxième bouton (Images)
+      await imagesButton.trigger('click')
+      
+      await wrapper.vm.$nextTick()
+      
+      expect(wrapper.vm.activeTab).toBe('images')
+      expect(imagesButton.classes()).toContain('active')
+      
+      const apercuButton = buttons[0] // Premier bouton (Aperçu)
+      expect(apercuButton.classes()).not.toContain('active')
+    })
+
+    it('affiche le contenu approprié selon l\'onglet sélectionné', async () => {
+      wrapper = mountComponent()
+      
+      // Vérifier le contenu de l'onglet Aperçu (div qui contient panel__section)
+      expect(wrapper.find('.panel__section').exists()).toBe(true)
+      expect(wrapper.findAll('.panel__images')).toHaveLength(0)
+      
+      // Changer vers l'onglet Images
+      const buttons = wrapper.findAll('.panel__menu button')
+      const imagesButton = buttons[1]
+      await imagesButton.trigger('click')
+      await wrapper.vm.$nextTick()
+      
+      // Vérifier le contenu de l'onglet Images
+      expect(wrapper.find('.panel__section').exists()).toBe(false)
+      expect(wrapper.findAll('.panel__images').length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('Galerie d\'images et lightbox', () => {
+    beforeEach(() => {
+      mockMarqueurStore.marqueurActif = {
+        properties: {
+          id: '1',
+          titre: 'Titre de test',
+          type: 'Studio',
+          description: 'Description de test',
+          adresse: '123 Rue Test, Québec',
+          temoignage: 'Témoignage de test',
+          createdByName: 'Utilisateur Test',
+          images: [
+            { publicId: 'img1', url: 'https://example.com/image1.jpg' },
+            { publicId: 'img2', url: 'https://example.com/image2.jpg' },
+            { publicId: 'img3', url: 'https://example.com/image3.jpg' }
+          ],
+          comments: []
+        },
+        geometry: {
+          coordinates: [-71.2082, 46.8139]
+        }
+      }
+    })
+
+    it('affiche les images dans l\'onglet Images', async () => {
+      wrapper = mountComponent()
+      
+      // Changer vers l'onglet Images
+      const buttons = wrapper.findAll('.panel__menu button')
+      const imagesButton = buttons[1]
+      await imagesButton.trigger('click')
+      await wrapper.vm.$nextTick()
+      
+      const images = wrapper.findAll('.panel__images')
+      expect(images).toHaveLength(3)
+      
+      // Vérifier que les images ont les bonnes sources
+      expect(images[0].attributes('src')).toBe('https://example.com/image1.jpg')
+      expect(images[1].attributes('src')).toBe('https://example.com/image2.jpg')
+      expect(images[2].attributes('src')).toBe('https://example.com/image3.jpg')
+    })
+
+    it('ouvre la lightbox au clic sur une image', async () => {
+      wrapper = mountComponent()
+      
+      // Changer vers l'onglet Images
+      const buttons = wrapper.findAll('.panel__menu button')
+      const imagesButton = buttons[1]
+      await imagesButton.trigger('click')
+      await wrapper.vm.$nextTick()
+      
+      // Cliquer sur la deuxième image (index 1)
+      const secondImage = wrapper.findAll('.panel__images')[1]
+      await secondImage.trigger('click')
+      
+      // Vérifier que la lightbox est ouverte avec la bonne image
+      expect(mockLightbox.openLightbox).toHaveBeenCalledWith([
+        { publicId: 'img1', url: 'https://example.com/image1.jpg' },
+        { publicId: 'img2', url: 'https://example.com/image2.jpg' },
+        { publicId: 'img3', url: 'https://example.com/image3.jpg' }
+      ], 1)
+      expect(mockLightbox.isOpen).toBe(true)
+      expect(mockLightbox.currentIndex).toBe(1)
+    })
+
+    it('affiche aucune image quand il n\'y a pas d\'images', async () => {
+      mockMarqueurStore.marqueurActif.properties.images = []
+      wrapper = mountComponent()
+      
+      // Changer vers l'onglet Images
+      const buttons = wrapper.findAll('.panel__menu button')
+      const imagesButton = buttons[1]
+      await imagesButton.trigger('click')
+      await wrapper.vm.$nextTick()
+      
+      expect(wrapper.findAll('.panel__images')).toHaveLength(0)
+    })
+
+    it('gère le cas où la propriété images est undefined', async () => {
+      mockMarqueurStore.marqueurActif.properties.images = undefined
+      wrapper = mountComponent()
+      
+      // Changer vers l'onglet Images
+      const buttons = wrapper.findAll('.panel__menu button')
+      const imagesButton = buttons[1]
+      await imagesButton.trigger('click')
+      await wrapper.vm.$nextTick()
+      
+      expect(wrapper.findAll('.panel__images')).toHaveLength(0)
+    })
+
+    it('ferme la lightbox correctement', async () => {
+      wrapper = mountComponent()
+      
+      // Changer vers l'onglet Images et ouvrir la lightbox
+      const buttons = wrapper.findAll('.panel__menu button')
+      const imagesButton = buttons[1]
+      await imagesButton.trigger('click')
+      await wrapper.vm.$nextTick()
+      
+      const firstImage = wrapper.findAll('.panel__images')[0]
+      await firstImage.trigger('click')
+      
+      expect(mockLightbox.isOpen).toBe(true)
+      
+      // Fermer la lightbox
+      mockLightbox.closeLightbox()
+      
+      expect(mockLightbox.isOpen).toBe(false)
+    })
   })
 
   describe('Cas de limite et erreurs', () => {
