@@ -26,7 +26,6 @@ const emit = defineEmits(['close', 'marqueur-added', 'locate-address']);
 const marqueurStore = useMarqueurStore();
 
 const files = ref([]);
-const adresse = ref('')
 const suggestions = ref([])
 const showSuggestions = ref(false)
 
@@ -297,7 +296,7 @@ async function locateFromAddress() {
 }
 
 async function onAdresseInput(value) {
-  adresse.value = value
+  form.value.adresse = value
 
   if (!value || value.length < 3) {
     suggestions.value = []
@@ -306,7 +305,7 @@ async function onAdresseInput(value) {
   }
 
   try {
-    const results = await fetchAdresseSuggestions(adresse.value)
+    const results = await fetchAdresseSuggestions(form.value.adresse)
     suggestions.value = results
     showSuggestions.value = results.length > 0
   } catch (err) {
@@ -314,6 +313,87 @@ async function onAdresseInput(value) {
     suggestions.value = []
     showSuggestions.value = false
   }
+}
+
+/**
+ * Gère la sélection d’une suggestion d’adresse dans la liste déroulante.
+ *
+ * Cette fonction :
+ *  - Met à jour le champ d’adresse (`adresse.value`) avec le libellé choisi,
+ *  - Convertit les coordonnées (`lat`, `lng`) de la suggestion en nombres,
+ *  - Met à jour les valeurs réactives `latitude` et `longitude`,
+ *  - Émet l’événement `locate-from-address` vers le composant parent afin de centrer la carte sur l’adresse sélectionnée,
+ *  - Vide et masque la liste des suggestions.
+ *
+ * @function selectSuggestion
+ * @param {Object} item - L’objet représentant la suggestion sélectionnée.
+ * @param {string} item.label - Le texte affiché dans la suggestion.
+ * @param {number|string} [item.lat] - La latitude associée à la suggestion.
+ * @param {number|string} [item.lng] - La longitude associée à la suggestion.
+ * @returns {void}
+ *
+ * @emits locate-from-address
+ */
+function selectSuggestion(item) {
+  // on met le joli label dans le champ texte
+  form.value.adresse = item.label
+
+  if (item && item.lat != null && item.lng != null) {
+    const lat = Number(item.lat)
+    const lng = Number(item.lng)
+
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+      form.value.latitude = lat
+      form.value.longitude = lng
+
+      emit('locate-from-address', { lat, lng })
+    }
+  }
+
+  showSuggestions.value = false
+  suggestions.value = []
+}
+
+function formatSuggestion(item) {
+  const a = (item.raw && item.raw.address) ? item.raw.address : {}
+
+  const ligne1 = [
+    a.house_number,
+    a.road
+  ].filter(Boolean).join(' ')
+
+  const quartier =
+    a.suburb ||
+    a.city_district ||
+    a.neighbourhood
+
+  const ville =
+    a.city ||
+    a.town ||
+    a.village ||
+    a.municipality
+
+  const ligne2 = [
+    quartier,
+    ville,
+    a.state,
+    a.country
+  ].filter(Boolean).join(', ')
+
+  return [ligne1, ligne2].filter(Boolean).join(' – ')
+}
+
+function hideSuggestions() {
+  // On laisse d'abord les autres handlers (selectSuggestion) se déclencher
+  setTimeout(() => {
+    // Si le focus est encore dans la zone d’adresse, on NE cache PAS
+    const active = document.activeElement
+    if (active && active.closest && active.closest('.adresse-wrapper')) {
+      return
+    }
+
+    showSuggestions.value = false
+  }, 100)
 }
 </script>
 
@@ -340,19 +420,36 @@ async function onAdresseInput(value) {
                     </div>
 
                     <div class="form-group">
-                        <label for="adresse">Adresse</label>
+                      <label for="adresse">Adresse</label>
+                      <div class="adresse-wrapper" @mousedown.stop>
 
+                      
                         <input 
                           type="text" 
                           id="adresse" 
                           v-model.trim="form.adresse" 
-                          placeholder="123 Rue Saint-Jean, Québec, QC, Canada" 
-                          
+                          placeholder="123 Rue Saint-Jean, Vieux-Québec, Québec, Canada" 
+                          @input="onAdresseInput($event.target.value)"
+                          @focus="adresse && suggestions.length && (showSuggestions = true)"
+                          @blur="hideSuggestions"
                           class="form-inputText"
                           />
-                        <span class="error" v-if="formErrors.adresse">{{ formErrors.adresse }}</span>
+                          <ul
+                            v-if="showSuggestions && suggestions.length"
+                            class="adresse-suggestions"
+                          >
+                            <li
+                              v-for="item in suggestions"
+                              :key="item.place_id"
+                              @mousedown.prevent="selectSuggestion(item)"
+                            >
+                              {{ formatSuggestion(item)}}
+                            </li>
+                          </ul>
+                      </div>
+                      <span class="error" v-if="formErrors.adresse">{{ formErrors.adresse }}</span>
 
-                        <button type="button" class="btn-locate" @click="locateFromAddress">Localiser</button>
+                      <button type="button" class="btn-locate" @click="locateFromAddress">Localiser</button>
                     </div>
 
                     <div class="form-group">
@@ -415,22 +512,27 @@ async function onAdresseInput(value) {
   position: absolute;
   top: 12px;
   bottom: 12px;
+  right: 12px;
   width: 320px;
+
+  display: flex;
+  flex-direction: column;
+
   background: #f2f2f2;
   color: #111;
   border: 2px solid #4CAF50;
   border-radius: 4px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  right: 12px;
+  z-index: 1000;
 }
+
+/* ---------- Header du panneau ---------- */
 
 .panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   padding: 10px 12px;
   font-weight: 700;
   border-bottom: 1px solid #ddd;
@@ -444,12 +546,14 @@ async function onAdresseInput(value) {
 .panel__close {
   width: 28px;
   height: 28px;
+  line-height: 22px;
+  font-size: 18px;
+
   border-radius: 4px;
   border: 2px solid #4CAF50;
   background: white;
   color: #4CAF50;
-  line-height: 22px;
-  font-size: 18px;
+
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -459,20 +563,25 @@ async function onAdresseInput(value) {
   color: white;
 }
 
+/* ---------- Corps du panneau ---------- */
+
 .panel__body {
-  padding: 12px 12px 0 12px;
-  overflow: auto;
   flex: 1;
+
+  padding: 12px 12px 0 12px;
   display: flex;
   flex-direction: column;
+  overflow: auto;
 }
 
-/* Formulaire */
+/* ---------- Formulaire ---------- */
+
 .form {
+  flex: 1;
+
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 1;
 }
 
 .form-group {
@@ -489,7 +598,10 @@ async function onAdresseInput(value) {
   color: #D8000C;
 }
 
+/* Champs */
+
 .form-inputText {
+  width: 100%;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -512,23 +624,29 @@ async function onAdresseInput(value) {
   background: white;
 }
 
+/* Erreurs */
+
 .error {
   color: #D8000C;
   font-size: 13px;
   margin-top: 4px;
 }
 
+/* ---------- Boutons ---------- */
+
 .btn-submit {
+  margin-top: 12px;
+  padding: 10px;
+
   background-color: white;
   color: #4CAF50;
-  padding: 10px;
   border: 2px solid #4CAF50;
   border-radius: 4px;
+
   cursor: pointer;
   font-size: 16px;
   font-weight: 600;
   transition: all 0.3s ease;
-  margin-top: 12px;
 }
 
 .btn-submit:hover {
@@ -537,16 +655,18 @@ async function onAdresseInput(value) {
 }
 
 .btn-locate {
+  margin-top: 12px;
+  padding: 8px;
+
   background-color: white;
   color: #4CAF50;
-  padding: 8px;
   border: 2px solid #4CAF50;
   border-radius: 4px;
+
   cursor: pointer;
   font-size: 16px;
   font-weight: 600;
   transition: all 0.3s ease;
-  margin-top: 12px;
 }
 
 .btn-locate:hover {
@@ -554,16 +674,21 @@ async function onAdresseInput(value) {
   color: white;
 }
 
+/* Footer sticky du formulaire */
+
 .form-submit {
   position: sticky;
   bottom: 0;
-  background: #f2f2f2;
+
   padding: 12px 0;
   margin-top: auto;
+
+  background: #f2f2f2;
   border-top: 1px solid #ddd;
 }
 
-/* Transition simple (fade + léger slide) */
+/* ---------- Transitions du panneau ---------- */
+
 .panel-fade-enter-active,
 .panel-fade-leave-active {
   transition: opacity .18s ease, transform .18s ease;
@@ -579,4 +704,41 @@ async function onAdresseInput(value) {
 .panel.left.panel-fade-leave-to {
   transform: translateX(-8px);
 }
+
+/* ---------- Suggestions d’adresse ---------- */
+
+.adresse-wrapper {
+  position: relative;
+}
+
+.adresse-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+
+  margin-top: 4px;
+  padding: 4px 0;
+
+  max-height: 220px;
+  overflow-y: auto;
+
+  list-style: none;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+  z-index: 9999;
+}
+
+.adresse-suggestions li {
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.adresse-suggestions li:hover {
+  background: #f3f4f6;
+}
+
 </style>

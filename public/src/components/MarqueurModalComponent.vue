@@ -136,7 +136,7 @@ function resetErrors() {
  * @returns {void}
  */
 function confirmClose() {
-  if(confirm("Les modifications non validée seront perdues. Voulez-vous continuer ?")) {
+  if(confirm("Toutes modifications seront perdues, voulez-vous continuer ?")) {
     resetErrors()
     emit('fermer')
   }
