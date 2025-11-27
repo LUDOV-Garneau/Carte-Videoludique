@@ -13,7 +13,6 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
-
 const DefaultIcon = L.icon({
   iconUrl: markerIcon,
   iconRetinaUrl: markerIcon2x,
@@ -42,118 +41,10 @@ const selectedMarqueur = ref(null);
 const currentMarqueur = ref(null);
 const currentAdresse = ref('');
 
-
 const QUEBEC_BOUND = L.latLngBounds(
   [40, -90],
   [63, -50]   
 )
-
-function openCreatePanel() {
-  createPanelOpen.value = true
-  const container = map?.getContainer?.()
-  if(container?.style) container.style.cursor = 'crosshair'
-  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none'
-}
-function closeCreatePanel() {
-  createPanelOpen.value = false
-  const container = map?.getContainer?.()
-  if (container?.style) container.style.cursor = 'grab'
-  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = ''
-  if (currentMarqueur.value) {
-    map.removeLayer(currentMarqueur.value)
-    currentMarqueur.value = null
-  }
-  latitude.value = ''
-  longitude.value = ''
-  currentAdresse.value = ''
-}
-
-function openInfoPanel() {
-  if (createPanelOpen.value) closeCreatePanel();
-  infoPanelOpen.value = true;
-  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none';
-}
-function closeInfoPanel() {
-  infoPanelOpen.value = false;
-  selectedMarqueur.value = null;
-  marqueurStore.marqueurActif = null;
-  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = '';
-}
-
-async function handleMarqueurAdded() {
-	await afficherMarqueurs();
-	closeCreatePanel();
-}
-async function handleMarqueurDeleted() {
-  await afficherMarqueurs();
-  closeInfoPanel();
-}
-
-function handlelocateFromAddress({ lat, lng }) {
-	if (currentMarqueur.value) {
-		map.removeLayer(currentMarqueur.value);
-		currentMarqueur.value = null;
-	}
-
-	currentMarqueur.value = L.marker({lat, lng})
-		.addTo(map)
-		.bindPopup('Adresse localisée')
-		.openPopup();
-
-	latitude.value = lat.toFixed(5);
-	longitude.value = lng.toFixed(5);
-
-	map.setView({lat, lng}, 15);
-}
-
-async function afficherMarqueurs() {
-  try {
-    await marqueurStore.getMarqueurs();
-    marqueurs.value.forEach(marqueur => {
-      map.removeLayer(marqueur);
-    });
-    marqueurs.value = [];
-
-    marqueurStore.marqueurs.forEach(marqueurData => {
-      if (marqueurData.geometry && marqueurData.geometry.coordinates) {
-        const [lat, lng] = marqueurData.geometry.coordinates;
-        const properties = marqueurData.properties;
-
-        const marqueur = L.marker([lat, lng]);
-        if (properties.status === 'pending') marqueur.setOpacity(0.5);
-        marqueur.addTo(map);
-
-        marqueur.properties = properties;
-
-        marqueur.on('click', (e) => {
-          selectedMarqueur.value = marqueur;
-          marqueurStore.getMarqueur(marqueurData.properties.id);
-          openInfoPanel();
-
-          map.setView([lat, lng], Math.max(map.getZoom(), 15));
-        });
-
-        marqueurs.value.push(marqueur);
-      }
-    });
-    console.log(map.Marker);
-  } catch (err) {
-    console.error('afficherMarqueurs error:', err);
-  }
-}
-
-defineExpose({
-  afficherMarqueurs,
-  handlelocateFromAddress,
-
-  latitude,
-  longitude,
-  marqueurs,
-  currentMarqueur,
-  selectedMarqueur,
-  map,
-  focusOn
-});
 
 /**
  * Initialise la carte Leaflet et la centre sur Montréal.
@@ -187,11 +78,6 @@ function initMap() {
   .setView([52.5, -71.0], 5);
 }
 
-function focusOn(lat, lng) {
-  if (!map) return
-  map.flyTo([lat, lng], 16)
-}
-
 /**
  * Ajoute la couche de tuiles (fond de carte) à la carte Leaflet.
  *
@@ -209,6 +95,20 @@ function addTileLayer() {
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     subdomains: 'abcd'
   }).addTo(map)
+}
+
+/**
+ * Centre la carte sur les coordonnées spécifiées avec une animation fluide.
+ *
+ * @function focusOn
+ * @param {number} lat - Latitude du point à centrer.
+ * @param {number} lng - Longitude du point à centrer.
+ * @param {number} [zoom=16] - Niveau de zoom optionnel (par défaut 16).
+ * @returns {void}
+ */
+function focusOn(lat, lng) {
+  if (!map) return
+  map.flyTo([lat, lng], 16)
 }
 
 /**
@@ -311,6 +211,152 @@ async function verifyAdressInQuebec(lat, lng) {
 }
 
 /**
+ * Affiche tous les marqueurs sur la carte Leaflet.
+ *
+ * Cette fonction :
+ *  - Récupère la liste des marqueurs depuis le store (`marqueurStore`),
+ *  - Supprime les anciens marqueurs de la carte,
+ *  - Crée et ajoute un nouveau `L.marker` pour chaque entrée de données,
+ *  - Configure l'opacité selon le statut (`pending` = semi-transparent),
+ *  - Attache un événement de clic sur chaque marqueur pour :
+ *      → le définir comme marqueur sélectionné (`selectedMarqueur`),
+ *      → charger ses données détaillées via `marqueurStore.getMarqueur(id)`,
+ *      → ouvrir le panneau d'information (`openInfoPanel()`),
+ *      → et recentrer la carte sur le marqueur.
+ * 
+ * @async
+ * @function afficherMarqueurs
+ * @returns {Promise<void>} Promesse résolue lorsque les marqueurs sont affichés.
+ * 
+ */
+async function afficherMarqueurs() {
+  try {
+    await marqueurStore.getMarqueurs();
+    marqueurs.value.forEach(marqueur => {
+      map.removeLayer(marqueur);
+    });
+    marqueurs.value = [];
+
+    marqueurStore.marqueurs.forEach(marqueurData => {
+      if (marqueurData.geometry && marqueurData.geometry.coordinates) {
+        const [lat, lng] = marqueurData.geometry.coordinates;
+        const properties = marqueurData.properties;
+
+        const marqueur = L.marker([lat, lng]);
+        if (properties.status === 'pending') marqueur.setOpacity(0.5);
+        marqueur.addTo(map);
+
+        marqueur.properties = properties;
+
+        marqueur.on('click', (e) => {
+          selectedMarqueur.value = marqueur;
+          marqueurStore.getMarqueur(marqueurData.properties.id);
+          openInfoPanel();
+
+          map.setView([lat, lng], Math.max(map.getZoom(), 15));
+        });
+
+        marqueurs.value.push(marqueur);
+      }
+    });
+    console.log(map.Marker);
+  } catch (err) {
+    console.error('afficherMarqueurs error:', err);
+  }
+}
+
+/**
+ * Ouvre le panneau d'ajout d'un marqueur
+ */
+function openCreatePanel() {
+  createPanelOpen.value = true
+  const container = map?.getContainer?.()
+  if(container?.style) container.style.cursor = 'crosshair'
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none'
+}
+
+/**
+ * Ferme le panneau d'ajout d'un marqueur 
+ * et efface le contenu des champs si nécéssaire
+ */
+function closeCreatePanel() {
+  createPanelOpen.value = false
+  const container = map?.getContainer?.()
+  if (container?.style) container.style.cursor = 'grab'
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = ''
+  if (currentMarqueur.value) {
+    map.removeLayer(currentMarqueur.value)
+    currentMarqueur.value = null
+  }
+  latitude.value = ''
+  longitude.value = ''
+  currentAdresse.value = ''
+}
+
+/**
+ * Ouvre le panneau d'information d'un marqueur.
+ * Ferme le panneau d'ajout s'il est ouvert et masque le bouton d'ajout.
+ */
+function openInfoPanel() {
+  if (createPanelOpen.value) closeCreatePanel();
+  infoPanelOpen.value = true;
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none';
+}
+
+/**
+ * Ferme le panneau d'information d'un marqueur.
+ * Réinitialise la sélection et réaffiche le bouton d'ajout.
+ */
+function closeInfoPanel() {
+  infoPanelOpen.value = false;
+  selectedMarqueur.value = null;
+  marqueurStore.marqueurActif = null;
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = '';
+}
+
+/**
+ * Gère la mise à jour de la carte après l'ajout d'un marqueur.
+ * Recharge les marqueurs, nettoie le marqueur temporaire
+ * et ferme le panneau d'ajout.
+ */
+async function handleMarqueurAdded() {
+	await afficherMarqueurs();
+	closeCreatePanel();
+}
+
+/**
+ * Gère la mise à jour de la carte après la suppréssion d'un marqueur.
+ * Recharge les marqueurs, nettoie le marqueur temporaire
+ * et ferme le panneau d'ajout.
+ */
+async function handleMarqueurDeleted() {
+  await afficherMarqueurs();
+  closeInfoPanel();
+}
+
+/**
+ * Localise une adresse sur la carte à partir de ses coordonnées.
+ * Supprime l'ancien marqueur, ajoute le nouveau et recadre la carte.
+ * @param {{ lat: number, lng: number }} coords
+ */
+function handlelocateFromAddress({ lat, lng }) {
+	if (currentMarqueur.value) {
+		map.removeLayer(currentMarqueur.value);
+		currentMarqueur.value = null;
+	}
+
+	currentMarqueur.value = L.marker({lat, lng})
+		.addTo(map)
+		.bindPopup('Adresse localisée')
+		.openPopup();
+
+	latitude.value = lat.toFixed(5);
+	longitude.value = lng.toFixed(5);
+
+	map.setView({lat, lng}, 15);
+}
+
+/**
  * Ajoute un contrôle personnalisé à la carte Leaflet pour permettre
  * l’ouverture du panneau d’ajout de marqueur.
  *
@@ -351,8 +397,6 @@ function addCustomControl() {
   map.addControl(controlAjoutMarqueur)
 }
 
-
-
 /**
  * Configure les raccourcis clavier globaux liés à la carte.
  *
@@ -371,7 +415,6 @@ function setupKeyboardShortcuts() {
   map.__onKey = onKey
 }
 
-
 onMounted(async() => {
   initMap()
   addTileLayer()
@@ -388,13 +431,26 @@ onUnmounted(() => {
     map.remove()
   }
 });
+
+defineExpose({
+  afficherMarqueurs,
+  handlelocateFromAddress,
+
+  latitude,
+  longitude,
+  marqueurs,
+  currentMarqueur,
+  selectedMarqueur,
+  map,
+  focusOn
+});
 </script>
+
 
 <template>
 
   <div class="map" ref="mapEl"></div>
 
-	<!-- Composant panel d'ajout de marqueur -->
 	<AddMarqueurPanel
 		:is-open="createPanelOpen"
 		:coordinates="{ lat: latitude, lng: longitude }"
