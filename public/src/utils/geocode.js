@@ -159,7 +159,7 @@ async function fetchAdresseSuggestions(query) {
     q: fullQuery,
     format: 'json',
     addressdetails: '1',
-    limit: '5',
+    limit: '10',
     countrycodes: 'ca',
   })
 

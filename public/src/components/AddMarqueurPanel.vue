@@ -4,7 +4,7 @@ import { useMarqueurStore } from '../stores/useMarqueur.js';
 import AddImage from './AddImage.vue';
 import * as utils from '../utils/utils.js';
 import * as cloudinary from '../utils/cloudinary.js';
-import { geocodeAddress } from '../utils/geocode.js';
+import { geocodeAddress, fetchAdresseSuggestions} from '../utils/geocode.js';
 
 const props = defineProps({
   isOpen: {
@@ -26,6 +26,9 @@ const emit = defineEmits(['close', 'marqueur-added', 'locate-address']);
 const marqueurStore = useMarqueurStore();
 
 const files = ref([]);
+const adresse = ref('')
+const suggestions = ref([])
+const showSuggestions = ref(false)
 
 const TYPES = [
   'Écoles et instituts de formation',
@@ -292,6 +295,26 @@ async function locateFromAddress() {
     formErrors.value.adresse = 'Adresse introuvable.'
   }
 }
+
+async function onAdresseInput(value) {
+  adresse.value = value
+
+  if (!value || value.length < 3) {
+    suggestions.value = []
+    showSuggestions.value = false
+    return
+  }
+
+  try {
+    const results = await fetchAdresseSuggestions(adresse.value)
+    suggestions.value = results
+    showSuggestions.value = results.length > 0
+  } catch (err) {
+    console.error('Erreur fetchAdresseSuggestions :', err)
+    suggestions.value = []
+    showSuggestions.value = false
+  }
+}
 </script>
 
 <template>
@@ -324,6 +347,7 @@ async function locateFromAddress() {
                           id="adresse" 
                           v-model.trim="form.adresse" 
                           placeholder="123 Rue Saint-Jean, Québec, QC, Canada" 
+                          
                           class="form-inputText"
                           />
                         <span class="error" v-if="formErrors.adresse">{{ formErrors.adresse }}</span>

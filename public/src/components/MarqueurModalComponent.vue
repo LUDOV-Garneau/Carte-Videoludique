@@ -135,9 +135,11 @@ function resetErrors() {
  * @function close
  * @returns {void}
  */
-function close() {
-  resetErrors()
-  emit('fermer')
+function confirmClose() {
+  if(confirm("Les modifications non validée seront perdues. Voulez-vous continuer ?")) {
+    resetErrors()
+    emit('fermer')
+  }
 }
 
 /**
@@ -238,7 +240,6 @@ async function valider() {
       temoignage: temoignage.value.trim(),   
     },
 
-    // include latitude/longitude when available so backend can update geometry
     lat: latitude.value,
     lng: longitude.value,
 
@@ -350,6 +351,11 @@ function formatSuggestion(item) {
     a.road
   ].filter(Boolean).join(' ')
 
+  const quartier =
+    a.suburb ||
+    a.city_district ||
+    a.neighbourhood
+
   const ville =
     a.city ||
     a.town ||
@@ -357,13 +363,26 @@ function formatSuggestion(item) {
     a.municipality
 
   const ligne2 = [
+    quartier,
     ville,
     a.state,
-    a.postcode,
     a.country
   ].filter(Boolean).join(', ')
 
   return [ligne1, ligne2].filter(Boolean).join(' – ')
+}
+
+function hideSuggestions() {
+  // On laisse d'abord les autres handlers (selectSuggestion) se déclencher
+  setTimeout(() => {
+    // Si le focus est encore dans la zone d’adresse, on NE cache PAS
+    const active = document.activeElement
+    if (active && active.closest && active.closest('.adresse-wrapper')) {
+      return
+    }
+
+    showSuggestions.value = false
+  }, 100)
 }
 
 /**
@@ -387,7 +406,7 @@ onMounted(async () => {
 
 
 <template>
-  <div class="overlay" @click.self="close" @keydown="onKeydown" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="overlay"  @keydown="onKeydown" tabindex="-1" role="dialog" aria-modal="true">
     <div class="modal-box" role="document" aria-labelledby="dlg-title">
       <header class="modal-header">
         <h2 id="dlg-title">Modifier le marqueur</h2>
@@ -481,7 +500,7 @@ onMounted(async () => {
         </div>
 
         <footer class="modal-actions">
-          <button type="button" class="btn btn-muted" @click="close">Annuler</button>
+          <button type="button" class="btn btn-muted" @click="confirmClose">Annuler</button>
           <button type="submit" class="btn btn-primary">Valider</button>
         </footer>
       </form>
