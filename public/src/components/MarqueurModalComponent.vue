@@ -1,10 +1,12 @@
 <script setup>
-import { defineProps, defineEmits, ref, watch, onMounted, nextTick, computed } from 'vue'
+import { defineProps, defineEmits, ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import AddImage from './AddImage.vue'
+import { useBodyScroll } from '../composables/useBodyScroll.js'
 import { fetchAdresseSuggestions, geocodeAddress } from '../utils/geocode'
 
 const props = defineProps({
-  marqueur: { type: Object, required: true }
+  marqueur: { type: Object, required: true },
+  isOpen: { type: Boolean, required: true }
 })
 
 const emit = defineEmits(['fermer', 'valider', 'locate-from-address'])
@@ -20,7 +22,6 @@ const latitude = ref(null)
 const longitude = ref(null)
 
 const files = ref([])
-const imagePreview = ref('')
 
 const TYPES = [
   'Écoles et instituts de formation',
@@ -36,6 +37,15 @@ const TYPES = [
 ]
 
 const descCount = ref(0)
+
+const canDisplay = computed(() => {
+  return props.marqueur != null && props.isOpen
+})
+
+const { lockScrollWhen } = useBodyScroll()
+
+// Gérer le verrouillage du scroll à l'ouverture et fermeture
+lockScrollWhen(canDisplay)
 
 /**
  * Met à jour le compteur de caractères de la description.
@@ -376,19 +386,21 @@ function hideSuggestions() {
  * Ferme la fenêtre modale lorsqu'une touche du clavier est pressée.
  *
  * - Vérifie si la touche pressée est `Escape`.
- * - Si oui, déclenche la fonction `close()` pour fermer la modale.
+ * - Si oui, déclenche la fonction `confirmClose()` pour fermer la modale.
  *
  * @param e Événement clavier déclenché lors de l'appui d'une touche
  * 
  */
 function onKeydown(e) {
-  if (e.key === 'Escape') close()
+  if (e.key === 'Escape') confirmClose()
 }
 
 onMounted(async () => {
   await nextTick()
   titreEl.value?.focus?.()
 })
+
+// Le nettoyage sera géré automatiquement par lockScrollWhen
 </script>
 
 
