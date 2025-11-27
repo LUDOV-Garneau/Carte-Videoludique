@@ -274,7 +274,7 @@ async function locateFromAddress() {
   if (!q) return
 
   try {
-    const pos = await geocodeAddress(q)
+    const pos = await geocodeAddress({ address: q })
 
     if (!pos) {
       console.warn(`Aucune position trouvée pour "${q}"`)
