@@ -462,27 +462,22 @@ onMounted(async () => {
               <p v-if="descriptionValidation" class="error-message">{{ descriptionMessage }}</p>
               <span class="char-count">{{ descCount }}/280</span>
             </div>
-        </div>
-
-        <div class="form-control form-col-2">
-          <label for="temoignageMarqueur">Témoignage</label>
-          <textarea id="temoignageMarqueur" v-model.trim="temoignage" rows="3" placeholder="Témoignage (optionnel)"></textarea>
-        </div>
-
-        <div class="form-control form-col-2">
-          <label>Image</label>
-          <div class="image-row">
-            <AddImage
-              v-model="files"
-              :initial-urls="initialImageUrls"
-              @change="onImagesChange"
-            />
           </div>
-          <img
-            v-if="imagePreview"
-            :src="imagePreview"
-            alt="Aperçu"
-            class="image-preview"/>
+
+          <div class="form-control form-col-2">
+            <label for="temoignageMarqueur">Témoignage</label>
+            <textarea id="temoignageMarqueur" v-model.trim="temoignage" rows="3" placeholder="Témoignage (optionnel)"></textarea>
+          </div>
+
+          <div class="form-control form-col-2">
+            <label>Image</label>
+            <div class="image-row">
+              <AddImage
+                v-model="files"
+                :initial-urls="initialImageUrls"
+                @change="onImagesChange"
+              />
+            </div>
           </div>
         </div>
 
