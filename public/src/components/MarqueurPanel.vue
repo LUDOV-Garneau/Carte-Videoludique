@@ -8,7 +8,7 @@ import { useLightbox } from '../composables/useLightbox.js';
 import { API_URL } from '../config';
 // import { svg } from 'leaflet';
 import MarqueurModal from './MarqueurModalComponent.vue';
-import ImageLightBox from './ImageLightBox.vue';
+import ImageLightbox from './ImageLightbox.vue';
 
 // props and emits
 const props = defineProps({
@@ -275,7 +275,7 @@ async function sendComment() {
     	@fermer="isEditModalOpen = false"
     	@valider="handleEditRequestSubmit"
   	/>
-	<ImageLightBox
+	<ImageLightbox
 		v-if="lightbox.isOpen"
 		:images="lightbox.images.value"
 		v-model:currentIndex="lightbox.currentIndex.value"
