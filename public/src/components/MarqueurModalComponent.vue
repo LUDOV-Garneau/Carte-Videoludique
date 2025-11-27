@@ -1,20 +1,14 @@
 <script setup>
-import { defineProps, defineEmits, ref, watch, onMounted, nextTick, computed} from 'vue'
+import { defineProps, defineEmits, ref, watch, onMounted, nextTick, computed } from 'vue'
 import AddImage from './AddImage.vue'
 import { fetchAdresseSuggestions, geocodeAddress } from '../utils/geocode'
 
-//#region Props & Emits
 const props = defineProps({
   marqueur: { type: Object, required: true }
 })
 
-
 const emit = defineEmits(['fermer', 'valider', 'locate-from-address'])
 
-
-//#endregion
-
-//#region Champs du formulaire
 const titre = ref('')
 const type = ref('')
 const adresse = ref('')
@@ -25,9 +19,6 @@ const temoignage = ref('')
 const latitude = ref(null)
 const longitude = ref(null)
 
-//#endregion
-
-//#region Images (AddImage) et compteurs
 const files = ref([])
 const imagePreview = ref('')
 
@@ -45,20 +36,30 @@ const TYPES = [
 ]
 
 const descCount = ref(0)
+
+/**
+ * Met à jour le compteur de caractères de la description.
+ *
+ * Cette fonction calcule la longueur actuelle du texte
+ * saisi dans le champ `description` et met à jour la
+ * valeur réactive `descCount` en conséquence.
+ *
+ * Elle est généralement appelée :
+ *  - Lors d’un événement `input` sur le champ description.
+ *  - Pour afficher en temps réel le nombre de caractères restants ou utilisés.
+ *
+ * @function updateDescCount
+ * @returns {void}
+ */
 function updateDescCount() {
   descCount.value = description.value.length
 }
-//#endregion
 
-
-//#region Refs pour focus
 const titreEl = ref(null)
 const typeEl = ref(null)
 const adresseEl = ref(null)
 const descriptionEl = ref(null)
-//#endregion
 
-//#region États de validation & messages
 const titreValidation = ref(false)
 const typeValidation = ref(false)
 const adresseValidation = ref(false)
@@ -68,9 +69,6 @@ const titreMessage = ref('')
 const typeMessage = ref('')
 const adresseMessage = ref('')
 const descriptionMessage = ref('')
-//#endregion
-
-//#region Images initiales
 
 const initialImageUrls = computed(() => {
   const images = props.marqueur?.properties?.images ?? []
@@ -78,9 +76,7 @@ const initialImageUrls = computed(() => {
     .filter(img => img && img.url)
     .map(img => img.url)
 })
-//#endregion
 
-//#region Hydratation des props
 const hydrateFromProps = () => {
   const p = props.marqueur?.properties ?? {}
   titre.value = p.titre ?? ''
@@ -91,17 +87,28 @@ const hydrateFromProps = () => {
 }
 hydrateFromProps()
 
-//#endregion
-
-//#region Watchers
 watch(
   () => props.marqueur,
-  () => { hydrateFromProps(); resetErrors(); },
+  () => { hydrateFromProps(); resetErrors() },
   { immediate: true }
 )
-//#endregion
 
-//#region Helpers erreurs & fermeture
+/**
+ * Réinitialise tous les indicateurs et messages d’erreur de validation du formulaire.
+ *
+ * Cette fonction :
+ *  - Réinitialise les indicateurs de validation (`titreValidation`, `typeValidation`, etc.) à `false`,
+ *  - Vide les messages d’erreur associés (`titreMessage`, `typeMessage`, etc.),
+ *  - Sert à nettoyer l’état du formulaire avant une nouvelle validation ou lors de la fermeture de la fenêtre.
+ *
+ * Elle est généralement appelée :
+ *  - Avant une nouvelle validation (`valider()`),
+ *  - Lors de la fermeture de la modale (`close()`),
+ *  - Ou lors du rechargement d’un marqueur (`watch(props.marqueur)`).
+ *
+ * @function resetErrors
+ * @returns {void}
+ */
 function resetErrors() {
   titreValidation.value = false
   typeValidation.value = false
@@ -113,13 +120,26 @@ function resetErrors() {
   descriptionMessage.value = ''
 }
 
+/**
+ * Ferme la fenêtre modale d’édition ou d’ajout de marqueur.
+ *
+ * Cette fonction :
+ *  - Réinitialise les erreurs de validation via {@link resetErrors},
+ *  - Émet l’événement `fermer` vers le composant parent pour indiquer
+ *    que la fenêtre doit être fermée.
+ *
+ * Elle est généralement appelée :
+ *  - Lors du clic sur le bouton « Fermer »,
+ *  - Ou lorsqu’une touche `Escape` est pressée (via `onKeydown`).
+ *
+ * @function close
+ * @returns {void}
+ */
 function close() {
   resetErrors()
   emit('fermer')
 }
-//#endregion
 
-//#region Gestion des images
 /**
 * Gère le changement des images sélectionnées dans le composant.
 *
@@ -131,13 +151,28 @@ function close() {
 */
 function onImagesChange(allFiles) {
   files.value = allFiles
-
 }
 
-//#endregion
-
-//#region Validation & submit
-// Valide tout d’un coup et focus le premier invalide
+/**
+ * Valide le formulaire d’édition ou d’ajout d’un marqueur avant envoi.
+ *
+ * Cette fonction :
+ *  - Réinitialise les erreurs précédentes via {@link resetErrors},
+ *  - Vérifie que tous les champs obligatoires sont remplis (`titre`, `type`, `adresse`, `description`),
+ *  - Met en évidence les champs invalides et positionne le focus sur le premier champ en erreur,
+ *  - Si la latitude/longitude sont absentes, tente de les obtenir via {@link geocodeAddress},
+ *  - Prépare un objet complet du marqueur (avec coordonnées, fichiers et propriétés),
+ *  - Émet l’événement `valider` vers le parent avec les données du marqueur validé.
+ *
+ * Elle est généralement appelée :
+ *  - Lors du clic sur le bouton **Valider / Sauvegarder** d’un panneau d’édition de marqueur.
+ *
+ * @async
+ * @function valider
+ * @returns {Promise<void>} Ne retourne rien, mais émet l’événement `valider` avec le contenu validé.
+ *
+ * @emits valider
+ */
 async function valider() {
   resetErrors()
   const invalid = []
@@ -210,8 +245,23 @@ async function valider() {
     files: files.value
   })
 }
-//#endregion
 
+/**
+ * Gère la saisie d’une adresse dans le champ de formulaire et propose des suggestions en temps réel.
+ *
+ * Cette fonction :
+ *  - Met à jour la valeur de l’adresse saisie,
+ *  - Lance une recherche de suggestions via {@link fetchAdresseSuggestions} lorsque la saisie contient au moins 3 caractères,
+ *  - Met à jour la liste `suggestions` et le booléen `showSuggestions` selon les résultats,
+ *  - Vide les suggestions si la saisie est trop courte ou en cas d’erreur réseau.
+ *
+ * Elle est appelée à chaque changement dans le champ d’adresse (`@input` ou `v-model`).
+ *
+ * @async
+ * @function onAdresseInput
+ * @param {string} value - La valeur actuelle du champ d’adresse saisie par l’utilisateur.
+ * @returns {Promise<void>} Ne retourne rien, mais met à jour les réactifs `suggestions` et `showSuggestions`.
+ */
 async function onAdresseInput(value) {
   adresse.value = value
 
@@ -232,6 +282,25 @@ async function onAdresseInput(value) {
   }
 }
 
+/**
+ * Gère la sélection d’une suggestion d’adresse dans la liste déroulante.
+ *
+ * Cette fonction :
+ *  - Met à jour le champ d’adresse (`adresse.value`) avec le libellé choisi,
+ *  - Convertit les coordonnées (`lat`, `lng`) de la suggestion en nombres,
+ *  - Met à jour les valeurs réactives `latitude` et `longitude`,
+ *  - Émet l’événement `locate-from-address` vers le composant parent afin de centrer la carte sur l’adresse sélectionnée,
+ *  - Vide et masque la liste des suggestions.
+ *
+ * @function selectSuggestion
+ * @param {Object} item - L’objet représentant la suggestion sélectionnée.
+ * @param {string} item.label - Le texte affiché dans la suggestion.
+ * @param {number|string} [item.lat] - La latitude associée à la suggestion.
+ * @param {number|string} [item.lng] - La longitude associée à la suggestion.
+ * @returns {void}
+ *
+ * @emits locate-from-address
+ */
 function selectSuggestion(item) {
   // on met le joli label dans le champ texte
   adresse.value = item.label
@@ -252,6 +321,27 @@ function selectSuggestion(item) {
   suggestions.value = []
 }
 
+/**
+ * Formate une suggestion d’adresse en une chaîne lisible pour l’affichage.
+ *
+ * Cette fonction :
+ *  - Extrait les informations pertinentes de `item.raw.address` (numéro, rue, ville, province, code postal, pays),
+ *  - Construit une représentation textuelle sur une ou deux lignes,
+ *  - Retourne une chaîne prête à être affichée dans la liste des suggestions (ex. : `123 Rue Saint-Jean – Québec, QC, Canada`).
+ *
+ * @function formatSuggestion
+ * @param {Object} item - L’objet représentant une suggestion d’adresse.
+ * @param {Object} [item.raw] - Données brutes de la suggestion provenant du service de géocodage.
+ * @param {Object} [item.raw.address] - Détails de l’adresse retournée par l’API (Nominatim).
+ * @param {string} [item.raw.address.house_number] - Numéro civique.
+ * @param {string} [item.raw.address.road] - Nom de la rue.
+ * @param {string} [item.raw.address.city] - Ville (ou équivalent).
+ * @param {string} [item.raw.address.state] - Province ou région.
+ * @param {string} [item.raw.address.postcode] - Code postal.
+ * @param {string} [item.raw.address.country] - Pays.
+ * @returns {string} Une version formatée de l’adresse (lisible et compacte).
+
+ */
 function formatSuggestion(item) {
   const a = (item.raw && item.raw.address) ? item.raw.address : {}
 
@@ -276,7 +366,6 @@ function formatSuggestion(item) {
   return [ligne1, ligne2].filter(Boolean).join(' – ')
 }
 
-//#region Gestion clavier & focus
 /**
  * Ferme la fenêtre modale lorsqu'une touche du clavier est pressée.
  *
@@ -290,13 +379,12 @@ function onKeydown(e) {
   if (e.key === 'Escape') close()
 }
 
-// Focus initial
 onMounted(async () => {
   await nextTick()
   titreEl.value?.focus?.()
 })
-//#endregion
 </script>
+
 
 <template>
   <div class="overlay" @click.self="close" @keydown="onKeydown" tabindex="-1" role="dialog" aria-modal="true">
