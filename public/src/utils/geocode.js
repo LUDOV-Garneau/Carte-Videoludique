@@ -119,7 +119,7 @@ async function reverseGeocode({ lat, lng }) {
  * const coords = await geocodeAddress({ address: '350 rue des Lilas Ouest, Québec' });
  */
 async function geocodeAddress({ address }) {
-  const query = (address || '').trim()
+  const query = (address || '')
   if (!query) return null
 
   const url = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({

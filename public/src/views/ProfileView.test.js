@@ -34,7 +34,7 @@ describe('ProfileView.vue', () => {
     const { useAuthStore } = await import('@/stores/auth')
     useAuthStore.mockReturnValue(mockAuthStore)
 
-    global.fetch = vi.fn(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve(mockResponse),
@@ -44,7 +44,7 @@ describe('ProfileView.vue', () => {
     const wrapper = mount(ProfileView)
     await flushPromises()
 
-    expect(global.fetch).toHaveBeenCalledOnce()
+    expect(globalThis.fetch).toHaveBeenCalledOnce()
     expect(wrapper.text()).toContain('Dupont')
     expect(wrapper.text()).toContain('Jean')
     expect(wrapper.text()).toContain('jean.dupont@example.com')
@@ -60,13 +60,13 @@ describe('ProfileView.vue', () => {
       isAuthenticated: false,
     })
 
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
 
     const wrapper = mount(ProfileView)
     await flushPromises()
 
     expect(wrapper.text()).toContain('Aucun utilisateur connecté.')
-    expect(global.fetch).not.toHaveBeenCalled()
+    expect(globalThis.fetch).not.toHaveBeenCalled()
   })
 
   // --- 3️⃣ Cas : Erreur API ---
@@ -74,7 +74,7 @@ describe('ProfileView.vue', () => {
     const { useAuthStore } = await import('@/stores/auth')
     useAuthStore.mockReturnValue(mockAuthStore)
 
-    global.fetch = vi.fn(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve({
         ok: false,
       })
@@ -83,7 +83,7 @@ describe('ProfileView.vue', () => {
     const wrapper = mount(ProfileView)
     await flushPromises()
 
-    expect(global.fetch).toHaveBeenCalledOnce()
+    expect(globalThis.fetch).toHaveBeenCalledOnce()
     expect(wrapper.text()).not.toContain('Dupont')
   })
 })
