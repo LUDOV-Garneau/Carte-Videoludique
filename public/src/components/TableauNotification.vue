@@ -2,7 +2,7 @@
 import { onMounted, watch } from 'vue'
 import { useEditRequestStore } from '@/stores/useEditRequest'
 import { useAuthStore } from '@/stores/auth'
-import { useCommentRequestStore } from "@/stores/useCommentRequest";
+import { useCommentRequestStore } from "@/stores/useCommentRequestStore";
 
 
 const editRequestStore = useEditRequestStore()
