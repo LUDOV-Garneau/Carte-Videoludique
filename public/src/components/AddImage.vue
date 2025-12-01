@@ -96,8 +96,8 @@ defineExpose({
             </button>
 
             <!-- tuiles d'images -->
-            <div v-for="(image, index) in images" :key="image.id" class="tile thumbnail" @click="open(index)">
-                <img :src="image.url" :alt="'Image ' + (index + 1)" @click="openLightboxAt(index)"/>
+            <div v-for="(image, index) in images" :key="image.id" class="tile thumbnail" @click="openLightboxAt(index)">
+                <img :src="image.url" :alt="'Image ' + (index + 1)"/>
                 <button type="button" class="btn-delete" @click.stop="removeAt(index)" aria-label="Supprimer">✕</button>
             </div>
         </div>
