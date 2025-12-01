@@ -95,9 +95,11 @@ onMounted(() => {
         <button :class="{ active: filtreStatus === 'edit-request' }" @click="setFiltre('edit-request')">
           Demande de modification
         </button>
-        <button :class="{ active: filtreStatus === 'comments' }" @click="setFiltre('comments')">
-          Commentaires à approuver
-        </button>
+        <button :class="{ active: filtreStatus === 'comments' }"
+        @click="setFiltre('comments')">
+  Commentaires à approuver
+</button>
+
       </div>
     </div>
 
