@@ -36,9 +36,17 @@ const refuserLocal = (marqueur) => {
   emit('refuser-marqueur', marqueur)
 }
 
+// --- ICI le fix complet ---
 const focusMarqueur = (marqueur) => {
+  // Prévention si aucune coordonnée : évite un crash et un focus inutile
+  if (!marqueur?.geometry?.coordinates) {
+    console.warn("❗ Impossible de centrer : ce marqueur n'a pas de coordonnées", marqueur)
+    return
+  }
+
   emit('focus-marqueur', marqueur)
 }
+// ---------------------------
 
 const loadEditRequests = async () => {
   try {
@@ -163,22 +171,30 @@ onMounted(() => {
       </thead>
 
       <tbody>
-        <tr v-for="req in editRequestStore.editRequests" :key="req._id">
-          <td>{{ req.proposedProperties?.titre || req.marqueur?.properties?.titre }}</td>
+        <tr
+          v-for="req in editRequestStore.editRequests"
+          :key="req._id"
+          class="row-hover"
+          @click="focusMarqueur(req.marqueur)"
+        >
           <td>
-            {{ req.proposedProperties?.adresse }}<br>
+            {{ req.proposedProperties?.titre || req.marqueur?.properties?.titre }}
+          </td>
+
+          <td>
+            {{ req.proposedProperties?.adresse }} <br>
             {{ req.proposedProperties?.description }}
           </td>
 
-          <td class="info-col">
+          <td class="info-col" @click.stop>
             <button class="info-btn">Voir détails</button>
           </td>
 
-          <td class="accept-col">
+          <td class="accept-col" @click.stop>
             <button class="action-btn accept">Accepter</button>
           </td>
 
-          <td class="reject-col">
+          <td class="reject-col" @click.stop>
             <button class="action-btn reject">Refuser</button>
           </td>
         </tr>
