@@ -8,6 +8,10 @@ import { useAuthStore } from '@/stores/auth'
 import * as cloudinary from '../utils/cloudinary.js'
 import TableauNotification from '../components/TableauNotification.vue'
 import NavBar from '../components/NavBar.vue'
+import { useCommentRequestStore } from "@/stores/useCommentRequestStore.js";
+
+const commentStore = useCommentRequestStore();
+
 
 const authStore = useAuthStore()
 const marqueurStore = useMarqueurStore()
@@ -84,6 +88,23 @@ const refuserMarqueur = async (marqueur) => {
   }
 }
 
+const accepterCommentaire = async (marqueurId, commentId) => {
+  try {
+    await commentStore.accepter(marqueurId, commentId);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const refuserCommentaire = async (marqueurId, commentId) => {
+  try {
+    await commentStore.refuser(marqueurId, commentId);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+
 const centrerCarte = (marqueur) => {
   if (!marqueur?.geometry?.coordinates) return
 
@@ -153,27 +174,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <NavBar/>
+  <NavBar />
   <div class="layout">
     <main class="content">
       <h2 class="section-title">Notifications</h2>
 
-      <TableauNotification
-        v-model:filtreStatus="filtreStatus"
-        :marqueurs-filtres="marqueursFiltres"
-        @ouvrir-modal="ouvrirModal"
-        @accepter-marqueur="accepterMarqueur"
-        @refuser-marqueur="refuserMarqueur"
-        @focus-marqueur="centrerCarte"
-      />
+      <TableauNotification v-model:filtre-status="filtreStatus" :marqueurs-filtres="marqueursFiltres"
+        @ouvrir-modal="ouvrirModal" @accepter-marqueur="accepterMarqueur" @refuser-marqueur="refuserMarqueur"
+        @accepter-commentaire="accepterCommentaire" @refuser-commentaire="refuserCommentaire"
+        @focus-marqueur="centrerCarte" />
 
-      <MarqueurModal
-        v-if="modalVisible && selectedMarqueur"
-        :marqueur="selectedMarqueur"
-        @fermer="modalVisible = false; selectedMarqueur = null"
-        @locate-from-address="handleLocateFromAddressFromModal"
-        @valider="validerModification"
-      />
+
+      <MarqueurModal v-if="modalVisible && selectedMarqueur" :marqueur="selectedMarqueur"
+        @fermer="modalVisible = false; selectedMarqueur = null" @locate-from-address="handleLocateFromAddressFromModal"
+        @valider="validerModification" />
 
       <section class="map-wrapper">
         <LeafletMap ref="leafletMapRef" />
