@@ -271,7 +271,6 @@ exports.addCommentMarqueur = async (req, res, next) => {
     }
 
     const marqueur = await Marqueur.findById(marqueurId);
-
     if (!marqueur) {
       return res.status(404).json(formatErrorResponse(
         404,
@@ -281,13 +280,18 @@ exports.addCommentMarqueur = async (req, res, next) => {
       ));
     }
 
-    const comment = { auteur: auteur || "Anonyme", contenu: texte };
+    const comment = {
+      auteur: auteur || "Anonyme",
+      contenu: texte,
+      status: "pending"
+    };
+
     marqueur.properties.comments.push(comment);
     await marqueur.save();
 
     res.status(201).json(formatSuccessResponse(
       201,
-      "Témoignage ajouté avec succès.",
+      "Témoignage ajouté et en attente d'approbation.",
       comment,
       req.originalUrl
     ));
