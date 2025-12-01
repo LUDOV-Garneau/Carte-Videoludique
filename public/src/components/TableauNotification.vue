@@ -69,7 +69,7 @@ watch(
       loadEditRequests()
     }
     if (newVal === "comments") {
-      commentRequestStore.fetchPendingComments();
+      commentRequestStore.getPendingComments();
     }
   }
 )
@@ -79,8 +79,8 @@ onMounted(() => {
     loadEditRequests()
   }
   if (props.filtreStatus === "comments") {
-  commentRequestStore.fetchPendingComments();
-}
+    commentRequestStore.getPendingComments();
+  }
 })
 </script>
 
@@ -95,7 +95,7 @@ onMounted(() => {
         <button :class="{ active: filtreStatus === 'edit-request' }" @click="setFiltre('edit-request')">
           Demande de modification
         </button>
-        <button :class="{ active: filtreStatus === 'comments' }" @click="$emit('update:filtreStatus', 'comments')">
+        <button :class="{ active: filtreStatus === 'comments' }" @click="setFiltre('comments')">
           Commentaires à approuver
         </button>
       </div>
@@ -201,55 +201,48 @@ onMounted(() => {
       </tbody>
     </table>
     <!-- TABLE DES COMMENTAIRES À APPROUVER -->
-<table v-if="filtreStatus === 'comments'" class="offers-table">
-  <thead>
-    <tr>
-      <th>Marqueur</th>
-      <th>Commentaire</th>
-      <th>Auteur</th>
-      <th class="accept-col">Accepter</th>
-      <th class="reject-col">Refuser</th>
-    </tr>
-  </thead>
+    <table v-if="filtreStatus === 'comments'" class="offers-table">
+      <thead>
+        <tr>
+          <th>Marqueur</th>
+          <th>Commentaire</th>
+          <th>Auteur</th>
+          <th class="accept-col">Accepter</th>
+          <th class="reject-col">Refuser</th>
+        </tr>
+      </thead>
 
-  <tbody>
-    <tr v-for="item in commentRequestStore.pendingComments"
-        :key="item.commentId"
-        class="row-hover"
-        @click="focusMarqueur(item.marqueur)"
-    >
-      <td>{{ item.marqueur?.properties?.titre }}</td>
+      <tbody>
+        <tr v-for="item in commentRequestStore.pendingComments" :key="item.commentId" class="row-hover"
+          @click="focusMarqueur(item.marqueur)">
+          <td>{{ item.marqueur?.properties?.titre }}</td>
 
-      <td>{{ item.comment?.contenu }}</td>
+          <td>{{ item.comment?.contenu }}</td>
 
-      <td>{{ item.comment?.auteur }}</td>
+          <td>{{ item.comment?.auteur }}</td>
 
-      <td class="accept-col" @click.stop>
-        <button
-          class="action-btn accept"
-          @click="commentRequestStore.approveComment(item.marqueurId, item.commentId)"
-        >
-          Accepter
-        </button>
-      </td>
+          <td class="accept-col" @click.stop>
+            <button class="action-btn accept"
+              @click="commentRequestStore.approuverCommentaire(item.marqueurId, item.commentId)">
+              Accepter
+            </button>
+          </td>
 
-      <td class="reject-col" @click.stop>
-        <button
-          class="action-btn reject"
-          @click="commentRequestStore.rejectComment(item.marqueurId, item.commentId)"
-        >
-          Refuser
-        </button>
-      </td>
-    </tr>
+          <td class="reject-col" @click.stop>
+            <button class="action-btn reject"
+              @click="commentRequestStore.refuserCommentaire(item.marqueurId, item.commentId)">
+              Refuser
+            </button>
+          </td>
+        </tr>
 
-    <tr v-if="!commentRequestStore.pendingComments.length">
-      <td colspan="5" class="empty">
-        Aucun commentaire en attente de validation.
-      </td>
-    </tr>
-  </tbody>
-</table>
+        <tr v-if="!commentRequestStore.pendingComments.length">
+          <td colspan="5" class="empty">
+            Aucun commentaire en attente de validation.
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
