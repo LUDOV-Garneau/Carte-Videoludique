@@ -29,7 +29,10 @@ router.put("/marqueurs/:marqueurId/status", isAuth, marqueurController.updateSta
 // POST => /marqueurs/:marqueurId/commentaires
 router.post("/marqueurs/:marqueurId/commentaires", marqueurController.addCommentMarqueur);
 
-// PATCH /marqueurs/:marqueurId/commentaires/:commentId/status
+// GET => /commentaires/pending
+router.get("/commentaires/pending", isAuth, marqueurController.getPendingComments);
+
+// PATCH => /marqueurs/:marqueurId/commentaires/:commentId/status
 router.patch("/marqueurs/:marqueurId/commentaires/:commentId/status", isAuth, marqueurController.updateCommentStatus);
 
 // DELETE => /marqueurs/:marqueurId/commentaires/commentsId
