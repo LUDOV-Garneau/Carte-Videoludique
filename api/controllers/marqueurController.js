@@ -300,6 +300,48 @@ exports.addCommentMarqueur = async (req, res, next) => {
   }
 };
 
+exports.updateCommentStatus = async (req, res, next) => {
+  try {
+    const { marqueurId, commentId } = req.params;
+    const { status } = req.body;
+
+    const allowed = ["pending", "approved", "rejected"];
+    if (!allowed.includes(status)) {
+      return res.status(400).json(formatErrorResponse(
+        400,
+        "Bad Request",
+        "Statut invalide.",
+        req.originalUrl
+      ));
+    }
+
+    const marqueur = await Marqueur.findById(marqueurId);
+    if (!marqueur)
+      return res.status(404).json(formatErrorResponse(404, "Not Found", "Marqueur introuvable", req.originalUrl));
+
+    const comment = marqueur.properties.comments.id(commentId);
+    if (!comment)
+      return res.status(404).json(formatErrorResponse(404, "Not Found", "Commentaire introuvable", req.originalUrl));
+
+    if (status === "rejected") {
+      comment.deleteOne();
+    } else {
+      comment.status = status;
+    }
+
+    await marqueur.save();
+
+    res.status(200).json(formatSuccessResponse(
+      200,
+      "Statut du commentaire mis à jour.",
+      comment,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
 /**
  * Supprime un commentaire spécifique d’un marqueur existant.
  *
