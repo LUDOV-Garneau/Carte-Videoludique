@@ -1,8 +1,8 @@
 <script setup>
 import { defineProps, defineEmits, ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import AddImage from './AddImage.vue'
-import { useBodyScroll } from '../composables/useBodyScroll.js'
 import { fetchAdresseSuggestions, geocodeAddress } from '../utils/geocode'
+import { useBodyScroll } from '../composables/useBodyScroll.js'
 
 const props = defineProps({
   marqueur: { type: Object, required: true },
@@ -37,15 +37,6 @@ const TYPES = [
 ]
 
 const descCount = ref(0)
-
-const canDisplay = computed(() => {
-  return props.marqueur != null && props.isOpen
-})
-
-const { lockScrollWhen } = useBodyScroll()
-
-// Gérer le verrouillage du scroll à l'ouverture et fermeture
-lockScrollWhen(canDisplay)
 
 /**
  * Met à jour le compteur de caractères de la description.
@@ -86,6 +77,9 @@ const initialImageUrls = computed(() => {
     .filter(img => img && img.url)
     .map(img => img.url)
 })
+
+// Utilisation du composable pour gérer le scroll
+const { disableScroll, enableScroll } = useBodyScroll()
 
 const hydrateFromProps = () => {
   const p = props.marqueur?.properties ?? {}
@@ -386,21 +380,27 @@ function hideSuggestions() {
  * Ferme la fenêtre modale lorsqu'une touche du clavier est pressée.
  *
  * - Vérifie si la touche pressée est `Escape`.
- * - Si oui, déclenche la fonction `confirmClose()` pour fermer la modale.
+ * - Si oui, déclenche la fonction `close()` pour fermer la modale.
  *
  * @param e Événement clavier déclenché lors de l'appui d'une touche
  * 
  */
 function onKeydown(e) {
-  if (e.key === 'Escape') confirmClose()
+  if (e.key === 'Escape') close()
 }
 
 onMounted(async () => {
+  // Bloquer le scroll dès que le composant est monté
+  disableScroll()
+  
   await nextTick()
   titreEl.value?.focus?.()
 })
 
-// Le nettoyage sera géré automatiquement par lockScrollWhen
+// Débloquer le scroll quand le composant est détruit
+onUnmounted(() => {
+  enableScroll()
+})
 </script>
 
 
