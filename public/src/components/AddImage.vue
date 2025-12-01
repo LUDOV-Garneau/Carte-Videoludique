@@ -1,5 +1,7 @@
 <script setup>
 import { ref, reactive, onBeforeUnmount, watch } from 'vue';
+import ImageLightbox from './ImageLightbox.vue';
+import { useLightbox } from '../composables/useLightbox.js';
 
 const props = defineProps({
     modelValue: { type: Array, default: () => [] }, // File[]
@@ -9,6 +11,7 @@ const emit = defineEmits(['update:modelValue', 'change']);
 
 const images = reactive([]);
 const fileInput = ref(null);
+const lightbox = useLightbox();
 
 props.initialUrls.forEach((url, index) => {
     images.push({ id: 'ext-' + index + '-' + Date.now(), url, file: null, isExternal: true });
@@ -17,6 +20,10 @@ props.initialUrls.forEach((url, index) => {
 watch(() => props.modelValue, (files) => {
 
 }, { deep: true});
+
+function openLightboxAt(index) {
+	lightbox.openLightbox(images || [], index);
+}
 
 function pick() {
     fileInput.value?.click();
@@ -51,29 +58,7 @@ function cryptoRandom() {
     return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-const lightboxOpen = ref(false);
-const lightboxIndex = ref(0);
-function open(index) {
-    lightboxIndex.value = index;
-    lightboxOpen.value = true;
-    setTimeout(() => {
-        const el = document.querySelector('.lightbox');
-        el && el.focus();
-    }, 0);
-}
-function close() { lightboxOpen.value = false; }
-function previous() { lightboxIndex.value = (lightboxIndex.value - 1 + images.length) % images.length; }
-function next() { lightboxIndex.value = (lightboxIndex.value + 1) % images.length; }
-
-function onKeyDown(event) {
-    if (!lightboxOpen.value) return;
-    else if (event.key === 'ArrowLeft') previous();
-    else if (event.key === 'ArrowRight') next();
-}
-window.addEventListener('keydown', onKeyDown);
-
 onBeforeUnmount(() => {
-    window.removeEventListener('keydown', onKeyDown);
     images.forEach((image) => {
         if (image.file && image.url && !image.isExternal) { URL.revokeObjectURL(image.url); }
     })
@@ -83,14 +68,8 @@ onBeforeUnmount(() => {
 defineExpose({
     addFiles,
     removeAt,
-    open,
-    close,
-    previous,
-    next,
     pick,
     images,
-    lightboxOpen,
-    lightboxIndex
 });
 </script>
 <template>
@@ -117,28 +96,21 @@ defineExpose({
             </button>
 
             <!-- tuiles d'images -->
-            <div v-for="(image, index) in images" :key="image.id" class="tile thumbnail" @click="open(index)">
-                <img :src="image.url" :alt="'Image ' + (index + 1)" />
+            <div v-for="(image, index) in images" :key="image.id" class="tile thumbnail" @click="openLightboxAt(index)">
+                <img :src="image.url" :alt="'Image ' + (index + 1)"/>
                 <button type="button" class="btn-delete" @click.stop="removeAt(index)" aria-label="Supprimer">✕</button>
             </div>
         </div>
 
         <input ref="fileInput" type="file" class="hidden" accept="image/*" multiple @change="onPick" />
-
-        <!-- Lightbox -->
-        <div v-if="lightboxOpen" class="lightbox" @click.self="close" tabindex="0">
-            <button class="lb-close" @click="close" aria-label="Fermer">x</button>
-            <button class="lb-nav left" @click.stop="previous" aria-label="Suivante">&lt;</button>
-            <img class="lb-image" :src="images[lightboxIndex].url" :alt="'Image ' + (lightboxIndex + 1)" />
-            <button class="lb-nav right" @click.stop="next" aria-label="Précédente">&gt;</button>
-            <div class="lb-dots">
-                <button v-for="(img, index) in images" :key="'dot-'+img.id"
-                :class="{ dot:true, active:index===lightboxIndex }"
-                @click.stop="lightboxIndex = index"
-                :aria-label="'Aller à l’image ' + (index+1)"></button>
-            </div>
-        </div>
     </div>
+    <ImageLightbox
+        v-if="lightbox.isOpen"
+        :images="lightbox.images.value"
+        v-model:currentIndex="lightbox.currentIndex.value"
+		:currentIndex="lightbox.currentIndex"
+		@close="lightbox.closeLightbox"
+    />
 </template>
 <style scoped>
     .hidden {
@@ -232,46 +204,5 @@ defineExpose({
     }
     .btn-delete:hover {
         background-color: rgba(0, 0, 0, .75);
-    }
-
-    /* Lightbox */
-    .lightbox {
-        position: fixed; inset: 0;
-        background: rgba(0,0,0,.92);
-        display: grid; place-items: center;
-        z-index: 9999;
-        outline: none;
-    }
-    .lb-image { max-width: 90vw; max-height: 82vh; object-fit: contain; }
-    .lb-close, .lb-nav {
-        position: absolute;
-        background: rgba(0,0,0,.5);
-        border: 1px solid rgba(255,255,255,.2);
-        color: #fff;
-        cursor: pointer;
-        padding: 0px;
-    }
-    .lb-close {
-        top: 14px; right: 16px;
-        width: 36px; height: 36px; border-radius: 999px; font-size: 22px;
-    }
-    .lb-nav.left, .lb-nav.right {
-        top: 50%; transform: translateY(-50%);
-        width: 42px; height: 42px; border-radius: 999px; font-size: 28px; line-height: 38px;
-    }
-    .lb-nav.left { left: 20px; }
-    .lb-nav.right { right: 20px; }
-    .lb-dots {
-        position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
-        display: flex; gap: 8px;
-    }
-    .dot {
-        width: 8px; height: 8px; border-radius: 999px;
-        background: rgba(255,255,255,.35);
-        border: none;
-        transition: all .3s ease;
-    }
-    .dot.active {
-        background: white;
     }
 </style>

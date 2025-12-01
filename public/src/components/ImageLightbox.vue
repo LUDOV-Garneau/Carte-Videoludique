@@ -26,8 +26,20 @@ const canDisplayLightbox = computed(() => {
 // Utilisation du composable pour gérer le scroll
 const { lockScrollWhen } = useBodyScroll();
 
-function previous() { lightboxIndex.value = (lightboxIndex.value - 1 + props.images.length) % props.images.length; }
-function next() { lightboxIndex.value = (lightboxIndex.value + 1) % props.images.length; }
+function previous(event) { 
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    lightboxIndex.value = (lightboxIndex.value - 1 + props.images.length) % props.images.length; 
+}
+function next(event) { 
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    lightboxIndex.value = (lightboxIndex.value + 1) % props.images.length; 
+}
 
 function close() {
     emits('close');
@@ -68,15 +80,15 @@ onUnmounted(() => {
 <template>
 <div class="lightbox" v-if="canDisplayLightbox" @click.self="close" tabindex="0">
     <button class="lb-close" @click="close" aria-label="Fermer">x</button>
-    <button class="lb-nav left" @click.stop="previous" aria-label="Suivante">&lt;</button>
+    <button class="lb-nav left" @click="previous" aria-label="Suivante">&lt;</button>
     <img class="lb-image" :src="images[lightboxIndex].url" :alt="'Image ' + (lightboxIndex + 1)" />
-    <button class="lb-nav right" @click.stop="next" aria-label="Précédente">&gt;</button>
+    <button class="lb-nav right" @click="next" aria-label="Précédente">&gt;</button>
     <div class="lb-dots">
         <button v-for="(img, index) in images" :key="'dot-'+img.id"
         :class="{ dot:true, active:index===lightboxIndex }"
         @click.stop="lightboxIndex = index"
         :aria-label="'Aller à l’image ' + (index+1)"></button>
-    </div>"
+    </div>
 </div>
 </template>
 <style scoped>
