@@ -11,102 +11,101 @@ export const useCommentRequestStore = defineStore("commentRequests", () => {
     /* --------------------------------------------
        GET — COMMENTAIRES EN ATTENTE
     -------------------------------------------- */
-    function getPendingComments() {
+    async function getPendingComments() {
+        try {
+            const headers = { "Content-Type": "application/json" };
 
-        const headers = { "Content-Type": "application/json" };
+            if (authStore.token) {
+                headers.Authorization = `Bearer ${authStore.token}`;
+            }
 
-        if (authStore.isAuthenticated && authStore.token) {
-            headers.Authorization = `Bearer ${authStore.token}`;
-        }
+            const response = await fetch(`${API_URL}/commentaires/pending`, {
+                method: "GET",
+                headers
+            });
 
-        return fetch(`${API_URL}/commentaires/pending`, {
-            method: "GET",
-            headers: headers
-        })
-        .then(async (response) => {
             const data = await response.json();
-
             if (!response.ok) {
                 throw new Error(data.message || "Erreur inconnue");
             }
 
-            // Format attendu : {marqueurId, marqueur, commentId, comment}
-            pendingComments.value = data.data;
+            pendingComments.value = data.data; // format : [{ marqueurId, marqueur, commentId, comment }]
             return pendingComments.value;
-        })
-        .catch((error) => {
+
+        } catch (error) {
             console.error("Erreur getPendingComments :", error);
             throw error;
-        });
+        }
     }
 
     /* --------------------------------------------
        PATCH — APPROUVER COMMENTAIRE
     -------------------------------------------- */
-    function approuverCommentaire(marqueurId, commentId) {
+    async function approuverCommentaire(marqueurId, commentId) {
+        try {
+            const response = await fetch(`${API_URL}/marqueurs/${marqueurId}/commentaires/${commentId}/status`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + authStore.token
+                },
+                body: JSON.stringify({ status: "approved" })
+            });
 
-        const headers = {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + authStore.token
-        };
-
-        return fetch(`${API_URL}/marqueurs/${marqueurId}/commentaires/${commentId}/status`, {
-            method: "PATCH",
-            headers: headers,
-            body: JSON.stringify({ status: "approved" })
-        })
-        .then(async (response) => {
             const data = await response.json();
-
             if (!response.ok) {
                 throw new Error(data.message || "Erreur inconnue");
             }
 
-            // 🔥 supprimer localement le commentaire approuvé
+            // Supprime localement
             pendingComments.value = pendingComments.value.filter(
-                (item) => item.commentId !== commentId
+                item => item.commentId !== commentId
             );
 
+            // Recharge depuis la BD (fiabilité ++)
+            await getPendingComments();
+
             return data.data;
-        })
-        .catch((error) => {
+
+        } catch (error) {
             console.error("Erreur approuverCommentaire :", error);
             throw error;
-        });
+        }
     }
 
     /* --------------------------------------------
        PATCH — REJETER COMMENTAIRE
     -------------------------------------------- */
-    function refuserCommentaire(marqueurId, commentId) {
+    async function refuserCommentaire(marqueurId, commentId) {
+        try {
+            const response = await fetch(`${API_URL}/marqueurs/${marqueurId}/commentaires/${commentId}/status`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + authStore.token
+                },
+                body: JSON.stringify({ status: "rejected" })
+            });
 
-        const headers = {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + authStore.token
-        };
-
-        return fetch(`${API_URL}/marqueurs/${marqueurId}/commentaires/${commentId}/status`, {
-            method: "PATCH",
-            headers: headers,
-            body: JSON.stringify({ status: "rejected" })
-        })
-        .then(async (response) => {
             const data = await response.json();
-
             if (!response.ok) {
                 throw new Error(data.message || "Erreur inconnue");
             }
 
+            // Supprime localement
             pendingComments.value = pendingComments.value.filter(
-                (item) => item.commentId !== commentId
+                item => item.commentId !== commentId
             );
 
+            // Recharge depuis la BD
+            await getPendingComments();
+
             return data.data;
-        })
-        .catch((error) => {
+
+        } catch (error) {
             console.error("Erreur refuserCommentaire :", error);
             throw error;
-        });
+        }
     }
 
     return {
@@ -117,5 +116,5 @@ export const useCommentRequestStore = defineStore("commentRequests", () => {
     };
 
 }, {
-    persist: true
+    persist: false
 });

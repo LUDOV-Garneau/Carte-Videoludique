@@ -159,7 +159,7 @@ onMounted(() => {
       <h2 class="section-title">Notifications</h2>
 
       <TableauNotification
-        v-model:filtre-status="filtreStatus"
+        v-model:filtreStatus="filtreStatus"
         :marqueurs-filtres="marqueursFiltres"
         @ouvrir-modal="ouvrirModal"
         @accepter-marqueur="accepterMarqueur"
