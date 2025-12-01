@@ -685,3 +685,108 @@ describe('MarqueurController.deleteCommentMarqueur', () => {
     expect(next).toHaveBeenCalledWith(boom)
   })
 })
+
+/* -------------------- addComment -------------------- */
+describe('MarqueurController.addCommentMarqueur', () => {
+
+  it('400 si texte manquant', async () => {
+    const req = mockReq({
+      params: { marqueurId: '123' },
+      body: { auteur: 'Fred', texte: '' },
+      originalUrl: '/api/marqueurs/123/commentaires'
+    })
+    const res = mockRes()
+    const next = mockNext()
+
+    await marqueurController.addCommentMarqueur(req, res, next)
+
+    expect(res.statusCode).toBe(400)
+    expect(res.body).toMatchObject({
+      status: 400,
+      error: 'Bad Request',
+      message: 'Le contenu du témoignage est requis.',
+      path: '/api/marqueurs/123/commentaires'
+    })
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('404 si le marqueur est introuvable', async () => {
+    vi.spyOn(Marqueur, 'findById').mockResolvedValue(null)
+
+    const req = mockReq({
+      params: { marqueurId: '999' },
+      body: { auteur: 'Fred', texte: 'Salut' },
+      originalUrl: '/api/marqueurs/999/commentaires'
+    })
+    const res = mockRes()
+    const next = mockNext()
+
+    await marqueurController.addCommentMarqueur(req, res, next)
+
+    expect(res.statusCode).toBe(404)
+    expect(res.body).toMatchObject({
+      status: 404,
+      error: 'Not Found',
+      message: "Le marqueur spécifié n'existe pas.",
+      path: '/api/marqueurs/999/commentaires'
+    })
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('201 + commentaire ajouté quand OK', async () => {
+    const mockSave = vi.fn().mockResolvedValue(true)
+
+    const marqueur = {
+      _id: 'abc123',
+      properties: { comments: [] },
+      save: mockSave
+    }
+
+    vi.spyOn(Marqueur, 'findById').mockResolvedValue(marqueur)
+
+    const req = mockReq({
+      params: { marqueurId: 'abc123' },
+      body: { auteur: 'Fred', texte: 'Un beau souvenir' },
+      originalUrl: '/api/marqueurs/abc123/commentaires'
+    })
+    const res = mockRes()
+    const next = mockNext()
+
+    await marqueurController.addCommentMarqueur(req, res, next)
+
+    expect(mockSave).toHaveBeenCalled()
+    expect(res.statusCode).toBe(201)
+    expect(res.body).toMatchObject({
+      status: 201,
+      message: "Témoignage ajouté et en attente d'approbation.",
+      path: '/api/marqueurs/abc123/commentaires'
+    })
+    expect(res.body.data).toMatchObject({
+      auteur: 'Fred',
+      contenu: 'Un beau souvenir',
+      status: 'pending'
+    })
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('next(err) si une erreur survient', async () => {
+    const boom = new Error('Erreur Mongo')
+
+    const findSpy = vi.spyOn(Marqueur, 'findById').mockRejectedValue(boom)
+
+    const req = mockReq({
+      params: { marqueurId: '123' },
+      body: { auteur: 'Fred', texte: 'test' },
+      originalUrl: '/api/marqueurs/123/commentaires'
+    })
+    const res = mockRes()
+    const next = vi.fn()
+
+    await marqueurController.addCommentMarqueur(req, res, next)
+
+    await new Promise(process.nextTick)
+
+    expect(findSpy).toHaveBeenCalledWith('123')
+    expect(next).toHaveBeenCalledWith(boom)
+  })
+})

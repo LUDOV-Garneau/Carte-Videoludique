@@ -95,10 +95,9 @@ onMounted(() => {
         <button :class="{ active: filtreStatus === 'edit-request' }" @click="setFiltre('edit-request')">
           Demande de modification
         </button>
-        <button :class="{ active: filtreStatus === 'comments' }"
-        @click="setFiltre('comments')">
-  Commentaires à approuver
-</button>
+        <button :class="{ active: filtreStatus === 'comments' }" @click="setFiltre('comments')">
+          Commentaires à approuver
+        </button>
 
       </div>
     </div>
@@ -224,17 +223,17 @@ onMounted(() => {
           <td>{{ item.comment?.auteur }}</td>
 
           <td class="accept-col" @click.stop>
-            <button class="action-btn accept"
-              @click="commentRequestStore.approuverCommentaire(item.marqueurId, item.commentId)">
+            <button class="action-btn accept" @click="emit('accepter-commentaire', item.marqueurId, item.commentId)">
               Accepter
             </button>
+
           </td>
 
           <td class="reject-col" @click.stop>
-            <button class="action-btn reject"
-              @click="commentRequestStore.refuserCommentaire(item.marqueurId, item.commentId)">
+            <button class="action-btn reject" @click="emit('refuser-commentaire', item.marqueurId, item.commentId)">
               Refuser
             </button>
+
           </td>
         </tr>
 
