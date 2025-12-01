@@ -78,29 +78,21 @@ onMounted(() => {
   <div class="offers-wrapper">
     <div class="tabs-wrapper">
       <div class="tabs">
-        <button
-          :class="{ active: filtreStatus === 'pending' }"
-          @click="setFiltre('pending')"
-        >
+        <button :class="{ active: filtreStatus === 'pending' }" @click="setFiltre('pending')">
           Demande d'ajout
         </button>
 
-        <button
-          :class="{ active: filtreStatus === 'edit-request' }"
-          @click="setFiltre('edit-request')"
-        >
+        <button :class="{ active: filtreStatus === 'edit-request' }" @click="setFiltre('edit-request')">
           Demande de modification
+        </button>
+        <button :class="{ active: filtreStatus === 'comments' }" @click="$emit('update:filtreStatus', 'comments')">
+          Commentaires à approuver
         </button>
       </div>
     </div>
 
     <!-- TABLE DES DEMANDES D'AJOUT -->
-    <table
-      v-if="filtreStatus === 'pending'"
-      class="offers-table"
-      role="table"
-      aria-label="Offres fournisseur"
-    >
+    <table v-if="filtreStatus === 'pending'" class="offers-table" role="table" aria-label="Offres fournisseur">
       <thead>
         <tr>
           <th>Lieu</th>
@@ -113,12 +105,8 @@ onMounted(() => {
       </thead>
 
       <tbody>
-        <tr
-          v-for="marqueur in marqueursFiltres"
-          :key="marqueur.id || marqueur._id"
-          class="row-hover"
-          @click="focusMarqueur(marqueur)"
-        >
+        <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id || marqueur._id" class="row-hover"
+          @click="focusMarqueur(marqueur)">
           <td class="provider">{{ marqueur.properties.titre }}</td>
           <td class="address">{{ marqueur.properties.adresse }}</td>
 
@@ -171,12 +159,8 @@ onMounted(() => {
       </thead>
 
       <tbody>
-        <tr
-          v-for="req in editRequestStore.editRequests"
-          :key="req._id"
-          class="row-hover"
-          @click="focusMarqueur(req.marqueur)"
-        >
+        <tr v-for="req in editRequestStore.editRequests" :key="req._id" class="row-hover"
+          @click="focusMarqueur(req.marqueur)">
           <td>
             {{ req.proposedProperties?.titre || req.marqueur?.properties?.titre }}
           </td>
