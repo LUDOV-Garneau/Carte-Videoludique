@@ -269,6 +269,7 @@ async function sendComment() {
 	<MarqueurModal
     	v-if="isEditModalOpen"
     	:marqueur="marqueurStore.marqueurActif"
+		:is-open="isEditModalOpen"
     	@fermer="isEditModalOpen = false"
     	@valider="handleEditRequestSubmit"
   	/>

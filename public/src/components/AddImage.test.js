@@ -4,12 +4,29 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { nextTick } from 'vue'
 import AddImage from './AddImage.vue'
 
+// Mock du composable useLightbox
+const mockLightbox = {
+  isOpen: { value: false },
+  images: { value: [] },
+  currentIndex: { value: 0 },
+  openLightbox: vi.fn()
+}
+
+vi.mock('../composables/useLightbox.js', () => ({
+  useLightbox: () => mockLightbox
+}))
+
 // Mock URL.createObjectURL et URL.revokeObjectURL
 const mockCreateObjectURL = vi.fn(() => 'blob:mock-url')
 const mockRevokeObjectURL = vi.fn()
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // Réinitialiser le mock lightbox
+  mockLightbox.isOpen.value = false
+  mockLightbox.images.value = []
+  mockLightbox.currentIndex.value = 0
+  
   vi.stubGlobal('URL', {
     createObjectURL: mockCreateObjectURL,
     revokeObjectURL: mockRevokeObjectURL
@@ -133,7 +150,7 @@ describe('AddImage.vue', () => {
   /* Tests du lightbox                 */
   /* --------------------------------- */
 
-  it('ouvre et ferme le lightbox', async () => {
+  it('ouvre le lightbox quand on clique sur une image', async () => {
     const initialUrls = ['http://example.com/img1.jpg']
     const wrapper = mount(AddImage, {
       props: { initialUrls }
@@ -141,120 +158,21 @@ describe('AddImage.vue', () => {
     
     await nextTick()
     
-    // Ouvrir lightbox
-    expect(wrapper.find('.lightbox').exists()).toBe(false)
+    // Vérifier que le lightbox est fermé initialement
+    expect(mockLightbox.isOpen.value).toBe(false)
     
+    // Cliquer sur l'image
     await wrapper.find('.thumbnail').trigger('click')
-    await nextTick()
     
-    expect(wrapper.find('.lightbox').exists()).toBe(true)
-    expect(wrapper.find('.lb-image').attributes('src')).toBe('http://example.com/img1.jpg')
-    
-    // Fermer lightbox
-    await wrapper.find('.lb-close').trigger('click')
-    await nextTick()
-    
-    expect(wrapper.find('.lightbox').exists()).toBe(false)
-  })
-
-  it('navigue dans le lightbox avec plusieurs images', async () => {
-    const initialUrls = [
-      'http://example.com/img1.jpg',
-      'http://example.com/img2.jpg', 
-      'http://example.com/img3.jpg'
-    ]
-    const wrapper = mount(AddImage, {
-      props: { initialUrls }
-    })
-    
-    await nextTick()
-    
-    // Ouvrir lightbox sur la première image
-    await wrapper.findAll('.thumbnail')[0].trigger('click')
-    await nextTick()
-    
-    expect(wrapper.find('.lb-image').attributes('src')).toBe('http://example.com/img1.jpg')
-    
-    // Aller à l'image suivante
-    await wrapper.find('.lb-nav.right').trigger('click')
-    await nextTick()
-    
-    expect(wrapper.find('.lb-image').attributes('src')).toBe('http://example.com/img2.jpg')
-    
-    // Revenir à l'image précédente  
-    await wrapper.find('.lb-nav.left').trigger('click')
-    await nextTick()
-    
-    expect(wrapper.find('.lb-image').attributes('src')).toBe('http://example.com/img1.jpg')
-  })
-
-  it('gère la navigation circulaire dans le lightbox', async () => {
-    const initialUrls = ['http://example.com/img1.jpg', 'http://example.com/img2.jpg']
-    const wrapper = mount(AddImage, {
-      props: { initialUrls }
-    })
-    
-    await nextTick()
-    
-    // Ouvrir sur la dernière image
-    await wrapper.findAll('.thumbnail')[1].trigger('click')
-    await nextTick()
-    
-    expect(wrapper.find('.lb-image').attributes('src')).toBe('http://example.com/img2.jpg')
-    
-    // Aller au suivant (doit revenir au début)
-    await wrapper.find('.lb-nav.right').trigger('click')
-    await nextTick()
-    
-    expect(wrapper.find('.lb-image').attributes('src')).toBe('http://example.com/img1.jpg')
-    
-    // Aller au précédent (doit aller à la fin)
-    await wrapper.find('.lb-nav.left').trigger('click')
-    await nextTick()
-    
-    expect(wrapper.find('.lb-image').attributes('src')).toBe('http://example.com/img2.jpg')
-  })
-
-  /* --------------------------------- */
-  /* Tests des raccourcis clavier      */
-  /* --------------------------------- */
-
-  it('navigue avec les touches fléchées dans le lightbox', async () => {
-    const initialUrls = ['http://example.com/img1.jpg', 'http://example.com/img2.jpg']
-    const wrapper = mount(AddImage, {
-      props: { initialUrls }
-    })
-    
-    await nextTick()
-    
-    // Ouvrir lightbox
-    await wrapper.find('.thumbnail').trigger('click')
-    await nextTick()
-    
-    expect(wrapper.find('.lb-image').attributes('src')).toBe('http://example.com/img1.jpg')
-    
-    // Simuler appui sur flèche droite - appeler directement la méthode
-    wrapper.vm.next()
-    await nextTick()
-    
-    expect(wrapper.find('.lb-image').attributes('src')).toBe('http://example.com/img2.jpg')
-    
-    // Simuler appui sur flèche gauche - appeler directement la méthode
-    wrapper.vm.previous()
-    await nextTick()
-    
-    expect(wrapper.find('.lb-image').attributes('src')).toBe('http://example.com/img1.jpg')
-  })
-
-  it('ignore les touches quand le lightbox est fermé', async () => {
-    const wrapper = mount(AddImage)
-    
-    // Simuler appui sur flèche (lightbox fermé)
-    const event = new KeyboardEvent('keydown', { key: 'ArrowRight' })
-    window.dispatchEvent(event)
-    
-    // Ne devrait pas planter et le lightbox reste fermé
-    expect(wrapper.find('.lightbox').exists()).toBe(false)
+    // Vérifier que openLightbox a été appelée
+    expect(mockLightbox.openLightbox).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          url: 'http://example.com/img1.jpg'
+        })
+      ]),
+      0
+    )
   })
 
   /* --------------------------------- */
