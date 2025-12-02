@@ -4,6 +4,7 @@ import L from 'leaflet'
 import { reverseGeocode, isAddressInQuebecProvince } from '../utils/geocode.js'
 import AddMarqueurPanel from './AddMarqueurPanel.vue'
 import MarqueurPanel from './MarqueurPanel.vue'
+import { useAuthStore } from '../stores/auth.js'
 import { useMarqueurStore } from '../stores/useMarqueur.js'
 
 import 'leaflet.fullscreen'
@@ -25,6 +26,7 @@ const DefaultIcon = L.icon({
 })
 L.Marker.prototype.options.icon = DefaultIcon
 
+const authStore = useAuthStore()
 const marqueurStore = useMarqueurStore()
 
 const mapEl = ref(null)
@@ -422,9 +424,11 @@ function addCustomControl() {
   });
 
   controlAjoutMarqueur = new ControlAjoutMarqueur()
-  controlEditCategorie = new ControlEditCategorie()
   map.addControl(controlAjoutMarqueur)
-  map.addControl(controlEditCategorie)
+  if (authStore.isAuthenticated) {
+    controlEditCategorie = new ControlEditCategorie()
+    map.addControl(controlEditCategorie)
+  }
 }
 
 /**

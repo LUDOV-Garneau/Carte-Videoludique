@@ -113,6 +113,14 @@ vi.mock('../stores/useMarqueur.js', () => ({
   useMarqueurStore: vi.fn(() => mockMarqueurStore)
 }))
 
+const mockAuthStore = {
+  isAuthenticated: false
+}
+
+vi.mock('../stores/auth.js', () => ({
+  useAuthStore: vi.fn(() => mockAuthStore)
+}))
+
 vi.mock('../utils/geocode.js', () => ({
   reverseGeocode: vi.fn().mockResolvedValue({
     address: {
@@ -158,17 +166,12 @@ describe('LeafletMap.vue', () => {
     expect(L.tileLayer).toHaveBeenCalledTimes(1)
     expect(L.marker).toHaveBeenCalledTimes(0)
 
-    expect(mapApi.addControl).toHaveBeenCalledTimes(2)
+    expect(mapApi.addControl).toHaveBeenCalledTimes(1)
 
     const ajoutBtn = document.querySelector('.btn-ajout-marqueur')
     expect(ajoutBtn).toBeTruthy()
     expect(ajoutBtn.getAttribute('role')).toBe('button')
     expect(ajoutBtn.getAttribute('aria-label')).toBe('Ajouter un marqueur')
-
-    const editCategorieBtn = document.querySelector('.btn-edit-categorie')
-    expect(editCategorieBtn).toBeTruthy()
-    expect(editCategorieBtn.getAttribute('role')).toBe('button')
-    expect(editCategorieBtn.getAttribute('aria-label')).toBe('Gérer les catégories')
 
     expect(L.DomEvent.disableClickPropagation).toHaveBeenCalled()
     expect(L.DomEvent.disableScrollPropagation).toHaveBeenCalled()
@@ -181,9 +184,36 @@ describe('LeafletMap.vue', () => {
     expect(addEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
 
     wrapper.unmount()
-    expect(mapApi.removeControl).toHaveBeenCalledTimes(2)
+    expect(mapApi.removeControl).toHaveBeenCalledTimes(1)
     expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
     expect(mapApi.remove).toHaveBeenCalledTimes(1)
+  })
+
+  it('affiche le contrôle d\'édition des catégories quand l\'utilisateur est connecté', async () => {
+    mockAuthStore.isAuthenticated = true
+
+    const wrapper = mount(LeafletMap, {
+      global: {
+        plugins: [createPinia()]
+      }
+    })
+
+    // Vérifier que les deux contrôles sont ajoutés
+    expect(mapApi.addControl).toHaveBeenCalledTimes(2)
+
+    // Vérifier que le bouton d'édition des catégories existe
+    const editBtn = document.querySelector('.btn-edit-categorie')
+    expect(editBtn).toBeTruthy()
+    expect(editBtn.getAttribute('role')).toBe('button')
+    expect(editBtn.getAttribute('aria-label')).toBe('Gérer les catégories')
+
+    wrapper.unmount()
+    
+    // Vérifier que les deux contrôles sont supprimés
+    expect(mapApi.removeControl).toHaveBeenCalledTimes(2)
+
+    // Reset pour les autres tests
+    mockAuthStore.isAuthenticated = false
   })
 
   it('ajoute un marqueur au clic carte et met à jour les coordonnées', async () => {
