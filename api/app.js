@@ -17,20 +17,20 @@ const allowedOrigins = [
   'https://ludov.ca',
   
   //Autorisation pour l'adresse github du site
-  'https://ludov-garneau.github.io/Carte-Videoludique/'  
+  'https://ludov-garneau.github.io'  
 ]
 
 app.use(cors({
   origin: function (origin, callback) {
-    console.log("🌐 CORS origin reçue :", origin);
+    console.log("CORS origin reçue :", origin);
     if (!origin) return callback(null, true); 
 
     if (allowedOrigins.includes(origin)) {
-      console.log("✅ Origin autorisée :", origin);
+      console.log("Origin autorisée :", origin);
       return callback(null, true);
     }
 
-    console.log("❌ Origin refusée :", origin);
+    console.log("Origin refusée :", origin);
     return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
