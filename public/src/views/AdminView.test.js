@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { defineComponent } from 'vue'
 import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '../stores/auth'
+import { useCommentRequestStore } from "@/stores/useCommentRequestStore.js";
 
 // Stub par défaut utilisé dans la majorité des tests
 const LeafletMapStub = defineComponent({
@@ -25,12 +26,16 @@ describe('AdminView.vue', () => {
   let pinia
   let marqueurStore
   let authStore
+  let commentStore   // ✅ AJOUT ICI
 
   beforeEach(() => {
     pinia = createPinia()
     setActivePinia(pinia)
+
     marqueurStore = useMarqueurStore()
     authStore = useAuthStore()
+    commentStore = useCommentRequestStore() // ✅ AJOUT ICI
+
     authStore.token = 'faketoken123'
   })
 
@@ -103,32 +108,33 @@ describe('AdminView.vue', () => {
   })
 
   it('supprime le marqueur et rafraîchit la liste quand refuserMarqueur() est appelé', async () => {
-    wrapper = mount(AdminView, {
-      global: { plugins: [pinia], stubs: { LeafletMap: LeafletMapStub } }
-    })
-
-    const marqueur = { properties: { id: '456' } }
-
-    marqueurStore.marqueurs = [
-      { properties: { id: '123' } },
-      { properties: { id: '456' } },
-      { properties: { id: '789' } }
-    ]
-
-    const spyDelete = vi
-      .spyOn(marqueurStore, 'supprimerMarqueur')
-      .mockResolvedValue(true)
-
-    const spyGet = vi
-      .spyOn(marqueurStore, 'getMarqueurs')
-      .mockResolvedValue([])
-
-    await wrapper.vm.refuserMarqueur(marqueur)
-
-    expect(spyDelete).toHaveBeenCalledWith('456', authStore.token)
-    expect(marqueurStore.marqueurs.find(m => m.properties.id === '456')).toBeUndefined()
-    expect(spyGet).toHaveBeenCalledTimes(1)
+  wrapper = mount(AdminView, {
+    global: { plugins: [pinia], stubs: { LeafletMap: LeafletMapStub } } // ✔ Correction ici
   })
+
+  const marqueur = { properties: { id: '456' } }
+
+  marqueurStore.marqueurs = [
+    { properties: { id: '123' } },
+    { properties: { id: '456' } },
+    { properties: { id: '789' } }
+  ]
+
+  const spyDelete = vi
+    .spyOn(marqueurStore, 'supprimerMarqueur')
+    .mockResolvedValue(true)
+
+  const spyGet = vi
+    .spyOn(marqueurStore, 'getMarqueurs')
+    .mockResolvedValue([])
+
+  await wrapper.vm.refuserMarqueur(marqueur)
+
+  expect(spyDelete).toHaveBeenCalledWith('456', authStore.token)
+  expect(marqueurStore.marqueurs.find(m => m.properties.id === '456')).toBeUndefined()
+  expect(spyGet).toHaveBeenCalledTimes(1)
+})
+
 
   it('affiche une erreur si aucun token n’est disponible', async () => {
     authStore.token = null
@@ -148,7 +154,6 @@ describe('AdminView.vue', () => {
   it('centre la carte via focusOn(lat, lng) lorsque centrerCarte() est appelé', async () => {
     const focusOnMock = vi.fn()
 
-    // Stub spécial uniquement pour CE test
     const LeafletMapExposeStub = defineComponent({
       name: 'LeafletMap',
       template: '<div data-testid="map"></div>',
@@ -164,7 +169,6 @@ describe('AdminView.vue', () => {
       }
     })
 
-    // Marqueur de test
     const fakeMarker = {
       geometry: { coordinates: [45.5017, -73.5673] }
     }
@@ -174,4 +178,74 @@ describe('AdminView.vue', () => {
     expect(focusOnMock).toHaveBeenCalledTimes(1)
     expect(focusOnMock).toHaveBeenCalledWith(45.5017, -73.5673)
   })
+
+  // ------------------------------------------------------------
+  // Tests commentaires
+  // ------------------------------------------------------------
+  it('appelle commentStore.accepter() quand accepterCommentaire est utilisé', async () => {
+    const spy = vi.spyOn(commentStore, 'accepter').mockResolvedValue(true)
+
+    wrapper = mount(AdminView, {
+      global: {
+        plugins: [pinia],
+        stubs: { LeafletMap: LeafletMapStub }
+      }
+    })
+
+    await wrapper.vm.accepterCommentaire('marq123', 'com456')
+
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy).toHaveBeenCalledWith('marq123', 'com456')
+  })
+
+  it('appelle commentStore.refuser() quand refuserCommentaire est utilisé', async () => {
+    const spy = vi.spyOn(commentStore, 'refuser').mockResolvedValue(true)
+
+    wrapper = mount(AdminView, {
+      global: {
+        plugins: [pinia],
+        stubs: { LeafletMap: LeafletMapStub }
+      }
+    })
+
+    await wrapper.vm.refuserCommentaire('marq123', 'com999')
+
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy).toHaveBeenCalledWith('marq123', 'com999')
+  })
+
+  it('gère proprement les erreurs lors de accepterCommentaire()', async () => {
+    const spy = vi.spyOn(commentStore, 'accepter').mockRejectedValue(new Error('bad'))
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    wrapper = mount(AdminView, {
+      global: {
+        plugins: [pinia],
+        stubs: { LeafletMap: LeafletMapStub }
+      }
+    })
+
+    await wrapper.vm.accepterCommentaire('111', '222')
+
+    expect(spy).toHaveBeenCalled()
+    expect(errorSpy).toHaveBeenCalled()
+  })
+
+  it('gère proprement les erreurs lors de refuserCommentaire()', async () => {
+    const spy = vi.spyOn(commentStore, 'refuser').mockRejectedValue(new Error('bad'))
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    wrapper = mount(AdminView, {
+      global: {
+        plugins: [pinia],
+        stubs: { LeafletMap: LeafletMapStub }
+      }
+    })
+
+    await wrapper.vm.refuserCommentaire('AAA', 'BBB')
+
+    expect(spy).toHaveBeenCalled()
+    expect(errorSpy).toHaveBeenCalled()
+  })
+
 })
