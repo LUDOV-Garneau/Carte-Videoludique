@@ -31,6 +31,8 @@ const mapEl = ref(null)
 let map
 let controlAjoutMarqueur
 let btnAjoutMarqueur
+let controlEditCategorie
+let btnEditCategorie
 
 const longitude = ref('')
 const latitude = ref('')
@@ -273,6 +275,7 @@ function openCreatePanel() {
   const container = map?.getContainer?.()
   if(container?.style) container.style.cursor = 'crosshair'
   if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none'
+  if (btnEditCategorie) btnEditCategorie.style.display = 'none'
 }
 
 /**
@@ -284,6 +287,7 @@ function closeCreatePanel() {
   const container = map?.getContainer?.()
   if (container?.style) container.style.cursor = 'grab'
   if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = ''
+  if (btnEditCategorie) btnEditCategorie.style.display = ''
   if (currentMarqueur.value) {
     map.removeLayer(currentMarqueur.value)
     currentMarqueur.value = null
@@ -391,10 +395,36 @@ function addCustomControl() {
 
       return container
     }
-  })
+  });
+
+  const ControlEditCategorie = L.Control.extend({
+    options: { position: 'topright' },
+    onAdd() {
+      const container = L.DomUtil.create('div', 'leaflet-control leaflet-control-custom');
+      btnEditCategorie = container;
+
+      const btn = L.DomUtil.create('a', 'btn-edit-categorie', container);
+      btn.href = '#';
+      btn.title = 'Gérer les catégories';
+      btn.textContent = 'Gérer les catégories';
+      btn.setAttribute('role', 'button');
+      btn.setAttribute('aria-label', 'Gérer les catégories');
+      btn.innerHTML = '<span aria-hidden="true"> ✎ </span><span class="sr-only">Gérer les catégories</span>';
+
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.disableScrollPropagation(container);
+      L.DomEvent.on(btn, 'click', (e) => {
+        L.DomEvent.preventDefault(e);
+        alert('Fonctionnalité de gestion des catégories à implémenter.');
+      });
+      return container
+    }
+  });
 
   controlAjoutMarqueur = new ControlAjoutMarqueur()
+  controlEditCategorie = new ControlEditCategorie()
   map.addControl(controlAjoutMarqueur)
+  map.addControl(controlEditCategorie)
 }
 
 /**
@@ -427,6 +457,7 @@ onMounted(async() => {
 onUnmounted(() => {
   if (map) {
     if (controlAjoutMarqueur) map.removeControl(controlAjoutMarqueur)
+    if (controlEditCategorie) map.removeControl(controlEditCategorie)
     if (map.__onKey) window.removeEventListener('keydown', map.__onKey)
     map.remove()
   }
@@ -473,127 +504,6 @@ defineExpose({
   inset: 0;
 }
 
-/* ---------- Petite fenêtre d'image ---------- */
-.image-window {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 20px;
-}
-
-.image-window__content {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  max-width: 500px;
-  max-height: 80vh;
-  overflow: auto;
-  position: relative;
-  padding: 20px;
-}
-
-.image-window__close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: #f44336;
-  color: white;
-  border-radius: 50%;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.image-window__close:hover {
-  background: #d32f2f;
-}
-
-.image-window__header {
-  margin-bottom: 15px;
-  padding-right: 40px;
-}
-
-.image-window__header h4 {
-  margin: 0 0 5px 0;
-  color: #4CAF50;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.image-window__type {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
-  font-style: italic;
-}
-
-.image-window__images {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-}
-
-.image-window__image {
-  width: 100%;
-  height: auto;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  cursor: zoom-in;
-}
-
-.image-window__image:hover {
-  transform: scale(1.02);
-  transition: transform 0.2s ease;
-}
-
-.image-window__no-image {
-  text-align: center;
-  padding: 40px 20px;
-  color: #999;
-}
-
-.image-window__no-image p {
-  margin: 0;
-  font-style: italic;
-}
-
-/* Transition pour la fenêtre d'image */
-.image-window-fade-enter-active,
-.image-window-fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.image-window-fade-enter-from,
-.image-window-fade-leave-to {
-  opacity: 0;
-}
-
-.image-window-fade-enter-active .image-window__content,
-.image-window-fade-leave-active .image-window__content {
-  transition: transform 0.3s ease;
-}
-
-.image-window-fade-enter-from .image-window__content,
-.image-window-fade-leave-to .image-window__content {
-  transform: scale(0.8);
-}
-
 /* ---------- Contrôle Leaflet custom ---------- */
 :deep(.btn-ajout-marqueur) {
   background-color: white;
@@ -609,6 +519,23 @@ defineExpose({
   transition: all 0.3s ease;
 }
 :deep(.btn-ajout-marqueur:hover) {
+  background-color: #4CAF50;
+  color: white;
+}
+:deep(.btn-edit-categorie) {
+  background-color: white;
+  border: 2px solid #4CAF50;
+  color: #4CAF50;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+:deep(.btn-edit-categorie:hover) {
   background-color: #4CAF50;
   color: white;
 }

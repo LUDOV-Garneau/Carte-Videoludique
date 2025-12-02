@@ -158,12 +158,17 @@ describe('LeafletMap.vue', () => {
     expect(L.tileLayer).toHaveBeenCalledTimes(1)
     expect(L.marker).toHaveBeenCalledTimes(0)
 
-    expect(mapApi.addControl).toHaveBeenCalledTimes(1)
+    expect(mapApi.addControl).toHaveBeenCalledTimes(2)
 
     const ajoutBtn = document.querySelector('.btn-ajout-marqueur')
     expect(ajoutBtn).toBeTruthy()
     expect(ajoutBtn.getAttribute('role')).toBe('button')
     expect(ajoutBtn.getAttribute('aria-label')).toBe('Ajouter un marqueur')
+
+    const editCategorieBtn = document.querySelector('.btn-edit-categorie')
+    expect(editCategorieBtn).toBeTruthy()
+    expect(editCategorieBtn.getAttribute('role')).toBe('button')
+    expect(editCategorieBtn.getAttribute('aria-label')).toBe('Gérer les catégories')
 
     expect(L.DomEvent.disableClickPropagation).toHaveBeenCalled()
     expect(L.DomEvent.disableScrollPropagation).toHaveBeenCalled()
@@ -176,7 +181,7 @@ describe('LeafletMap.vue', () => {
     expect(addEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
 
     wrapper.unmount()
-    expect(mapApi.removeControl).toHaveBeenCalledTimes(1)
+    expect(mapApi.removeControl).toHaveBeenCalledTimes(2)
     expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
     expect(mapApi.remove).toHaveBeenCalledTimes(1)
   })
