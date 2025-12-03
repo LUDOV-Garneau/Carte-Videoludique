@@ -20,6 +20,7 @@
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
     "leaflet.fullscreen": "^4.0.0",
+    "maki": "^2.1.0",
     "mongoose": "^8.19.0",
     "pinia": "^3.0.3",
     "vue": "^3.5.18",

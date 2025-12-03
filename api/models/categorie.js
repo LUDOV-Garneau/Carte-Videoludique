@@ -16,13 +16,14 @@ const ImageCategorieSchema = new mongoose.Schema({
     height: { type: Number },
     bytes: { type: Number },
     format: { type: String },
+    createdAt: { type: String },
+    originalFilename: { type: String },
     
     // Pour les URLs externes
     externalUrl: { type: String },
     
     // Métadonnées communes
     alt: { type: String, trim: true, maxlength: 100 },
-    createdAt: { type: Date, default: Date.now }
 }, { _id: false });
 
 const CategorieSchema = new mongoose.Schema({
@@ -46,7 +47,7 @@ const CategorieSchema = new mongoose.Schema({
         type: String,
         trim: true,
         match: /^#[0-9A-F]{6}$/i, // Code couleur hexadécimal
-        default: "#4CAF50"
+        default: "#FFFFFF"
     },
     ordre: {
         type: Number,
