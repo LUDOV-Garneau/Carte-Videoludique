@@ -43,6 +43,7 @@ const currentMarqueur = ref(null);
 const currentAdresse = ref('');
 const filterPanelOpen = ref(false);
 const activeFilters = ref([]);
+const noResults = ref(false)
 
 const QUEBEC_BOUND = L.latLngBounds(
   [40, -90],
@@ -253,6 +254,10 @@ async function afficherMarqueurs() {
       return activeFilters.value.includes(type);
     });
 
+    noResults.value = (filtered.length === 0);
+
+    if (filtered.length === 0) return;
+
     filtered.forEach(marqueurData => {
       if (!marqueurData.geometry?.coordinates) return;
 
@@ -270,7 +275,6 @@ async function afficherMarqueurs() {
         selectedMarqueur.value = marker;
         marqueurStore.getMarqueur(properties.id);
         openInfoPanel();
-
         map.setView([lat, lng], Math.max(map.getZoom(), 15));
       });
 
@@ -514,6 +518,10 @@ defineExpose({
 <template>
 
   <div class="map" ref="mapEl"></div>
+  <div v-if="noResults" class="no-results">
+    Aucun lieu trouvé pour ces filtres.
+  </div>
+
 
   <AddMarqueurPanel :is-open="createPanelOpen" :coordinates="{ lat: latitude, lng: longitude }"
     :adresse="currentAdresse" @close="closeCreatePanel" @marqueur-added="handleMarqueurAdded"
@@ -723,6 +731,22 @@ defineExpose({
 :deep(.btn-filter-map:hover) {
   background: #0077ff;
   color: white;
+}
+
+.no-results {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 10px 18px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  z-index: 5000;
 }
 
 </style>
