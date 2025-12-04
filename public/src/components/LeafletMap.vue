@@ -42,6 +42,7 @@ const selectedMarqueur = ref(null);
 const currentMarqueur = ref(null);
 const currentAdresse = ref('');
 const filterPanelOpen = ref(false);
+const activeFilters = ref([]);
 
 const QUEBEC_BOUND = L.latLngBounds(
   [40, -90],
@@ -242,38 +243,45 @@ async function verifyAdressInQuebec(lat, lng) {
 async function afficherMarqueurs() {
   try {
     await marqueurStore.getMarqueurs();
-    marqueurs.value.forEach(marqueur => {
-      map.removeLayer(marqueur);
-    });
+
+    marqueurs.value.forEach(m => map.removeLayer(m));
     marqueurs.value = [];
 
-    marqueurStore.marqueurs.forEach(marqueurData => {
-      if (marqueurData.geometry && marqueurData.geometry.coordinates) {
-        const [lat, lng] = marqueurData.geometry.coordinates;
-        const properties = marqueurData.properties;
-
-        const marqueur = L.marker([lat, lng]);
-        if (properties.status === 'pending') marqueur.setOpacity(0.5);
-        marqueur.addTo(map);
-
-        marqueur.properties = properties;
-
-        marqueur.on('click', (e) => {
-          selectedMarqueur.value = marqueur;
-          marqueurStore.getMarqueur(marqueurData.properties.id);
-          openInfoPanel();
-
-          map.setView([lat, lng], Math.max(map.getZoom(), 15));
-        });
-
-        marqueurs.value.push(marqueur);
-      }
+    const filtered = marqueurStore.marqueurs.filter(m => {
+      const type = m.properties?.type || "";
+      if (activeFilters.value.length === 0) return true;
+      return activeFilters.value.includes(type);
     });
-    console.log(map.Marker);
+
+    filtered.forEach(marqueurData => {
+      if (!marqueurData.geometry?.coordinates) return;
+
+      const [lat, lng] = marqueurData.geometry.coordinates;
+      const properties = marqueurData.properties;
+
+      const marker = L.marker([lat, lng]);
+
+      if (properties.status === "pending") marker.setOpacity(0.5);
+
+      marker.addTo(map);
+      marker.properties = properties;
+
+      marker.on("click", () => {
+        selectedMarqueur.value = marker;
+        marqueurStore.getMarqueur(properties.id);
+        openInfoPanel();
+
+        map.setView([lat, lng], Math.max(map.getZoom(), 15));
+      });
+
+      marqueurs.value.push(marker);
+    });
+
   } catch (err) {
-    console.error('afficherMarqueurs error:', err);
+    console.error("afficherMarqueurs error:", err);
   }
 }
+
 
 /**
  * Ouvre le panneau d'ajout d'un marqueur
@@ -458,6 +466,16 @@ function setupKeyboardShortcuts() {
   map.__onKey = onKey
 }
 
+function applyFilters(filters) {
+  activeFilters.value = filters;
+  afficherMarqueurs(); // refresh
+}
+
+function resetFilters() {
+  activeFilters.value = [];
+  afficherMarqueurs();
+}
+
 onMounted(async() => {
   initMap()
   addTileLayer()
@@ -479,6 +497,8 @@ onUnmounted(() => {
 defineExpose({
   afficherMarqueurs,
   handlelocateFromAddress,
+  applyFilters,
+  resetFilters,
 
   latitude,
   longitude,
@@ -495,25 +515,14 @@ defineExpose({
 
   <div class="map" ref="mapEl"></div>
 
-	<AddMarqueurPanel
-		:is-open="createPanelOpen"
-		:coordinates="{ lat: latitude, lng: longitude }"
-		:adresse="currentAdresse"
-		@close="closeCreatePanel"
-		@marqueur-added="handleMarqueurAdded"
-		@locate-address="handlelocateFromAddress"
-	/>
+  <AddMarqueurPanel :is-open="createPanelOpen" :coordinates="{ lat: latitude, lng: longitude }"
+    :adresse="currentAdresse" @close="closeCreatePanel" @marqueur-added="handleMarqueurAdded"
+    @locate-address="handlelocateFromAddress" />
 
-  <MarqueurPanel
-    :is-open="infoPanelOpen"
-    @close="closeInfoPanel"
-    @marqueur-deleted="handleMarqueurDeleted"
-  />
+  <MarqueurPanel :is-open="infoPanelOpen" @close="closeInfoPanel" @marqueur-deleted="handleMarqueurDeleted" />
 
-  <FilterPanel
-  :is-open="filterPanelOpen"
-  @close="closeFilterPanel"
-/>
+  <FilterPanel :is-open="filterPanelOpen" @close="closeFilterPanel" @apply-filters="applyFilters"
+    @reset-filters="resetFilters" />
 </template>
 
 <style scoped>
