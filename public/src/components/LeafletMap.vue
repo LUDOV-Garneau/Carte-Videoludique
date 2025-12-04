@@ -103,7 +103,6 @@ function addTileLayer() {
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
     noWrap: true,
-    bounds: QUEBEC_BOUND,
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     subdomains: 'abcd'
   }).addTo(map)

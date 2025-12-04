@@ -8,23 +8,44 @@ dotenv.config();
 
 const cors = require("cors");
 
-// app.use(cors({
-//   origin: ['https://carte-videoludique.vercel.app', 'http://localhost:5173'],
-//   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-//   allowedHeaders: ['Content-Type', 'Authorization']
-// }));
-app.use(cors())
+const allowedOrigins = [
+
+  //Accès pour le frontend localhost
+  'http://localhost:5173',
+
+  //Accès pour le site ludov officiel
+  'https://ludov.ca',
+  
+  //Autorisation pour l'adresse github du site
+  'https://ludov-garneau.github.io'  
+]
+
+app.use(cors({
+  origin: function (origin, callback) {
+    console.log("CORS origin reçue :", origin);
+    if (!origin) return callback(null, true); 
+
+    if (allowedOrigins.includes(origin)) {
+      console.log("Origin autorisée :", origin);
+      return callback(null, true);
+    }
+
+    console.log("Origin refusée :", origin);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+}));
+
 app.use(express.json());
 
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "OPTIONS, GET, POST, PUT, PATCH, DELETE"
   );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   if (req.method === "OPTIONS") {
-    return res.sendStatus(200).end();
+    return res.sendStatus(200);
   }
   next();
 });
@@ -65,9 +86,5 @@ mongoose
     });
   })
   .catch((err) => console.error("❌ Erreur MongoDB :", err));
-
-  // mongoose.connect(process.env.DATA_BASE)
-  // .then(() => console.log("MongoDB connecté"))
-  // .catch((err) => console.error("Erreur MongoDB :", err));
 
 module.exports = app;

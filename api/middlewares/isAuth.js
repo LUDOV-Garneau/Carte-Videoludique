@@ -60,11 +60,11 @@ module.exports = async (req, res, next) => {
     const admin = await Admin.findById(decoded.id);
     if (!admin) {
       return res
-        .status(404)
+        .status(401)
         .json(
           formatErrorResponse(
-            404,
-            "Not Found",
+            401,
+            "Unauthorized",
             "Administrateur inexistant.",
             req.originalUrl
           )
