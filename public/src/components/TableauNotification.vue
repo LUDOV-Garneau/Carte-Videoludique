@@ -2,9 +2,13 @@
 import { onMounted, watch } from 'vue'
 import { useEditRequestStore } from '@/stores/useEditRequest'
 import { useAuthStore } from '@/stores/auth'
+import { useCommentRequestStore } from "@/stores/useCommentRequestStore";
+
 
 const editRequestStore = useEditRequestStore()
 const authStore = useAuthStore()
+const commentRequestStore = useCommentRequestStore();
+
 
 const props = defineProps({
   filtreStatus: { type: String, default: 'pending' },
@@ -36,9 +40,17 @@ const refuserLocal = (marqueur) => {
   emit('refuser-marqueur', marqueur)
 }
 
+// --- ICI le fix complet ---
 const focusMarqueur = (marqueur) => {
+  // Prévention si aucune coordonnée : évite un crash et un focus inutile
+  if (!marqueur?.geometry?.coordinates) {
+    console.warn("❗ Impossible de centrer : ce marqueur n'a pas de coordonnées", marqueur)
+    return
+  }
+
   emit('focus-marqueur', marqueur)
 }
+// ---------------------------
 
 const loadEditRequests = async () => {
   try {
@@ -56,12 +68,18 @@ watch(
     if (newVal === 'edit-request') {
       loadEditRequests()
     }
+    if (newVal === "comments") {
+      commentRequestStore.getPendingComments();
+    }
   }
 )
 
 onMounted(() => {
   if (props.filtreStatus === 'edit-request') {
     loadEditRequests()
+  }
+  if (props.filtreStatus === "comments") {
+    commentRequestStore.getPendingComments();
   }
 })
 </script>
@@ -70,29 +88,22 @@ onMounted(() => {
   <div class="offers-wrapper">
     <div class="tabs-wrapper">
       <div class="tabs">
-        <button
-          :class="{ active: filtreStatus === 'pending' }"
-          @click="setFiltre('pending')"
-        >
+        <button :class="{ active: filtreStatus === 'pending' }" @click="setFiltre('pending')">
           Demande d'ajout
         </button>
 
-        <button
-          :class="{ active: filtreStatus === 'edit-request' }"
-          @click="setFiltre('edit-request')"
-        >
+        <button :class="{ active: filtreStatus === 'edit-request' }" @click="setFiltre('edit-request')">
           Demande de modification
         </button>
+        <button :class="{ active: filtreStatus === 'comments' }" @click="setFiltre('comments')">
+          Commentaires à approuver
+        </button>
+
       </div>
     </div>
 
     <!-- TABLE DES DEMANDES D'AJOUT -->
-    <table
-      v-if="filtreStatus === 'pending'"
-      class="offers-table"
-      role="table"
-      aria-label="Offres fournisseur"
-    >
+    <table v-if="filtreStatus === 'pending'" class="offers-table" role="table" aria-label="Offres fournisseur">
       <thead>
         <tr>
           <th>Lieu</th>
@@ -105,12 +116,8 @@ onMounted(() => {
       </thead>
 
       <tbody>
-        <tr
-          v-for="marqueur in marqueursFiltres"
-          :key="marqueur.id || marqueur._id"
-          class="row-hover"
-          @click="focusMarqueur(marqueur)"
-        >
+        <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id || marqueur._id" class="row-hover"
+          @click="focusMarqueur(marqueur)">
           <td class="provider">{{ marqueur.properties.titre }}</td>
           <td class="address">{{ marqueur.properties.adresse }}</td>
 
@@ -163,22 +170,26 @@ onMounted(() => {
       </thead>
 
       <tbody>
-        <tr v-for="req in editRequestStore.editRequests" :key="req._id">
-          <td>{{ req.proposedProperties?.titre || req.marqueur?.properties?.titre }}</td>
+        <tr v-for="req in editRequestStore.editRequests" :key="req._id" class="row-hover"
+          @click="focusMarqueur(req.marqueur)">
           <td>
-            {{ req.proposedProperties?.adresse }}<br>
+            {{ req.proposedProperties?.titre || req.marqueur?.properties?.titre }}
+          </td>
+
+          <td>
+            {{ req.proposedProperties?.adresse }} <br>
             {{ req.proposedProperties?.description }}
           </td>
 
-          <td class="info-col">
+          <td class="info-col" @click.stop>
             <button class="info-btn">Voir détails</button>
           </td>
 
-          <td class="accept-col">
+          <td class="accept-col" @click.stop>
             <button class="action-btn accept">Accepter</button>
           </td>
 
-          <td class="reject-col">
+          <td class="reject-col" @click.stop>
             <button class="action-btn reject">Refuser</button>
           </td>
         </tr>
@@ -186,6 +197,49 @@ onMounted(() => {
         <tr v-if="!editRequestStore.editRequests.length">
           <td colspan="5" class="empty">
             Aucune demande de modification pour le moment.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- TABLE DES COMMENTAIRES À APPROUVER -->
+    <table v-if="filtreStatus === 'comments'" class="offers-table">
+      <thead>
+        <tr>
+          <th>Marqueur</th>
+          <th>Commentaire</th>
+          <th>Auteur</th>
+          <th class="accept-col">Accepter</th>
+          <th class="reject-col">Refuser</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr v-for="item in commentRequestStore.pendingComments" :key="item.commentId" class="row-hover"
+          @click="focusMarqueur(item.marqueur)">
+          <td>{{ item.marqueur?.properties?.titre }}</td>
+
+          <td>{{ item.comment?.contenu }}</td>
+
+          <td>{{ item.comment?.auteur }}</td>
+
+          <td class="accept-col" @click.stop>
+            <button class="action-btn accept" @click="emit('accepter-commentaire', item.marqueurId, item.commentId)">
+              Accepter
+            </button>
+
+          </td>
+
+          <td class="reject-col" @click.stop>
+            <button class="action-btn reject" @click="emit('refuser-commentaire', item.marqueurId, item.commentId)">
+              Refuser
+            </button>
+
+          </td>
+        </tr>
+
+        <tr v-if="!commentRequestStore.pendingComments.length">
+          <td colspan="5" class="empty">
+            Aucun commentaire en attente de validation.
           </td>
         </tr>
       </tbody>

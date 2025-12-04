@@ -271,7 +271,6 @@ exports.addCommentMarqueur = async (req, res, next) => {
     }
 
     const marqueur = await Marqueur.findById(marqueurId);
-
     if (!marqueur) {
       return res.status(404).json(formatErrorResponse(
         404,
@@ -281,13 +280,92 @@ exports.addCommentMarqueur = async (req, res, next) => {
       ));
     }
 
-    const comment = { auteur: auteur || "Anonyme", contenu: texte };
+    const comment = {
+      auteur: auteur || "Anonyme",
+      contenu: texte,
+      status: "pending"
+    };
+
     marqueur.properties.comments.push(comment);
     await marqueur.save();
 
     res.status(201).json(formatSuccessResponse(
       201,
-      "Témoignage ajouté avec succès.",
+      "Témoignage ajouté et en attente d'approbation.",
+      comment,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getPendingComments = async (req, res, next) => {
+  try {
+    const marqueurs = await Marqueur.find({
+      "properties.comments.status": "pending"
+    });
+
+    const data = [];
+
+    marqueurs.forEach(m => {
+      m.properties.comments
+        .filter(c => c.status === "pending")
+        .forEach(c => {
+          data.push({
+            marqueurId: m._id,
+            marqueur: m,
+            commentId: c._id,
+            comment: c
+          });
+        });
+    });
+
+    return res.status(200).json(formatSuccessResponse(
+      200,
+      "Commentaires en attente récupérés.",
+      data,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.updateCommentStatus = async (req, res, next) => {
+  try {
+    const { marqueurId, commentId } = req.params;
+    const { status } = req.body;
+
+    const allowed = ["pending", "approved", "rejected"];
+    if (!allowed.includes(status)) {
+      return res.status(400).json(formatErrorResponse(
+        400,
+        "Bad Request",
+        "Statut invalide.",
+        req.originalUrl
+      ));
+    }
+
+    const marqueur = await Marqueur.findById(marqueurId);
+    if (!marqueur)
+      return res.status(404).json(formatErrorResponse(404, "Not Found", "Marqueur introuvable", req.originalUrl));
+
+    const comment = marqueur.properties.comments.id(commentId);
+    if (!comment)
+      return res.status(404).json(formatErrorResponse(404, "Not Found", "Commentaire introuvable", req.originalUrl));
+
+    if (status === "rejected") {
+      comment.deleteOne();
+    } else {
+      comment.status = status;
+    }
+
+    await marqueur.save();
+
+    res.status(200).json(formatSuccessResponse(
+      200,
+      "Statut du commentaire mis à jour.",
       comment,
       req.originalUrl
     ));

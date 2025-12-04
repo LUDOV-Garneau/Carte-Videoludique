@@ -1,10 +1,12 @@
 <script setup>
-import { defineProps, defineEmits, ref, watch, onMounted, nextTick, computed } from 'vue'
+import { defineProps, defineEmits, ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import AddImage from './AddImage.vue'
 import { fetchAdresseSuggestions, geocodeAddress } from '../utils/geocode'
+import { useBodyScroll } from '../composables/useBodyScroll.js'
 
 const props = defineProps({
-  marqueur: { type: Object, required: true }
+  marqueur: { type: Object, required: true },
+  isOpen: { type: Boolean, required: true }
 })
 
 const emit = defineEmits(['fermer', 'valider', 'locate-from-address'])
@@ -20,7 +22,6 @@ const latitude = ref(null)
 const longitude = ref(null)
 
 const files = ref([])
-const imagePreview = ref('')
 
 const TYPES = [
   'Écoles et instituts de formation',
@@ -76,6 +77,9 @@ const initialImageUrls = computed(() => {
     .filter(img => img && img.url)
     .map(img => img.url)
 })
+
+// Utilisation du composable pour gérer le scroll
+const { disableScroll, enableScroll } = useBodyScroll()
 
 const hydrateFromProps = () => {
   const p = props.marqueur?.properties ?? {}
@@ -386,8 +390,16 @@ function onKeydown(e) {
 }
 
 onMounted(async () => {
+  // Bloquer le scroll dès que le composant est monté
+  disableScroll()
+  
   await nextTick()
   titreEl.value?.focus?.()
+})
+
+// Débloquer le scroll quand le composant est détruit
+onUnmounted(() => {
+  enableScroll()
 })
 </script>
 
@@ -462,27 +474,22 @@ onMounted(async () => {
               <p v-if="descriptionValidation" class="error-message">{{ descriptionMessage }}</p>
               <span class="char-count">{{ descCount }}/280</span>
             </div>
-        </div>
-
-        <div class="form-control form-col-2">
-          <label for="temoignageMarqueur">Témoignage</label>
-          <textarea id="temoignageMarqueur" v-model.trim="temoignage" rows="3" placeholder="Témoignage (optionnel)"></textarea>
-        </div>
-
-        <div class="form-control form-col-2">
-          <label>Image</label>
-          <div class="image-row">
-            <AddImage
-              v-model="files"
-              :initial-urls="initialImageUrls"
-              @change="onImagesChange"
-            />
           </div>
-          <img
-            v-if="imagePreview"
-            :src="imagePreview"
-            alt="Aperçu"
-            class="image-preview"/>
+
+          <div class="form-control form-col-2">
+            <label for="temoignageMarqueur">Témoignage</label>
+            <textarea id="temoignageMarqueur" v-model.trim="temoignage" rows="3" placeholder="Témoignage (optionnel)"></textarea>
+          </div>
+
+          <div class="form-control form-col-2">
+            <label>Image</label>
+            <div class="image-row">
+              <AddImage
+                v-model="files"
+                :initial-urls="initialImageUrls"
+                @change="onImagesChange"
+              />
+            </div>
           </div>
         </div>
 

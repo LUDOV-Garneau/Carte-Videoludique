@@ -5,8 +5,15 @@ const mongoose = require("mongoose");
 const CommentSchema = new mongoose.Schema({
   auteur: { type: String, trim: true },
   contenu: { type: String, trim: true, maxlength: 1000 },
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+    index: true
+  },
   createdAt: { type: Date, default: Date.now }
 });
+
 
 const ImageSchema = new mongoose.Schema({
     publicId: String,

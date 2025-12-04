@@ -59,6 +59,7 @@ export function useBodyScroll() {
     }
 
     // Auto-gestion avec watcher
+    // Si ça ne marche pas, utiliser le enable/disable manuellement dans le composant onMounted/onUnmounted
     function lockScrollWhen(condition, options = { immediate: true }) {
         return watch(condition, (newVal) => {
             toggleScroll(newVal);
