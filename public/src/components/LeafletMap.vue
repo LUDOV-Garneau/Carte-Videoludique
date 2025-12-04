@@ -4,6 +4,7 @@ import L from 'leaflet'
 import { reverseGeocode, isAddressInQuebecProvince } from '../utils/geocode.js'
 import AddMarqueurPanel from './AddMarqueurPanel.vue'
 import MarqueurPanel from './MarqueurPanel.vue'
+import FilterPanel from './FilterPanel.vue'
 import { useMarqueurStore } from '../stores/useMarqueur.js'
 
 import 'leaflet.fullscreen'
@@ -40,11 +41,20 @@ const marqueurs = ref([]);
 const selectedMarqueur = ref(null);
 const currentMarqueur = ref(null);
 const currentAdresse = ref('');
+const filterPanelOpen = ref(false);
 
 const QUEBEC_BOUND = L.latLngBounds(
   [40, -90],
-  [63, -50]   
+  [63, -50]
 )
+
+function openFilterPanel() {
+  filterPanelOpen.value = true;
+}
+
+function closeFilterPanel() {
+  filterPanelOpen.value = false;
+}
 
 /**
  * Initialise la carte Leaflet et la centre sur Montréal.
@@ -56,10 +66,10 @@ const QUEBEC_BOUND = L.latLngBounds(
  * @returns {void}
  */
 function initMap() {
-  map = L.map(mapEl.value, { 
+  map = L.map(mapEl.value, {
     center: [52.5, -71.0],
-    zoom: 5,               
-    minZoom: 5,            
+    zoom: 5,
+    minZoom: 5,
     maxZoom: 19,
 
     zoomControl: true,
@@ -69,11 +79,11 @@ function initMap() {
 
     fullscreenControl: true,
     fullscreenControlOptions: {
-      position: 'topleft', 
+      position: 'topleft',
       title: 'Plein écran',
       titleCancel: 'Quitter le plein écran'
     }
-    
+
   })
   .setView([52.5, -71.0], 5);
 }
@@ -148,7 +158,7 @@ function setupMapClickHandler() {
  * Cette fonction vérifie si l'adresse est dans la province de Québec.
  * Si oui, elle ajoute le marqueur sur la carte
  * Sinon, elle retire le marqueur et affiche un message à l'utilisateur
- * 
+ *
  * @param lat La coordonnée de latitude du marqueur
  * @param lng La coordonnée de longitude du marqueur
  */
@@ -187,7 +197,7 @@ async function verifyAdressInQuebec(lat, lng) {
     const ligne = [
       addr.house_number,
       addr.road,
-      quartier, 
+      quartier,
       ville,
       addr.state,
       addr.postcode,
@@ -223,11 +233,11 @@ async function verifyAdressInQuebec(lat, lng) {
  *      → charger ses données détaillées via `marqueurStore.getMarqueur(id)`,
  *      → ouvrir le panneau d'information (`openInfoPanel()`),
  *      → et recentrer la carte sur le marqueur.
- * 
+ *
  * @async
  * @function afficherMarqueurs
  * @returns {Promise<void>} Promesse résolue lorsque les marqueurs sont affichés.
- * 
+ *
  */
 async function afficherMarqueurs() {
   try {
@@ -276,7 +286,7 @@ function openCreatePanel() {
 }
 
 /**
- * Ferme le panneau d'ajout d'un marqueur 
+ * Ferme le panneau d'ajout d'un marqueur
  * et efface le contenu des champs si nécéssaire
  */
 function closeCreatePanel() {
@@ -398,6 +408,39 @@ function addCustomControl() {
 }
 
 /**
+ * Ajoute un filtre selon la catégorie
+ */
+function addFilterControl() {
+  const FilterControl = L.Control.extend({
+    options: { position: "topright" },
+    onAdd() {
+      const container = L.DomUtil.create("div", "leaflet-control leaflet-control-custom");
+
+      const btn = L.DomUtil.create("a", "btn-filter-map", container);
+      btn.href = "#";
+      btn.title = "Filtrer les catégories";
+      btn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M3 4h18M6 10h12M9 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      `;
+
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.on(btn, "click", (e) => {
+        L.DomEvent.preventDefault(e);
+        openFilterPanel();     // *** tu vas créer cette fonction ***
+      });
+
+      return container;
+    }
+  });
+
+  const controlFilter = new FilterControl();
+  map.addControl(controlFilter);
+}
+
+
+/**
  * Configure les raccourcis clavier globaux liés à la carte.
  *
  * Actuellement, la touche **Échap (Escape)** permet de fermer le panneau
@@ -420,6 +463,7 @@ onMounted(async() => {
   addTileLayer()
   setupMapClickHandler()
   addCustomControl()
+  addFilterControl();
   setupKeyboardShortcuts()
   await afficherMarqueurs();
 });
@@ -465,6 +509,11 @@ defineExpose({
     @close="closeInfoPanel"
     @marqueur-deleted="handleMarqueurDeleted"
   />
+
+  <FilterPanel
+  :is-open="filterPanelOpen"
+  @close="closeFilterPanel"
+/>
 </template>
 
 <style scoped>
@@ -647,4 +696,24 @@ defineExpose({
 	left: 0 !important;
 	z-index: 99999;
 }
+
+:deep(.btn-filter-map) {
+  background: white;
+  border: 2px solid #0077ff;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  transition: 0.2s;
+}
+
+:deep(.btn-filter-map:hover) {
+  background: #0077ff;
+  color: white;
+}
+
 </style>
