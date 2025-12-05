@@ -23,4 +23,7 @@ router.put("/categories/:categorieId", isAuth, categorieController.updateCategor
 // PATCH => /categories/:categorieId/ordre
 router.patch("/categories/:categorieId/ordre", isAuth, categorieController.updateCategorieOrdre);
 
+// DELETE => /categories/:categorieId
+router.delete("/categories/:categorieId", isAuth, categorieController.deleteCategorie);
+
 module.exports = router;

@@ -123,9 +123,9 @@ exports.getCategorie = async (req, res, next) => {
  * Mettre à jour une catégorie existante en fonction de son identifiant.
  * Ne gère PAS l'ordre (voir updateCategorieOrdre pour cela)
  *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
+ * @param {import('express').Request} req - Objet de requête Express contenant les données du marqueur dans `req.body`.
+ * @param {import('express').Response} res - Objet de réponse Express utilisé pour envoyer le marqueur créé.
+ * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
  */
 exports.updateCategorie = async (req, res, next) => {
     try {
@@ -238,8 +238,8 @@ exports.updateCategorie = async (req, res, next) => {
  * Utilisé pour le drag & drop dans l'interface d'administration
  *
  * @param {import('express').Request} req - req.body.ordreCategories: Array<string> des IDs dans le nouvel ordre
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
+ * @param {import('express').Response} res - Objet de réponse Express utilisé pour envoyer les catégories mises à jour.
+ * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
  */
 exports.updateCategorieOrdre = async (req, res, next) => {
     try {
@@ -286,6 +286,42 @@ exports.updateCategorieOrdre = async (req, res, next) => {
             await session.endSession();
             throw transactionError;
         }
+    } catch (err) {
+        next(err);
+    }
+}
+
+/**
+ * Met à jour l'ordre des catégories basé sur un array d'IDs
+ * Utilisé pour le drag & drop dans l'interface d'administration
+ *
+ * @param {import('express').Request} req - req.body.ordreCategories: Array<string> des IDs dans le nouvel ordre
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+exports.deleteCategorie = async (req, res, next) => {
+    try {
+        const { categorieId } = req.params;
+        const deletedCategorie = await Categorie.findByIdAndUpdate(
+            categorieId,
+            { active: false },
+            { new: true }
+        );
+        if (!deletedCategorie) {
+            return res.status(404).json(formatErrorResponse(
+                404,
+                "Not Found",
+                "Catégorie non trouvée.",
+                req.originalUrl
+            ));
+        }
+
+        res.status(200).json(formatSuccessResponse(
+            200,
+            "Catégorie désactivée avec succès.",
+            deletedCategorie,
+            req.originalUrl
+        ));
     } catch (err) {
         next(err);
     }
