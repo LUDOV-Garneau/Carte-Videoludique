@@ -12,9 +12,8 @@ import { RouterView } from 'vue-router'
 /* fond global pour toute l’appli */
 html,
 body,
-#app {
+#plugin-verusvueapp {
   min-height: 100%;
   margin: 0;
-  background-color: #f5f7fa; 
 }
 </style>

@@ -8,6 +8,8 @@ import 'leaflet/dist/leaflet.css'
 import 'bootstrap'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
+console.log("Starting Carte-Videoludique App");
+
 const app = createApp(App)
 
 app.use(createPinia())
