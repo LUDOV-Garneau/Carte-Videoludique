@@ -74,7 +74,7 @@ exports.createMarqueur = async (req, res, next) => {
  */
 exports.getMarqueurs = async (req, res, next) => {
   try {
-    const marqueurs = await Marqueur.find();
+    const marqueurs = await Marqueur.find({ archived: false });
 
     res.status(200).json(formatSuccessResponse(
       200,
