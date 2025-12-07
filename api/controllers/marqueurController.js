@@ -515,3 +515,26 @@ exports.deleteMarqueurPermanently = async (req, res, next) => {
   }
 };
 
+/**
+ * Réccupère les marqueurs archivés.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+exports.getArchivedMarqueurs = async (req, res, next) => {
+  try {
+    const archived = await Marqueur.find({ archived: true });
+
+    return res.status(200).json(formatSuccessResponse(
+      200,
+      "Marqueurs archivés récupérés.",
+      archived,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
+
