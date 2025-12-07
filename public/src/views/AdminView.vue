@@ -197,7 +197,7 @@ onMounted(() => {
     <main class="content">
       <h2 class="section-title">Notifications</h2>
 
-      <TableauNotification v-model:filtre-status="filtreStatus" :marqueurs-filtres="marqueursFiltres"
+      <TableauNotification v-model:filtre-status="filtreStatus" :marqueurs-filtres="marqueursFiltres" :archived="archived"
         @ouvrir-modal="ouvrirModal" @accepter-marqueur="accepterMarqueur" @refuser-marqueur="refuserMarqueur"
         @accepter-commentaire="accepterCommentaire" @refuser-commentaire="refuserCommentaire"
         @focus-marqueur="centrerCarte" @restore-marqueur="restaurer" @delete-final="supprimerDefinitif" />

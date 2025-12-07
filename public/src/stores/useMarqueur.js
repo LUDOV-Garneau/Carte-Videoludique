@@ -40,15 +40,35 @@ export const useMarqueurStore = defineStore('marqueurs', () => {
        GET MARQUEURS NON ARCHIVÉS
     -------------------------------------------- */
     async function getMarqueurs() {
-        const response = await fetch(`${API_URL}/marqueurs`, { method: 'GET' })
+        const response = await fetch(`${API_URL}/marqueurs`, {
+            method: 'GET',
+            headers: { "Content-Type": "application/json" }
+        })
+
         const data = await response.json()
         if (!response.ok) throw new Error(data.message)
 
         marqueurs.value = data.data
-            .filter(m => !m.isArchived)
+            .filter(m => !m.archived) // ✅ CORRIGÉ
             .map(m => ({ ...m, id: m._id }))
 
         return marqueurs.value
+    }
+
+    /* --------------------------------------------
+       ✅ GET UN SEUL MARQUEUR
+    -------------------------------------------- */
+    async function getMarqueur(id) {
+        const response = await fetch(`${API_URL}/marqueurs/${id}`, {
+            method: 'GET',
+            headers: { "Content-Type": "application/json" }
+        })
+
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.message)
+
+        marqueurActif.value = { ...data.data, id: data.data._id }
+        return marqueurActif.value
     }
 
     /* --------------------------------------------
@@ -122,6 +142,7 @@ export const useMarqueurStore = defineStore('marqueurs', () => {
         marqueurActif,
         ajouterMarqueur,
         getMarqueurs,
+        getMarqueur,
         getArchived,
         archiveMarqueur,
         restore,

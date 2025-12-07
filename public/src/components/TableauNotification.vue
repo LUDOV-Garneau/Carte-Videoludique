@@ -12,7 +12,8 @@ const commentRequestStore = useCommentRequestStore();
 
 const props = defineProps({
   filtreStatus: { type: String, default: 'pending' },
-  marqueursFiltres: { type: Array, default: () => [] }
+  marqueursFiltres: { type: Array, default: () => [] },
+  archived: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits([
@@ -257,7 +258,7 @@ onMounted(() => {
       </thead>
 
       <tbody>
-        <tr v-for="marqueur in archived" :key="marqueur._id">
+        <tr v-for="marqueur in props.archived" :key="marqueur._id">
           <td>{{ marqueur.properties.titre }}</td>
           <td>{{ marqueur.properties.createdByName }}</td>
 
@@ -274,7 +275,7 @@ onMounted(() => {
           </td>
         </tr>
 
-        <tr v-if="!archived.length">
+        <tr v-if="!props.archived.length">
           <td colspan="4" class="empty">Aucun marqueur archivé.</td>
         </tr>
       </tbody>
