@@ -32,11 +32,15 @@ exports.createMarqueur = async (req, res, next) => {
       form.type = "Autres";
     }
 
+    // ⚠️ Correction : coordinates = [lng, lat] pour un GeoJSON valide
     const marqueur = new Marqueur({
       type: "Feature",
       geometry: {
         type: "Point",
-        coordinates: [parseFloat(form.lat), parseFloat(form.lng)]
+        coordinates: [
+          parseFloat(form.lng),
+          parseFloat(form.lat)
+        ]
       },
       properties: {
         titre: form.titre,
@@ -47,8 +51,10 @@ exports.createMarqueur = async (req, res, next) => {
         courriel: form.email,
         images: form.images || [],
         status: isAdmin ? "approved" : "pending",
-        createdByName: form.nom || "Anonyme"
-      }
+        createdByName: form.nom || "Anonyme",
+        comments: []
+      },
+      archived: false
     });
 
     const result = await marqueur.save();
@@ -66,7 +72,7 @@ exports.createMarqueur = async (req, res, next) => {
 };
 
 /**
- * Récupère tous les marqueurs et les renvoie en réponse JSON.
+ * Récupère tous les marqueurs non archivés et les renvoie en réponse JSON.
  *
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -74,6 +80,7 @@ exports.createMarqueur = async (req, res, next) => {
  */
 exports.getMarqueurs = async (req, res, next) => {
   try {
+    // ⚠️ Correction : inclure seulement archived: false
     const marqueurs = await Marqueur.find({ archived: false });
 
     res.status(200).json(formatSuccessResponse(
@@ -170,16 +177,14 @@ exports.updateMarqueur = async (req, res, next) => {
       updated,
       req.originalUrl
     ));
-
   } catch (err) {
     next(err);
   }
 };
 
-
 /**
  * Met à jour le statut d’un marqueur (approved, pending, rejected).
- * Si rejeté → suppression du marqueur.
+ * Si rejeté → ARCHIVAGE au lieu de suppression.
  *
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -200,28 +205,32 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       ));
     }
 
-    // 🔥 Si rejeté : suppression
+    // 🔥 Correction : "rejected" = archive, pas delete
     if (status === "rejected") {
-      const deleted = await Marqueur.findByIdAndDelete(marqueurId);
+      const archived = await Marqueur.findByIdAndUpdate(
+        marqueurId,
+        { $set: { archived: true, "properties.status": "rejected" } },
+        { new: true }
+      );
 
-      if (!deleted) {
+      if (!archived) {
         return res.status(404).json(formatErrorResponse(
           404,
           "Not Found",
-          "Le marqueur à supprimer n'existe pas.",
+          "Le marqueur à archiver n'existe pas.",
           req.originalUrl
         ));
       }
 
       return res.status(200).json(formatSuccessResponse(
         200,
-        "Marqueur supprimé (rejeté).",
-        deleted,
+        "Marqueur rejeté et archivé.",
+        archived,
         req.originalUrl
       ));
     }
 
-    // 🔥 Sinon on met juste à jour le statut
+    // 🔥 Sinon mise à jour standard
     const updated = await Marqueur.findByIdAndUpdate(
       marqueurId,
       { $set: { "properties.status": status } },
@@ -243,7 +252,6 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       updated,
       req.originalUrl
     ));
-
   } catch (err) {
     next(err);
   }
@@ -251,10 +259,6 @@ exports.updateStatusMarqueur = async (req, res, next) => {
 
 /**
  * Ajoute un commentaire (témoignage) à un marqueur existant.
- *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
  */
 exports.addCommentMarqueur = async (req, res, next) => {
   try {
@@ -375,60 +379,7 @@ exports.updateCommentStatus = async (req, res, next) => {
 };
 
 /**
- * Supprime un commentaire spécifique d’un marqueur existant.
- *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
- */
-exports.deleteCommentMarqueur = async (req, res, next) => {
-  try {
-    const { marqueurId, commentId } = req.params;
-
-    const marqueur = await Marqueur.findById(marqueurId);
-
-    if (!marqueur) {
-      return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le marqueur spécifié n'existe pas.",
-        req.originalUrl
-      ));
-    }
-
-    const index = marqueur.comments.findIndex(
-      (c) => c._id.toString() === commentId
-    );
-
-    if (index === -1) {
-      return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le commentaire spécifié n'existe pas.",
-        req.originalUrl
-      ));
-    }
-
-    marqueur.comments.splice(index, 1);
-    await marqueur.save();
-
-    res.status(200).json(formatSuccessResponse(
-      200,
-      "Témoignage supprimé avec succès.",
-      marqueur,
-      req.originalUrl
-    ));
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * Supprime un marqueur en fonction de son identifiant.
- *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
+ * Archive un marqueur (suppression logique).
  */
 exports.deleteMarqueur = async (req, res, next) => {
   try {
@@ -457,10 +408,6 @@ exports.deleteMarqueur = async (req, res, next) => {
 
 /**
  * Remet un marqueur sur la carte selon son id.
- *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
  */
 exports.restoreMarqueur = async (req, res, next) => {
   try {
@@ -488,11 +435,7 @@ exports.restoreMarqueur = async (req, res, next) => {
 };
 
 /**
- * Supprime un marqueur définitivement en fonction de son identifiant.
- *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
+ * Supprime un marqueur définitivement.
  */
 exports.deleteMarqueurPermanently = async (req, res, next) => {
   try {
@@ -517,10 +460,6 @@ exports.deleteMarqueurPermanently = async (req, res, next) => {
 
 /**
  * Réccupère les marqueurs archivés.
- *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
  */
 exports.getArchivedMarqueurs = async (req, res, next) => {
   try {
@@ -536,5 +475,3 @@ exports.getArchivedMarqueurs = async (req, res, next) => {
     next(err);
   }
 };
-
-
