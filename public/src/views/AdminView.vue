@@ -167,6 +167,24 @@ const validerModification = async (marqueurModifie) => {
   }
 }
 
+const archived = ref([]);
+
+const loadArchived = async () => {
+  archived.value = await marqueurStore.getArchived(authStore.token);
+};
+
+const restaurer = async (marqueur) => {
+  await marqueurStore.restore(marqueur._id, authStore.token);
+  loadArchived();
+  marqueurStore.getMarqueurs();
+  leafletMapRef.value?.afficherMarqueurs();
+};
+
+const supprimerDefinitif = async (marqueur) => {
+  await marqueurStore.deletePermanently(marqueur._id, authStore.token);
+  loadArchived();
+};
+
 onMounted(() => {
   getMarqueurs()
 
@@ -182,7 +200,7 @@ onMounted(() => {
       <TableauNotification v-model:filtre-status="filtreStatus" :marqueurs-filtres="marqueursFiltres"
         @ouvrir-modal="ouvrirModal" @accepter-marqueur="accepterMarqueur" @refuser-marqueur="refuserMarqueur"
         @accepter-commentaire="accepterCommentaire" @refuser-commentaire="refuserCommentaire"
-        @focus-marqueur="centrerCarte" />
+        @focus-marqueur="centrerCarte" @restore-marqueur="restaurer" @delete-final="supprimerDefinitif" />
 
 
       <MarqueurModal v-if="modalVisible && selectedMarqueur" :marqueur="selectedMarqueur"
