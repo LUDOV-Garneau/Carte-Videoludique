@@ -91,14 +91,15 @@ onMounted(() => {
         <button :class="{ active: filtreStatus === 'pending' }" @click="setFiltre('pending')">
           Demande d'ajout
         </button>
-
         <button :class="{ active: filtreStatus === 'edit-request' }" @click="setFiltre('edit-request')">
           Demande de modification
         </button>
         <button :class="{ active: filtreStatus === 'comments' }" @click="setFiltre('comments')">
           Commentaires à approuver
         </button>
-
+        <button :class="{ active: filtreStatus === 'archived' }" @click="setFiltre('archived')">
+          Marqueurs archivés
+        </button>
       </div>
     </div>
 
@@ -241,6 +242,40 @@ onMounted(() => {
           <td colspan="5" class="empty">
             Aucun commentaire en attente de validation.
           </td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- TABLE DES MARQUEURS ARCHIVÉS -->
+    <table v-if="filtreStatus === 'archived'" class="offers-table">
+      <thead>
+        <tr>
+          <th>Lieu</th>
+          <th>Auteur</th>
+          <th>Réactiver</th>
+          <th>Supprimer définitivement</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr v-for="marqueur in archived" :key="marqueur._id">
+          <td>{{ marqueur.properties.titre }}</td>
+          <td>{{ marqueur.properties.createdByName }}</td>
+
+          <td>
+            <button class="action-btn accept" @click="$emit('restore-marqueur', marqueur)">
+              Remettre sur la carte
+            </button>
+          </td>
+
+          <td>
+            <button class="action-btn reject" @click="$emit('delete-final', marqueur)">
+              Supprimer définitivement
+            </button>
+          </td>
+        </tr>
+
+        <tr v-if="!archived.length">
+          <td colspan="4" class="empty">Aucun marqueur archivé.</td>
         </tr>
       </tbody>
     </table>
