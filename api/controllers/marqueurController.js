@@ -454,3 +454,36 @@ exports.deleteMarqueur = async (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * Remet un marqueur sur la carte selon son id.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+exports.restoreMarqueur = async (req, res, next) => {
+  try {
+    const restored = await Marqueur.findByIdAndUpdate(
+      req.params.marqueurId,
+      { $set: { archived: false } },
+      { new: true }
+    );
+
+    if (!restored) {
+      return res.status(404).json(formatErrorResponse(
+        404, "Not Found", "Marqueur introuvable", req.originalUrl
+      ));
+    }
+
+    return res.status(200).json(formatSuccessResponse(
+      200,
+      "Marqueur restauré et remis sur la carte.",
+      restored,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
