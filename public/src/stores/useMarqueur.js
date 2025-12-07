@@ -6,216 +6,126 @@ import { useAuthStore } from './auth.js'
 export const useMarqueurStore = defineStore('marqueurs', () => {
 
     const marqueurs = ref([])
+    const archives = ref([])
     const marqueurActif = ref(null)
     const authStore = useAuthStore()
+
+    function authHeaders() {
+        const headers = { "Content-Type": "application/json" }
+        if (authStore.isAuthenticated && authStore.token) {
+            headers.Authorization = `Bearer ${authStore.token}`
+        }
+        return headers
+    }
 
     /* --------------------------------------------
        AJOUTER UN MARQUEUR
     -------------------------------------------- */
-    function ajouterMarqueur(payload) {
-
-        const headers = { "Content-Type": "application/json" }
-
-        if (authStore.isAuthenticated && authStore.token) {
-            headers.Authorization = `Bearer ${authStore.token}`
-        }
-
-        return fetch(`${API_URL}/marqueurs`, {
+    async function ajouterMarqueur(payload) {
+        const response = await fetch(`${API_URL}/marqueurs`, {
             method: 'POST',
-            headers: headers,
+            headers: authHeaders(),
             body: JSON.stringify(payload),
         })
-        .then(async (response) => {
-            const data = await response.json()
 
-            if (response.status !== 201) {
-                throw new Error(data.message || 'Erreur inconnue')
-            }
+        const data = await response.json()
+        if (response.status !== 201) throw new Error(data.message)
 
-            const mapped = {
-                ...data.data,
-                id: data.data._id
-            }
-
-            marqueurs.value.push(mapped)
-            return mapped
-        })
-        .catch((error) => {
-            console.error('Erreur ajout marqueur:', error)
-            throw error
-        })
+        const mapped = { ...data.data, id: data.data._id }
+        marqueurs.value.push(mapped)
+        return mapped
     }
 
     /* --------------------------------------------
-       GET TOUS LES MARQUEURS
+       GET MARQUEURS NON ARCHIVÉS
     -------------------------------------------- */
-    function getMarqueurs() {
-        return fetch(`${API_URL}/marqueurs`, {
+    async function getMarqueurs() {
+        const response = await fetch(`${API_URL}/marqueurs`, { method: 'GET' })
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.message)
+
+        marqueurs.value = data.data
+            .filter(m => !m.isArchived)
+            .map(m => ({ ...m, id: m._id }))
+
+        return marqueurs.value
+    }
+
+    /* --------------------------------------------
+       GET ARCHIVES
+    -------------------------------------------- */
+    async function getArchived() {
+        const response = await fetch(`${API_URL}/marqueurs/archives`, {
             method: 'GET',
-            headers: { "Content-Type": "application/json" }
+            headers: authHeaders()
         })
-        .then(async (response) => {
-            const data = await response.json()
 
-            if (response.status !== 200) {
-                throw new Error(data.message || 'Erreur inconnue')
-            }
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.message)
 
-            marqueurs.value = data.data.map(m => ({
-                ...m,
-                id: m._id
-            }))
-
-            return marqueurs.value
-        })
-        .catch((error) => {
-            console.error("Erreur getMarqueurs:", error)
-            throw error
-        })
+        archives.value = data.data.map(m => ({ ...m, id: m._id }))
+        return archives.value
     }
 
     /* --------------------------------------------
-       GET UN SEUL MARQUEUR
+       ARCHIVER MARQUEUR
     -------------------------------------------- */
-    function getMarqueur(marqueurId) {
-        return fetch(`${API_URL}/marqueurs/${marqueurId}`, {
-            method: 'GET',
-            headers: { "Content-Type": "application/json" }
-        })
-        .then(async (response) => {
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Erreur inconnue')
-            }
-
-            marqueurActif.value = {
-                ...data.data,
-                id: data.data._id
-            }
-
-            return marqueurActif.value
-        })
-        .catch((error) => {
-            console.error("Erreur getMarqueur:", error)
-            throw error
-        })
-    }
-
-    /* --------------------------------------------
-       MODIFIER MARQUEUR COMPLET
-    -------------------------------------------- */
-    function modifierMarqueur(marqueurId, token, payload) {
-        return fetch(`${API_URL}/marqueurs/${marqueurId}`, {
+    async function archiveMarqueur(id) {
+        const response = await fetch(`${API_URL}/marqueurs/${id}/archive`, {
             method: 'PUT',
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
-            },
-            body: JSON.stringify(payload)
+            headers: authHeaders()
         })
-        .then(async (response) => {
-            const data = await response.json()
 
-            if (!response.ok) {
-                throw new Error(data.message || 'Erreur inconnue')
-            }
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.message)
 
-            if (marqueurActif.value) {
-                Object.assign(marqueurActif.value.properties, data.data)
-            }
-
-            return data.data
-        })
-        .catch((error) => {
-            console.error("Erreur modifierMarqueur:", error)
-            throw error
-        })
+        marqueurs.value = marqueurs.value.filter(m => m.id !== id)
+        return data.data
     }
 
     /* --------------------------------------------
-       MODIFIER STATUT (APPROUVE / REJETÉ)
+       RESTAURER MARQUEUR
     -------------------------------------------- */
-    function modifierMarqueurStatus(marqueurId, token, status) {
-
-        return fetch(`${API_URL}/marqueurs/${marqueurId}/status`, {
+    async function restore(id) {
+        const response = await fetch(`${API_URL}/marqueurs/${id}/restore`, {
             method: 'PUT',
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
-            },
-            body: JSON.stringify(status)
+            headers: authHeaders()
         })
-        .then(async (response) => {
-            const data = await response.json()
 
-            if (!response.ok) {
-                throw new Error(data.message || 'Erreur inconnue')
-            }
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.message)
 
-            // 🔥 Cas SUPPRESSION locale
-            if (data.message?.includes("supprim")) {
-                marqueurs.value = marqueurs.value.filter(m => m.id !== marqueurId)
-                return null
-            }
-
-            // 🔥 Mise à jour normale
-            const updated = {
-                ...data.data,
-                id: data.data._id
-            }
-
-            const index = marqueurs.value.findIndex(m => m.id === marqueurId)
-            if (index !== -1) marqueurs.value[index] = updated
-
-            if (marqueurActif.value?.id === marqueurId) {
-                marqueurActif.value.properties.status = updated.properties.status
-            }
-
-            return updated
-        })
-        .catch((error) => {
-            console.error("Erreur modifierMarqueurStatus:", error)
-            throw error
-        })
+        archives.value = archives.value.filter(m => m.id !== id)
+        marqueurs.value.push({ ...data.data, id: data.data._id })
+        return data.data
     }
 
     /* --------------------------------------------
-       SUPPRIMER UN MARQUEUR
+       SUPPRESSION DÉFINITIVE
     -------------------------------------------- */
-    function supprimerMarqueur(id, token) {
-        return fetch(`${API_URL}/marqueurs/${id}`, {
+    async function deletePermanently(id) {
+        const response = await fetch(`${API_URL}/marqueurs/${id}/permanent`, {
             method: 'DELETE',
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
-            }
+            headers: authHeaders()
         })
-        .then(async (response) => {
-            const data = await response.json()
 
-            if (!response.ok) {
-                throw new Error(data.message || 'Erreur inconnue')
-            }
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.message)
 
-            // 🔥 supprimer localement (IMPORTANT)
-            marqueurs.value = marqueurs.value.filter(m => m.id !== id)
-
-            return data
-        })
+        archives.value = archives.value.filter(m => m.id !== id)
+        return data
     }
 
     return {
         marqueurs,
+        archives,
         marqueurActif,
         ajouterMarqueur,
         getMarqueurs,
-        getMarqueur,
-        modifierMarqueur,
-        modifierMarqueurStatus,
-        supprimerMarqueur
+        getArchived,
+        archiveMarqueur,
+        restore,
+        deletePermanently,
     }
 
-}, {
-    persist: true
-})
+}, { persist: true })
