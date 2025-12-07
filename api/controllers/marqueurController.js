@@ -487,3 +487,31 @@ exports.restoreMarqueur = async (req, res, next) => {
   }
 };
 
+/**
+ * Supprime un marqueur définitivement en fonction de son identifiant.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+exports.deleteMarqueurPermanently = async (req, res, next) => {
+  try {
+    const deleted = await Marqueur.findByIdAndDelete(req.params.marqueurId);
+
+    if (!deleted) {
+      return res.status(404).json(formatErrorResponse(
+        404, "Not Found", "Marqueur introuvable", req.originalUrl
+      ));
+    }
+
+    return res.status(200).json(formatSuccessResponse(
+      200,
+      "Marqueur supprimé définitivement.",
+      deleted,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
