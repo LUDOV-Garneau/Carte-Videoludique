@@ -432,21 +432,22 @@ exports.deleteCommentMarqueur = async (req, res, next) => {
  */
 exports.deleteMarqueur = async (req, res, next) => {
   try {
-    const deleted = await Marqueur.findByIdAndDelete(req.params.marqueurId);
+    const updated = await Marqueur.findByIdAndUpdate(
+      req.params.marqueurId,
+      { $set: { archived: true } },
+      { new: true }
+    );
 
-    if (!deleted) {
+    if (!updated) {
       return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le marqueur à supprimer n'existe pas",
-        req.originalUrl
+        404, "Not Found", "Marqueur introuvable", req.originalUrl
       ));
     }
 
-    res.status(200).json(formatSuccessResponse(
+    return res.status(200).json(formatSuccessResponse(
       200,
-      "Le marqueur a été supprimé avec succès!",
-      deleted,
+      "Marqueur archivé avec succès.",
+      updated,
       req.originalUrl
     ));
   } catch (err) {
