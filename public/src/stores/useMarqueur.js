@@ -208,6 +208,73 @@ export const useMarqueurStore = defineStore(
     })
 }
 
+async function getArchivedMarqueurs() {
+  const response = await fetch(`${API_URL}/marqueurs-archives`, {
+    method: 'GET',
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + authStore.token
+    }
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || "Erreur lors de la récupération des marqueurs archivés.")
+  }
+
+  // Remplace le tableau local par les archivés
+  marqueurs.value = data.data.map(m => ({
+    ...m,
+    id: m._id
+  }))
+
+  return marqueurs.value
+}
+
+async function restaurerMarqueur(id) {
+  const response = await fetch(`${API_URL}/marqueurs/${id}/restaurer`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + authStore.token
+    }
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || "Erreur lors de la restauration du marqueur.")
+  }
+
+  // Mise à jour locale
+  const index = marqueurs.value.findIndex(m => m.id === id)
+  if (index !== -1) marqueurs.value[index].archived = false
+
+  return data.data
+}
+
+async function deleteMarqueurDefinitif(id) {
+  const response = await fetch(`${API_URL}/marqueurs/${id}/definitif`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + authStore.token
+    }
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || "Erreur lors de la suppression définitive.")
+  }
+
+  // Retirer du tableau local
+  marqueurs.value = marqueurs.value.filter(m => m.id !== id)
+
+  return data
+}
+
     return {
       marqueurs,
       marqueurActif,
@@ -217,6 +284,9 @@ export const useMarqueurStore = defineStore(
       modifierMarqueur,
       modifierMarqueurStatus,
       supprimerMarqueur,
+      getArchivedMarqueurs,
+      restaurerMarqueur,
+      deleteMarqueurDefinitif,
     }
   },
   {

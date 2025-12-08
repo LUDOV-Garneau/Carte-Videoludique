@@ -20,6 +20,9 @@ router.post("/marqueurs", optionalAuth, marqueurController.createMarqueur);
 // GET => /marqueurs (liste des marqueurs NON archivés)
 router.get("/marqueurs", marqueurController.getMarqueurs);
 
+// ⚠️ IMPORTANT : route spécifique AVANT la route paramétrée
+router.get("/marqueurs-archives", isAuth, marqueurController.getArchivedMarqueurs);
+
 // GET => /marqueurs/:marqueurId (récupération d'un marqueur)
 router.get("/marqueurs/:marqueurId", marqueurController.getMarqueur);
 
@@ -34,9 +37,6 @@ router.delete("/marqueurs/:marqueurId", isAuth, marqueurController.archiveMarque
 
 // PUT => /marqueurs/:marqueurId/restaurer (désarchive)
 router.put("/marqueurs/:marqueurId/restaurer", isAuth, marqueurController.restoreMarqueur);
-
-// GET => /marqueurs-archives (liste des archivés)
-router.get("/marqueurs-archives", isAuth, marqueurController.getArchivedMarqueurs);
 
 // DELETE => /marqueurs/:marqueurId/definitif (suppression permanente)
 router.delete("/marqueurs/:marqueurId/definitif", isAuth, marqueurController.deleteMarqueurDefinitif);

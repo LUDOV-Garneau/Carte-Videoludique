@@ -42,13 +42,14 @@ const getMarqueurs = async () => {
 /* --------------------------------------------------------
    🔥 Lorsqu’on passe à l’onglet archived → recharge complet
 -------------------------------------------------------- */
+
 watch(filtreStatus, async (newVal) => {
-  if (newVal === 'archived') {
-    await marqueurStore.getMarqueurs(true) // route backend doit renvoyer tous les marqueurs
+  if (newVal === "archived") {
+    await marqueurStore.getArchivedMarqueurs();
   } else {
-    await marqueurStore.getMarqueurs()
+    await marqueurStore.getMarqueurs();
   }
-})
+});
 
 /* --------------------------------------------------------
    Ouvrir modal
