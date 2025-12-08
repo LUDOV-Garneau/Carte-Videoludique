@@ -6,6 +6,7 @@ import AddMarqueurPanel from './AddMarqueurPanel.vue'
 import MarqueurPanel from './MarqueurPanel.vue'
 import CategorieEditPanel from './CategorieEditPanel.vue'
 import { useAuthStore } from '../stores/auth.js'
+import FilterPanel from './FilterPanel.vue'
 import { useMarqueurStore } from '../stores/useMarqueur.js'
 
 import 'leaflet.fullscreen'
@@ -46,11 +47,22 @@ const marqueurs = ref([]);
 const selectedMarqueur = ref(null);
 const currentMarqueur = ref(null);
 const currentAdresse = ref('');
+const filterPanelOpen = ref(false);
+const activeFilters = ref([]);
+const noResults = ref(false)
 
 const QUEBEC_BOUND = L.latLngBounds(
   [40, -90],
-  [63, -50]   
+  [63, -50]
 )
+
+function openFilterPanel() {
+  filterPanelOpen.value = true;
+}
+
+function closeFilterPanel() {
+  filterPanelOpen.value = false;
+}
 
 /**
  * Initialise la carte Leaflet et la centre sur Montréal.
@@ -62,7 +74,7 @@ const QUEBEC_BOUND = L.latLngBounds(
  * @returns {void}
  */
 function initMap() {
-  map = L.map(mapEl.value, { 
+  map = L.map(mapEl.value, {
     center: [52.5, -71.0],
     zoom: 5,
     minZoom: 5,
@@ -75,7 +87,7 @@ function initMap() {
 
     fullscreenControl: true,
     fullscreenControlOptions: {
-      position: 'topleft', 
+      position: 'topleft',
       title: 'Plein écran',
       titleCancel: 'Quitter le plein écran'
     }
@@ -96,7 +108,6 @@ function addTileLayer() {
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
     noWrap: true,
-    bounds: QUEBEC_BOUND,
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     subdomains: 'abcd'
   }).addTo(map)
@@ -153,7 +164,7 @@ function setupMapClickHandler() {
  * Cette fonction vérifie si l'adresse est dans la province de Québec.
  * Si oui, elle ajoute le marqueur sur la carte
  * Sinon, elle retire le marqueur et affiche un message à l'utilisateur
- * 
+ *
  * @param lat La coordonnée de latitude du marqueur
  * @param lng La coordonnée de longitude du marqueur
  */
@@ -192,7 +203,7 @@ async function verifyAdressInQuebec(lat, lng) {
     const ligne = [
       addr.house_number,
       addr.road,
-      quartier, 
+      quartier,
       ville,
       addr.state,
       addr.postcode,
@@ -228,47 +239,57 @@ async function verifyAdressInQuebec(lat, lng) {
  *      → charger ses données détaillées via `marqueurStore.getMarqueur(id)`,
  *      → ouvrir le panneau d'information (`openInfoPanel()`),
  *      → et recentrer la carte sur le marqueur.
- * 
+ *
  * @async
  * @function afficherMarqueurs
  * @returns {Promise<void>} Promesse résolue lorsque les marqueurs sont affichés.
- * 
+ *
  */
 async function afficherMarqueurs() {
   try {
     await marqueurStore.getMarqueurs();
-    marqueurs.value.forEach(marqueur => {
-      map.removeLayer(marqueur);
-    });
+
+    marqueurs.value.forEach(m => map.removeLayer(m));
     marqueurs.value = [];
 
-    marqueurStore.marqueurs.forEach(marqueurData => {
-      if (marqueurData.geometry && marqueurData.geometry.coordinates) {
-        const [lat, lng] = marqueurData.geometry.coordinates;
-        const properties = marqueurData.properties;
-
-        const marqueur = L.marker([lat, lng]);
-        if (properties.status === 'pending') marqueur.setOpacity(0.5);
-        marqueur.addTo(map);
-
-        marqueur.properties = properties;
-
-        marqueur.on('click', (e) => {
-          selectedMarqueur.value = marqueur;
-          marqueurStore.getMarqueur(marqueurData.properties.id);
-          openInfoPanel();
-
-          map.setView([lat, lng], Math.max(map.getZoom(), 15));
-        });
-
-        marqueurs.value.push(marqueur);
-      }
+    const filtered = marqueurStore.marqueurs.filter(m => {
+      const type = m.properties?.type || "";
+      if (activeFilters.value.length === 0) return true;
+      return activeFilters.value.includes(type);
     });
-    console.log(map.Marker);
+
+    noResults.value = (filtered.length === 0);
+
+    if (filtered.length === 0) return;
+
+    filtered.forEach(marqueurData => {
+      if (!marqueurData.geometry?.coordinates) return;
+
+      const [lat, lng] = marqueurData.geometry.coordinates;
+      const properties = marqueurData.properties;
+
+      const marker = L.marker([lat, lng]);
+
+      if (properties.status === "pending") marker.setOpacity(0.5);
+
+      marker.addTo(map);
+      marker.properties = properties;
+
+      marker.on("click", () => {
+        selectedMarqueur.value = marker;
+        marqueurStore.getMarqueur(properties.id);
+        openInfoPanel();
+        map.setView([lat, lng], Math.max(map.getZoom(), 15));
+      });
+
+      marqueurs.value.push(marker);
+    });
+
   } catch (err) {
-    console.error('afficherMarqueurs error:', err);
+    console.error("afficherMarqueurs error:", err);
   }
 }
+
 
 /**
  * Ouvre le panneau d'ajout d'un marqueur
@@ -282,7 +303,7 @@ function openCreatePanel() {
 }
 
 /**
- * Ferme le panneau d'ajout d'un marqueur 
+ * Ferme le panneau d'ajout d'un marqueur
  * et efface le contenu des champs si nécéssaire
  */
 function closeCreatePanel() {
@@ -453,6 +474,39 @@ function addCustomControl() {
 }
 
 /**
+ * Ajoute un filtre selon la catégorie
+ */
+function addFilterControl() {
+  const FilterControl = L.Control.extend({
+    options: { position: "topright" },
+    onAdd() {
+      const container = L.DomUtil.create("div", "leaflet-control leaflet-control-custom");
+
+      const btn = L.DomUtil.create("a", "btn-filter-map", container);
+      btn.href = "#";
+      btn.title = "Filtrer les catégories";
+      btn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M3 4h18M6 10h12M9 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      `;
+
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.on(btn, "click", (e) => {
+        L.DomEvent.preventDefault(e);
+        openFilterPanel();     // *** tu vas créer cette fonction ***
+      });
+
+      return container;
+    }
+  });
+
+  const controlFilter = new FilterControl();
+  map.addControl(controlFilter);
+}
+
+
+/**
  * Configure les raccourcis clavier globaux liés à la carte.
  *
  * Actuellement, la touche **Échap (Escape)** permet de fermer le panneau
@@ -470,11 +524,22 @@ function setupKeyboardShortcuts() {
   map.__onKey = onKey
 }
 
+function applyFilters(filters) {
+  activeFilters.value = filters;
+  afficherMarqueurs(); // refresh
+}
+
+function resetFilters() {
+  activeFilters.value = [];
+  afficherMarqueurs();
+}
+
 onMounted(async() => {
   initMap()
   addTileLayer()
   setupMapClickHandler()
   addCustomControl()
+  addFilterControl();
   setupKeyboardShortcuts()
   await afficherMarqueurs();
 });
@@ -491,6 +556,8 @@ onUnmounted(() => {
 defineExpose({
   afficherMarqueurs,
   handlelocateFromAddress,
+  applyFilters,
+  resetFilters,
 
   latitude,
   longitude,
@@ -506,15 +573,10 @@ defineExpose({
 <template>
 
   <div class="map" ref="mapEl"></div>
+  <div v-if="noResults" class="no-results">
+    Aucun lieu trouvé pour ces filtres.
+  </div>
 
-	<AddMarqueurPanel
-		:is-open="createPanelOpen"
-		:coordinates="{ lat: latitude, lng: longitude }"
-		:adresse="currentAdresse"
-		@close="closeCreatePanel"
-		@marqueur-added="handleMarqueurAdded"
-		@locate-address="handlelocateFromAddress"
-	/>
 
   <MarqueurPanel
     :is-open="infoPanelOpen"
@@ -522,9 +584,25 @@ defineExpose({
     @marqueur-deleted="handleMarqueurDeleted"
   />
 
+  <AddMarqueurPanel 
+    :is-open="createPanelOpen" 
+    :coordinates="{ lat: latitude, lng: longitude }"
+    :adresse="currentAdresse" 
+    @close="closeCreatePanel" 
+    @marqueur-added="handleMarqueurAdded"
+    @locate-address="handlelocateFromAddress" 
+  />
+
   <CategorieEditPanel
     :is-open="categorieEditPanelOpen"
     @close="closeCategorieEditPanel"
+  />
+
+  <FilterPanel 
+    :is-open="filterPanelOpen" 
+    @close="closeFilterPanel" 
+    @apply-filters="applyFilters"
+    @reset-filters="resetFilters" 
   />
 </template>
 
@@ -604,4 +682,40 @@ defineExpose({
 	left: 0 !important;
 	z-index: 99999;
 }
+
+:deep(.btn-filter-map) {
+  background: white;
+  border: 2px solid #0077ff;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  transition: 0.2s;
+}
+
+:deep(.btn-filter-map:hover) {
+  background: #0077ff;
+  color: white;
+}
+
+.no-results {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 10px 18px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  z-index: 5000;
+}
+
 </style>
