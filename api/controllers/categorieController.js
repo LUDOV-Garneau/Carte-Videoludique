@@ -326,3 +326,266 @@ exports.deleteCategorie = async (req, res, next) => {
         next(err);
     }
 }
+
+/**
+ * Met à jour le nom d'une catégorie
+ * @param {import('express').Request} req 
+ * @param {import('express').Response} res 
+ * @param {import('express').NextFunction} next 
+ */
+exports.patchCategorieNom = async (req, res, next) => {
+    try {
+        const { categorieId } = req.params;
+        const { nom } = req.body;
+
+        if (!nom || nom.trim() === '') {
+            return res.status(400).json(formatErrorResponse(
+                400,
+                "Bad Request",
+                "Le nom de la catégorie ne peut pas être vide.",
+                req.originalUrl
+            ));
+        }
+
+        if (nom.length > 50) {
+            return res.status(400).json(formatErrorResponse(
+                400,
+                "Bad Request",
+                "Le nom de la catégorie ne doit pas dépasser 50 caractères.",
+                req.originalUrl
+            ));
+        }
+
+        const updatedCategorie = await Categorie.findByIdAndUpdate(
+            categorieId,
+            { nom: nom.trim() },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedCategorie) {
+            return res.status(404).json(formatErrorResponse(
+                404,
+                "Not Found",
+                "Catégorie non trouvée.",
+                req.originalUrl
+            ));
+        }
+
+        res.status(200).json(formatSuccessResponse(
+            200,
+            "Nom de la catégorie mis à jour avec succès.",
+            updatedCategorie,
+            req.originalUrl
+        ));
+    } catch (err) {
+        next(err);
+    }
+}
+
+/**
+ * Met à jour la description d'une catégorie
+ * @param {import('express').Request} req 
+ * @param {import('express').Response} res 
+ * @param {import('express').NextFunction} next 
+ */
+exports.patchCategorieDescription = async (req, res, next) => {
+    try {
+        const { categorieId } = req.params;
+        const { description } = req.body;
+
+        if (description && description.length > 200) {
+            return res.status(400).json(formatErrorResponse(
+                400,
+                "Bad Request",
+                "La description ne doit pas dépasser 200 caractères.",
+                req.originalUrl
+            ));
+        }
+
+        const updatedCategorie = await Categorie.findByIdAndUpdate(
+            categorieId,
+            { description: description || '' },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedCategorie) {
+            return res.status(404).json(formatErrorResponse(
+                404,
+                "Not Found",
+                "Catégorie non trouvée.",
+                req.originalUrl
+            ));
+        }
+
+        res.status(200).json(formatSuccessResponse(
+            200,
+            "Description de la catégorie mise à jour avec succès.",
+            updatedCategorie,
+            req.originalUrl
+        ));
+    } catch (err) {
+        next(err);
+    }
+}
+
+/**
+ * Met à jour la couleur d'une catégorie
+ * @param {import('express').Request} req 
+ * @param {import('express').Response} res 
+ * @param {import('express').NextFunction} next 
+ */
+exports.patchCategorieCouleur = async (req, res, next) => {
+    try {
+        const { categorieId } = req.params;
+        const { couleur } = req.body;
+
+        if (!couleur) {
+            return res.status(400).json(formatErrorResponse(
+                400,
+                "Bad Request",
+                "Une couleur est requise.",
+                req.originalUrl
+            ));
+        }
+
+        if (!/^#[0-9A-F]{6}$/i.test(couleur)) {
+            return res.status(400).json(formatErrorResponse(
+                400,
+                "Bad Request",
+                "Le code couleur doit être un code hexadécimal valide (ex: #FF5733).",
+                req.originalUrl
+            ));
+        }
+
+        const updatedCategorie = await Categorie.findByIdAndUpdate(
+            categorieId,
+            { couleur },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedCategorie) {
+            return res.status(404).json(formatErrorResponse(
+                404,
+                "Not Found",
+                "Catégorie non trouvée.",
+                req.originalUrl
+            ));
+        }
+
+        res.status(200).json(formatSuccessResponse(
+            200,
+            "Couleur de la catégorie mise à jour avec succès.",
+            updatedCategorie,
+            req.originalUrl
+        ));
+    } catch (err) {
+        next(err);
+    }
+}
+
+/**
+ * Met à jour l'icône d'une catégorie
+ * @param {import('express').Request} req 
+ * @param {import('express').Response} res 
+ * @param {import('express').NextFunction} next 
+ */
+exports.patchCategorieImage = async (req, res, next) => {
+    try {
+        const { categorieId } = req.params;
+        const { image } = req.body;
+
+        if (!image || !image.filename) {
+            return res.status(400).json(formatErrorResponse(
+                400,
+                "Bad Request",
+                "Une icône est requise.",
+                req.originalUrl
+            ));
+        }
+
+        // Validation basique de l'icône
+        if (typeof image.filename !== 'string' || image.filename.trim() === '') {
+            return res.status(400).json(formatErrorResponse(
+                400,
+                "Bad Request",
+                "Le nom de fichier de l'icône n'est pas valide.",
+                req.originalUrl
+            ));
+        }
+
+        const updatedCategorie = await Categorie.findByIdAndUpdate(
+            categorieId,
+            { 
+                image: {
+                    type: image.type || 'predefined',
+                    filename: image.filename.trim()
+                }
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedCategorie) {
+            return res.status(404).json(formatErrorResponse(
+                404,
+                "Not Found",
+                "Catégorie non trouvée.",
+                req.originalUrl
+            ));
+        }
+
+        res.status(200).json(formatSuccessResponse(
+            200,
+            "Icône de la catégorie mise à jour avec succès.",
+            updatedCategorie,
+            req.originalUrl
+        ));
+    } catch (err) {
+        next(err);
+    }
+}
+
+/**
+ * Met à jour le statut actif/inactif d'une catégorie
+ * @param {import('express').Request} req 
+ * @param {import('express').Response} res 
+ * @param {import('express').NextFunction} next 
+ */
+exports.patchCategorieActive = async (req, res, next) => {
+    try {
+        const { categorieId } = req.params;
+        const { active } = req.body;
+
+        if (typeof active !== 'boolean') {
+            return res.status(400).json(formatErrorResponse(
+                400,
+                "Bad Request",
+                "Le statut 'active' doit être un booléen (true/false).",
+                req.originalUrl
+            ));
+        }
+
+        const updatedCategorie = await Categorie.findByIdAndUpdate(
+            categorieId,
+            { active },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedCategorie) {
+            return res.status(404).json(formatErrorResponse(
+                404,
+                "Not Found",
+                "Catégorie non trouvée.",
+                req.originalUrl
+            ));
+        }
+
+        res.status(200).json(formatSuccessResponse(
+            200,
+            `Catégorie ${active ? 'activée' : 'désactivée'} avec succès.`,
+            updatedCategorie,
+            req.originalUrl
+        ));
+    } catch (err) {
+        next(err);
+    }
+}

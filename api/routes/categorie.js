@@ -23,6 +23,21 @@ router.put("/categories/:categorieId", isAuth, categorieController.updateCategor
 // PATCH => /categories/:categorieId/ordre
 router.patch("/categories/:categorieId/ordre", isAuth, categorieController.updateCategorieOrdre);
 
+// PATCH => /categories/:categorieId/nom
+router.patch("/categories/:categorieId/nom", isAuth, categorieController.patchCategorieNom);
+
+// PATCH => /categories/:categorieId/description
+router.patch("/categories/:categorieId/description", isAuth, categorieController.patchCategorieDescription);
+
+// PATCH => /categories/:categorieId/couleur
+router.patch("/categories/:categorieId/couleur", isAuth, categorieController.patchCategorieCouleur);
+
+// PATCH => /categories/:categorieId/image
+router.patch("/categories/:categorieId/image", isAuth, categorieController.patchCategorieImage);
+
+// PATCH => /categories/:categorieId/active
+router.patch("/categories/:categorieId/active", isAuth, categorieController.patchCategorieActive);
+
 // DELETE => /categories/:categorieId
 router.delete("/categories/:categorieId", isAuth, categorieController.deleteCategorie);
 
