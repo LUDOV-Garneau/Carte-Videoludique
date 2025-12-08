@@ -1,7 +1,6 @@
 "use strict";
 
 const express = require("express");
-
 const router = express.Router();
 
 const marqueurController = require("../controllers/marqueurController");
@@ -11,20 +10,41 @@ const isAuth = require("../middlewares/isAuth");
 const optionalAuth = require("../middlewares/optionalAuth");
 
 
-// POST => /marqueurs
+// -------------------------------------------------------
+// CRUD + Archive / Restore
+// -------------------------------------------------------
+
+// POST => /marqueurs (création)
 router.post("/marqueurs", optionalAuth, marqueurController.createMarqueur);
 
-// GET => /marqueurs 
+// GET => /marqueurs (liste des marqueurs NON archivés)
 router.get("/marqueurs", marqueurController.getMarqueurs);
 
-// GET => /marqueurs/:marqueurId
+// GET => /marqueurs/:marqueurId (récupération d'un marqueur)
 router.get("/marqueurs/:marqueurId", marqueurController.getMarqueur);
 
-// PUT => /marqueurs/:marqueurId
+// PUT => /marqueurs/:marqueurId (modification)
 router.put("/marqueurs/:marqueurId", isAuth, marqueurController.updateMarqueur);
 
-// PUT => /marqueurs/:marqueurId/status
+// PUT => /marqueurs/:marqueurId/status (changer statut pending/approved/rejected)
 router.put("/marqueurs/:marqueurId/status", isAuth, marqueurController.updateStatusMarqueur);
+
+// DELETE => /marqueurs/:marqueurId (archive un marqueur)
+router.delete("/marqueurs/:marqueurId", isAuth, marqueurController.archiveMarqueur);
+
+// PUT => /marqueurs/:marqueurId/restaurer (désarchive)
+router.put("/marqueurs/:marqueurId/restaurer", isAuth, marqueurController.restoreMarqueur);
+
+// GET => /marqueurs-archives (liste des archivés)
+router.get("/marqueurs-archives", isAuth, marqueurController.getArchivedMarqueurs);
+
+// DELETE => /marqueurs/:marqueurId/definitif (suppression permanente)
+router.delete("/marqueurs/:marqueurId/definitif", isAuth, marqueurController.deleteMarqueurDefinitif);
+
+
+// -------------------------------------------------------
+// Commentaires
+// -------------------------------------------------------
 
 // POST => /marqueurs/:marqueurId/commentaires
 router.post("/marqueurs/:marqueurId/commentaires", marqueurController.addCommentMarqueur);
@@ -35,27 +55,17 @@ router.get("/commentaires/pending", isAuth, marqueurController.getPendingComment
 // PATCH => /marqueurs/:marqueurId/commentaires/:commentId/status
 router.patch("/marqueurs/:marqueurId/commentaires/:commentId/status", isAuth, marqueurController.updateCommentStatus);
 
-// DELETE => /marqueurs/:marqueurId/commentaires/commentsId
+// DELETE => /marqueurs/:marqueurId/commentaires/:commentId
 router.delete("/marqueurs/:marqueurId/commentaires/:commentId", marqueurController.deleteCommentMarqueur);
 
-// DELETE => /marqueurs/:marqueurId
-router.delete("/marqueurs/:marqueurId", isAuth, marqueurController.archiveMarqueur);
 
-// POST => /marqueurs/:marqueurId/edit-requests
+// -------------------------------------------------------
+// Demandes de modification
+// -------------------------------------------------------
 router.post(
   "/marqueurs/:marqueurId/edit-requests",
-  optionalAuth, // ou isAuth si tu veux obliger la connexion
+  optionalAuth,
   editRequestController.createEditRequest
 );
-
-// PUT => /marqueurs/:marqueurId
-router.put("/marqueurs/:marqueurId/restaurer", isAuth, marqueurController.restoreMarqueur);
-
-// GET => /marqueurs
-router.get("/marqueurs-archives", isAuth, marqueurController.getArchivedMarqueurs);
-
-// DELETE => /marqueurs/:marqueurId
-router.delete("/marqueurs/:marqueurId/definitif", isAuth, marqueurController.deleteMarqueurDefinitif);
-
 
 module.exports = router;
