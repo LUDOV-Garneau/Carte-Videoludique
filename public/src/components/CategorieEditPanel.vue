@@ -94,9 +94,30 @@ function backToList() {
   activeTab.value = 'liste'
 }
 
-
-
-
+// Fonction pour modifier une catégorie existante
+function editCategory(category) {
+  activeTab.value = 'creer'
+  editingCategoryId.value = category._id
+  
+  // Remplir le formulaire avec les données de la catégorie
+  form.value = {
+    nom: category.nom || '',
+    description: category.description || '',
+    couleur: category.couleur || '#3498db',
+    image: category.image || { filename: 'marker', size: 14 }
+  }
+  
+  // Mettre à jour l'icône sélectionnée
+  if (category.image && category.image.filename) {
+    selectedIcon.value = category.image.filename
+    
+    // Trouver la catégorie de cette icône pour l'affichage
+    const iconCategory = categorieStore.findIconCategory(category.image.filename)
+    if (iconCategory) {
+      selectedIconCategory.value = iconCategory
+    }
+  }
+}
 
 function selectIcon(iconName, category) {
   selectedIcon.value = iconName
@@ -190,6 +211,13 @@ async function deleteCategory() {
   }
 }
 
+// Fonction pour générer l'alt avec la provenance
+function getIconAltWithSource(iconName, categoryName = null) {
+  const iconInfo = categorieStore.getIconInfoSync(iconName, categoryName)
+  const source = iconInfo.size === 14 ? 'Osmic' : 'Mapbox'
+  return `${iconName} — © ${source}`
+}
+
 onMounted(async () => {
   // Charger les catégories dès le montage du composant
   await categorieStore.fetchCategories()
@@ -251,7 +279,8 @@ watch(() => props.isOpen, async (newValue) => {
                   <img 
                     v-if="category.image?.filename"
                     :src="categorieStore.getIconUrl(category.image.filename)" 
-                    :alt="category.nom"
+                    :alt="getIconAltWithSource(category.image.filename)"
+                    :title="getIconAltWithSource(category.image.filename)"
                     class="category-icon-img"
                   >
                 </div>
@@ -267,6 +296,13 @@ watch(() => props.isOpen, async (newValue) => {
               </div>
               
               <div v-if="authStore.isAuthenticated" class="category-actions">
+                <button 
+                  class="btn-edit"
+                  @click="editCategory(category)"
+                  title="Modifier la catégorie"
+                >
+                  ✏️
+                </button>
                 <button 
                   class="btn-delete"
                   @click="confirmDelete(category._id)"
@@ -318,7 +354,7 @@ watch(() => props.isOpen, async (newValue) => {
             </div>
 
             <div class="panel__section">
-              <label for="couleur">Couleur</label>
+              <label>Couleur</label>
               <div class="color-input-group">
                 <input 
                   id="couleur"
@@ -339,7 +375,7 @@ watch(() => props.isOpen, async (newValue) => {
             <div class="panel__section">
               <label>Icône sélectionnée</label>
               <div class="selected-icon-display">
-                <img :src="selectedIconUrl" :alt="selectedIcon" class="selected-icon-img">
+                <img :src="selectedIconUrl" :alt="getIconAltWithSource(selectedIcon, selectedIconCategory)" :title="getIconAltWithSource(selectedIcon, selectedIconCategory)" class="selected-icon-img">
                 <span class="selected-icon-name">{{ selectedIcon }}</span>
               </div>
               
@@ -356,12 +392,12 @@ watch(() => props.isOpen, async (newValue) => {
                     :key="icon"
                     class="icon-option"
                     @click="selectIcon(icon, categoryName)"
-                    :title="icon"
+                    :title="getIconAltWithSource(icon, categoryName)"
                     :class="{ selected: selectedIcon === icon }"
                   >
                     <img 
                       :src="categorieStore.getIconUrl(icon, categoryName)" 
-                      :alt="icon"
+                      :alt="getIconAltWithSource(icon, categoryName)"
                       class="icon-img"
                     >
                   </div>
@@ -649,6 +685,27 @@ watch(() => props.isOpen, async (newValue) => {
 
 .category-status.inactive {
   color: #999;
+}
+
+.category-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-edit {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  margin-right: 4px;
+}
+
+.btn-edit:hover {
+  background: rgba(52, 152, 219, 0.1);
 }
 
 .btn-delete {
