@@ -15,6 +15,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@beyondtracks/osmic": "^1.0.0",
     "bootstrap": "^5.3.8",
     "cloudinary": "^2.8.0",
     "jwt-decode": "^4.0.0",
