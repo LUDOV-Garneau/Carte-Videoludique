@@ -182,7 +182,7 @@ onMounted(() => {
       <TableauNotification v-model:filtre-status="filtreStatus" :marqueurs-filtres="marqueursFiltres"
         @ouvrir-modal="ouvrirModal" @accepter-marqueur="accepterMarqueur" @refuser-marqueur="refuserMarqueur"
         @accepter-commentaire="accepterCommentaire" @refuser-commentaire="refuserCommentaire"
-        @focus-marqueur="centrerCarte" />
+        @focus-marqueur="centrerCarte" @refresh="getMarqueurs" />
 
 
       <MarqueurModal v-if="modalVisible && selectedMarqueur" :marqueur="selectedMarqueur"
