@@ -67,9 +67,9 @@ function openLightboxAt(index) {
 async function handleEditRequestSubmit(payloadFromModal) {
 	try {
 		const original = marqueurStore.marqueurActif;
-		if (!original) return;	
-		const marqueurId = original.properties?.id || original._id;	
-		const props = payloadFromModal.properties || {};	
+		if (!original) return;
+		const marqueurId = original.properties?.id || original._id;
+		const props = payloadFromModal.properties || {};
 		const body = {
 			titre: props.titre,
 			type: props.type,
@@ -105,15 +105,19 @@ function copyToClipboard(text) {
 }
 
 async function deleteMarqueur() {
-	try {
-		if (authStore.isAuthenticated) {
-			await marqueurStore.supprimerMarqueur(marqueurStore.marqueurActif?.properties?.id, authStore.token);
-			emits('marqueur-deleted');
-			closePanel();
-		}
-	} catch (err) {
-		console.error('Erreur lors de la suppression du marqueur :', err);
-	}
+    try {
+        if (!authStore.isAuthenticated) return;
+
+        const id = marqueurStore.marqueurActif?.properties?.id;
+        if (!id) return;
+
+        await marqueurStore.archiveMarqueur(id);
+
+        emits('marqueur-deleted');
+        closePanel();
+    } catch (err) {
+        console.error('Erreur lors de l\'archivage du marqueur :', err);
+    }
 }
 
 function validateCommentForm() {
@@ -177,13 +181,13 @@ async function sendComment() {
             </header>
             <div class="panel__body">
 				<div class="panel__menu">
-					<button 
+					<button
 						:class="{ active: activeTab === 'apercu' }"
 						@click="setActiveTab('apercu')"
 					>
 						Aperçu
 					</button>
-					<button  
+					<button
 						:class="{ active: activeTab === 'images' }"
 						@click="setActiveTab('images')"
 					>
@@ -253,13 +257,13 @@ async function sendComment() {
 					</div>
 				</div>
 				<div v-else-if="activeTab === 'images'">
-					<img 
-						v-for="(image, index) in marqueurStore.marqueurActif?.properties.images || []" 
-						:key="image.publicId" 
-						:src="image.url" 
-						:alt="'Image du lieu du marqueur'" 
-						class="panel__images" 
-						@click="openLightboxAt(index)" 
+					<img
+						v-for="(image, index) in marqueurStore.marqueurActif?.properties.images || []"
+						:key="image.publicId"
+						:src="image.url"
+						:alt="'Image du lieu du marqueur'"
+						class="panel__images"
+						@click="openLightboxAt(index)"
 					/>
 				</div>
             </div>

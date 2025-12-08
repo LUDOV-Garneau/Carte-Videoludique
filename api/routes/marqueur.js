@@ -48,4 +48,13 @@ router.post(
   editRequestController.createEditRequest
 );
 
+// PUT => /marqueurs/:marqueurId/archive (archiver un marqueur)
+router.put("/marqueurs/:marqueurId/archive", isAuth, marqueurController.archiveMarqueur);
+
+// PUT => /marqueurs/:marqueurId/restore (restaurer un marqueur)
+router.put("/marqueurs/:marqueurId/restore", isAuth, marqueurController.restoreMarqueur);
+
+// DELETE => /marqueurs/:marqueurId/permanent (supprimer définitivement)
+router.delete("/marqueurs/:marqueurId/permanent", isAuth, marqueurController.deletePermanent);
+
 module.exports = router;

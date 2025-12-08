@@ -136,6 +136,30 @@ export const useMarqueurStore = defineStore('marqueurs', () => {
         return data
     }
 
+    /* --------------------------------------------
+   SUPPRIMER (refuser) un marqueur NON archivé
+-------------------------------------------- */
+async function supprimerMarqueur(id, token) {
+    const response = await fetch(`${API_URL}/marqueurs/${id}`, {
+        method: 'DELETE',
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message);
+
+    // Retirer du tableau local
+    marqueurs.value = marqueurs.value.filter(m =>
+        (m.id || m._id || m.properties?.id) !== id
+    );
+
+    return data;
+}
+
+
     return {
         marqueurs,
         archives,
@@ -147,6 +171,7 @@ export const useMarqueurStore = defineStore('marqueurs', () => {
         archiveMarqueur,
         restore,
         deletePermanently,
+        supprimerMarqueur
     }
 
 }, { persist: true })
