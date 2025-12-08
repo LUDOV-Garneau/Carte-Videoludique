@@ -51,4 +51,8 @@ router.post(
 // PUT => /marqueurs/:marqueurId
 router.put("/marqueurs/:marqueurId/restaurer", isAuth, marqueurController.restoreMarqueur);
 
+// GET => /marqueurs
+router.get("/marqueurs-archives", isAuth, marqueurController.getArchivedMarqueurs);
+
+
 module.exports = router;

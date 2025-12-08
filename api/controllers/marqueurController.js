@@ -485,3 +485,18 @@ exports.restoreMarqueur = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.getArchivedMarqueurs = async (req, res, next) => {
+  try {
+    const marqueurs = await Marqueur.find({ archived: true });
+
+    res.status(200).json(formatSuccessResponse(
+      200,
+      "Marqueurs archivés récupérés.",
+      marqueurs,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
