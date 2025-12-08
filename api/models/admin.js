@@ -31,6 +31,7 @@ const AdminSchema = new Schema(
     status: {
       type: String,
       enum: ["Actif", "Inactif"],
+      default: "Actif",
       required:true
     },
     motDePasse: {
