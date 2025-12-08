@@ -4,6 +4,7 @@ import L from 'leaflet'
 import { reverseGeocode, isAddressInQuebecProvince } from '../utils/geocode.js'
 import AddMarqueurPanel from './AddMarqueurPanel.vue'
 import MarqueurPanel from './MarqueurPanel.vue'
+import CategorieEditPanel from './CategorieEditPanel.vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useMarqueurStore } from '../stores/useMarqueur.js'
 
@@ -40,6 +41,7 @@ const longitude = ref('')
 const latitude = ref('')
 const createPanelOpen = ref(false);
 const infoPanelOpen = ref(false);
+const categorieEditPanelOpen = ref(false);
 const marqueurs = ref([]);
 const selectedMarqueur = ref(null);
 const currentMarqueur = ref(null);
@@ -62,8 +64,8 @@ const QUEBEC_BOUND = L.latLngBounds(
 function initMap() {
   map = L.map(mapEl.value, { 
     center: [52.5, -71.0],
-    zoom: 5,               
-    minZoom: 5,            
+    zoom: 5,
+    minZoom: 5,
     maxZoom: 19,
 
     zoomControl: true,
@@ -77,7 +79,6 @@ function initMap() {
       title: 'Plein écran',
       titleCancel: 'Quitter le plein écran'
     }
-    
   })
   .setView([52.5, -71.0], 5);
 }
@@ -321,6 +322,26 @@ function closeInfoPanel() {
 }
 
 /**
+ * Ouvre le panneau d'édition des catégories.
+ * Masque les boutons d'ajout et d'édition.
+ */
+function openCategorieEditPanel() {
+  categorieEditPanelOpen.value = true;
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none';
+  if (btnEditCategorie) btnEditCategorie.style.display = 'none';
+}
+
+/**
+ * Ferme le panneau d'édition des catégories.
+ * Réaffiche les boutons d'ajout et d'édition.
+ */
+function closeCategorieEditPanel() {
+  categorieEditPanelOpen.value = false;
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = '';
+  if (btnEditCategorie) btnEditCategorie.style.display = '';
+}
+
+/**
  * Gère la mise à jour de la carte après l'ajout d'un marqueur.
  * Recharge les marqueurs, nettoie le marqueur temporaire
  * et ferme le panneau d'ajout.
@@ -417,7 +438,7 @@ function addCustomControl() {
       L.DomEvent.disableScrollPropagation(container);
       L.DomEvent.on(btn, 'click', (e) => {
         L.DomEvent.preventDefault(e);
-        alert('Fonctionnalité de gestion des catégories à implémenter.');
+        openCategorieEditPanel();
       });
       return container
     }
@@ -499,6 +520,11 @@ defineExpose({
     :is-open="infoPanelOpen"
     @close="closeInfoPanel"
     @marqueur-deleted="handleMarqueurDeleted"
+  />
+
+  <CategorieEditPanel
+    :is-open="categorieEditPanelOpen"
+    @close="closeCategorieEditPanel"
   />
 </template>
 
