@@ -4,168 +4,186 @@ import { useAuthStore } from '../stores/auth.js';
 import { useMarqueurStore } from '../stores/useMarqueur.js';
 import { useEditRequestStore } from '../stores/useEditRequest';
 import { useLightbox } from '../composables/useLightbox.js';
-
 import { API_URL } from '../config';
-// import { svg } from 'leaflet';
+
 import MarqueurModal from './MarqueurModalComponent.vue';
 import ImageLightbox from './ImageLightbox.vue';
 
-// props and emits
+
+// -------------------------------------------------------
+// Props & Emits
+// -------------------------------------------------------
 const props = defineProps({
-    isOpen: {
-        type: Boolean,
-        required: true
-    },
+    isOpen: { type: Boolean, required: true }
 });
 const emits = defineEmits(['close', 'marqueur-deleted']);
 
+
+// -------------------------------------------------------
+// Stores
+// -------------------------------------------------------
 const marqueurStore = useMarqueurStore();
 const authStore = useAuthStore();
 const editRequestStore = useEditRequestStore();
 const lightbox = useLightbox();
 
-const canDisplayPanel = computed(() => {
-    return props.isOpen && marqueurStore.marqueurActif !== null;
-});
 
-const marqueurProperties = computed(() => {
-    return marqueurStore.marqueurActif?.properties || {};
-});
-
+// -------------------------------------------------------
+// États locaux
+// -------------------------------------------------------
 const isCommenting = ref(false);
 const isDeletingMarqueur = ref(false);
 const isEditModalOpen = ref(false);
-const activeTab = ref('apercu'); // 'apercu' ou 'images'
+const activeTab = ref('apercu');
 
-const formData = ref({
-	auteur: '',
-	contenu: ''
-});
-const formErrors = ref({
-	auteur: '',
-	contenu: ''
-});
+const formData = ref({ auteur: '', contenu: '' });
+const formErrors = ref({ auteur: '', contenu: '' });
 
-function openModificationRequest() {
-	if(!marqueurStore.marqueurActif) return;
-	isEditModalOpen.value = true;
-}
 
+// -------------------------------------------------------
+// Computed
+// -------------------------------------------------------
+const canDisplayPanel = computed(() =>
+    props.isOpen && marqueurStore.marqueurActif !== null
+);
+
+const marqueurProperties = computed(() =>
+    marqueurStore.marqueurActif?.properties || {}
+);
+
+
+// -------------------------------------------------------
+// Actions
+// -------------------------------------------------------
 function closePanel() {
-	activeTab.value = 'apercu';
+    activeTab.value = 'apercu';
     emits('close');
 }
 
+function openModificationRequest() {
+    if (!marqueurStore.marqueurActif) return;
+    isEditModalOpen.value = true;
+}
+
 function setActiveTab(tab) {
-	activeTab.value = tab;
+    activeTab.value = tab;
 }
 
 function openLightboxAt(index) {
-	lightbox.openLightbox(marqueurStore.marqueurActif?.properties.images || [], index);
-}
-
-async function handleEditRequestSubmit(payloadFromModal) {
-	try {
-		const original = marqueurStore.marqueurActif;
-		if (!original) return;
-		const marqueurId = original.properties?.id || original._id;
-		const props = payloadFromModal.properties || {};
-		const body = {
-			titre: props.titre,
-			type: props.type,
-	  		adresse: props.adresse,
-	  		description: props.description,
-	  		temoignage: props.temoignage,
-		}
-		await editRequestStore.createEditRequest(marqueurId, body);
-		isEditModalOpen.value = false;
-		console.log('Demande de modification soumise avec succès');
-	} catch (err) {
-		console.error('Erreur lors de la soumission de la demande de modification :', err);
-	}
+    lightbox.openLightbox(marqueurStore.marqueurActif?.properties.images || [], index);
 }
 
 function toggleDeleteMarqueur() {
-	isDeletingMarqueur.value = !isDeletingMarqueur.value;
+    isDeletingMarqueur.value = !isDeletingMarqueur.value;
 }
 
 function toggleCommenting() {
-	isCommenting.value = !isCommenting.value;
-	formData.value.auteur = '';
-	formData.value.contenu = '';
+    isCommenting.value = !isCommenting.value;
+    formData.value = { auteur: '', contenu: '' };
 }
 
 function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        // Optionnel : ajouter une notification de succès
-        console.log('Adresse copiée dans le presse-papiers');
-    }).catch(err => {
-        console.error('Erreur lors de la copie :', err);
-    });
+    navigator.clipboard.writeText(text).catch(() => {});
 }
 
+
+// -------------------------------------------------------
+// EDIT REQUEST
+// -------------------------------------------------------
+async function handleEditRequestSubmit(payload) {
+    try {
+        const m = marqueurStore.marqueurActif;
+        if (!m) return;
+
+        const id = m.id;
+        const props = payload.properties || {};
+
+        await editRequestStore.createEditRequest(id, {
+            titre: props.titre,
+            type: props.type,
+            adresse: props.adresse,
+            description: props.description,
+            temoignage: props.temoignage,
+        });
+
+        isEditModalOpen.value = false;
+    } catch (err) {
+        console.error("Erreur demande modification :", err);
+    }
+}
+
+function getMarqueurId(m) {
+    return m?._id || m?.id || m?.properties?.id || null;
+}
+
+// -------------------------------------------------------
+// ARCHIVAGE — FIXÉ
+// -------------------------------------------------------
 async function deleteMarqueur() {
     try {
         if (!authStore.isAuthenticated) return;
 
-        const id = marqueurStore.marqueurActif?.properties?.id;
-        if (!id) return;
+        const id = getMarqueurId(marqueurStore.marqueurActif);
+
+        if (!id) {
+            console.error("Aucun ID trouvé pour archiver.");
+            console.log("Marqueur actif :", marqueurStore.marqueurActif);
+            return;
+        }
 
         await marqueurStore.archiveMarqueur(id);
 
         emits('marqueur-deleted');
         closePanel();
     } catch (err) {
-        console.error('Erreur lors de l\'archivage du marqueur :', err);
+        console.error("Erreur lors de l'archivage du marqueur :", err);
     }
 }
 
+// -------------------------------------------------------
+// COMMENTAIRES
+// -------------------------------------------------------
 function validateCommentForm() {
-	let isValid = true;
-	formErrors.value = {
-		auteur: '',
-		contenu: ''
-	}
-	if (formData.value.auteur.trim().length > 50) {
-		formErrors.value.auteur = 'Le nom ne doit pas dépasser 50 caractères.';
-		isValid = false;
-	}
-	if (formData.value.contenu.trim().length === 0) {
-		formErrors.value.contenu = 'Le contenu du témoignage ne peut pas être vide.';
-		isValid = false;
-	} else if (formData.value.contenu.trim().length > 500) {
-		formErrors.value.contenu = 'Le témoignage ne doit pas dépasser 500 caractères.';
-		isValid = false;
-	}
-	console.log('Form validation:', isValid, formErrors.value);
-	return isValid;
+    let isValid = true;
+    formErrors.value = { auteur: '', contenu: '' };
+
+    if (formData.value.auteur.trim().length > 50) {
+        formErrors.value.auteur = 'Le nom ne doit pas dépasser 50 caractères.';
+        isValid = false;
+    }
+    if (formData.value.contenu.trim().length === 0) {
+        formErrors.value.contenu = 'Le contenu du témoignage ne peut pas être vide.';
+        isValid = false;
+    } else if (formData.value.contenu.trim().length > 500) {
+        formErrors.value.contenu = 'Le témoignage ne doit pas dépasser 500 caractères.';
+        isValid = false;
+    }
+    return isValid;
 }
 
 async function sendComment() {
-	try {
-		if (validateCommentForm()) {
-			const auteur = formData.value.auteur.trim();
-			const contenu = formData.value.contenu.trim();
+    try {
+        if (!validateCommentForm()) return;
 
-			const response = await fetch(`${API_URL}/marqueurs/${marqueurStore.marqueurActif?.properties?.id}/commentaires`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ auteur: auteur, texte: contenu }),
-			});
-			if (response.status !== 200 && response.status !== 201) {
-				const errorData = await response.json()
-                throw new Error(errorData.message || 'Erreur inconnue')
-			}
-			const responseData = await response.json();
-			marqueurStore.marqueurActif.properties.comments.push(responseData.data);
-			toggleCommenting();
-		}
-	} catch (err) {
-		console.error('Erreur lors de l\'envoi du commentaire :', err);
-		throw err;
-	}
+        const auteur = formData.value.auteur.trim();
+        const contenu = formData.value.contenu.trim();
+        const id = marqueurStore.marqueurActif?.id;
+
+        const response = await fetch(`${API_URL}/marqueurs/${id}/commentaires`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auteur, texte: contenu }),
+        });
+
+        if (!response.ok) throw new Error("Erreur ajout commentaire");
+
+        const responseData = await response.json();
+        marqueurStore.marqueurActif.properties.comments.push(responseData.data);
+
+        toggleCommenting();
+    } catch (err) {
+        console.error("Erreur lors de l'envoi du commentaire :", err);
+    }
 }
 </script>
 <template>

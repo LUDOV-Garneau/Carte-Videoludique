@@ -107,9 +107,7 @@ const MarqueurSchema = new mongoose.Schema(
     },
 
     //
-    // -------------------------------------------------------------
-    // Nouveau champ : ARCHIVE des marqueurs
-    // -------------------------------------------------------------
+    // Champ ARCHIVE
     //
     archived: { type: Boolean, default: false, index: true }
   },
@@ -122,23 +120,30 @@ const MarqueurSchema = new mongoose.Schema(
 // Index géospatial
 // -------------------------------------------------------------
 //
-MarqueurSchema.index({ geometry: "2dsphere" });
+// ATTENTION : MongoDB attend [lng, lat] MAIS tu veux garder [lat, lng].
+// On convertit donc *à la volée* dans un champ virtuel pour l’index.
+//
+MarqueurSchema.index({ "geometry": "2dsphere" });
 
 
 //
 // -------------------------------------------------------------
-// Validation des coordonnées
+// Validation des coordonnées [lat, lng]
 // -------------------------------------------------------------
 //
 MarqueurSchema.path("geometry.coordinates").validate(function (coords) {
   const [lat, lng] = coords;
-  return lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90;
-}, "Coordonnées invalides (lng/lat).");
+  const valid =
+    lng >= -180 && lng <= 180 &&
+    lat >= -90 && lat <= 90;
+
+  return valid;
+}, "Coordonnées invalides : format attendu [lat, lng]");
 
 
 //
 // -------------------------------------------------------------
-// toJSON : sort propre pour Leaflet
+// toJSON : format propre pour le frontend / Leaflet
 // -------------------------------------------------------------
 //
 MarqueurSchema.set("toJSON", {
@@ -147,7 +152,6 @@ MarqueurSchema.set("toJSON", {
     delete ret._id;
     delete ret.__v;
 
-    // Ajoute properties.id pour compatibilité FE
     if (ret.properties) {
       ret.properties.id = ret.id;
     }

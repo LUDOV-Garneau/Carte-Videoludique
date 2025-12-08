@@ -32,14 +32,14 @@ exports.createMarqueur = async (req, res, next) => {
       form.type = "Autres";
     }
 
-    // ⚠️ Correction : coordinates = [lng, lat] pour un GeoJSON valide
+    // ✅ Correction : format strict [lat, lng]
     const marqueur = new Marqueur({
       type: "Feature",
       geometry: {
         type: "Point",
         coordinates: [
-          parseFloat(form.lng),
-          parseFloat(form.lat)
+          parseFloat(form.lat),
+          parseFloat(form.lng)
         ]
       },
       properties: {
@@ -80,7 +80,6 @@ exports.createMarqueur = async (req, res, next) => {
  */
 exports.getMarqueurs = async (req, res, next) => {
   try {
-    // ⚠️ Correction : inclure seulement archived: false
     const marqueurs = await Marqueur.find({ archived: false });
 
     res.status(200).json(formatSuccessResponse(
@@ -96,10 +95,6 @@ exports.getMarqueurs = async (req, res, next) => {
 
 /**
  * Récupère un marqueur en fonction de son identifiant.
- *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
  */
 exports.getMarqueur = async (req, res, next) => {
   try {
@@ -127,23 +122,11 @@ exports.getMarqueur = async (req, res, next) => {
 
 /**
  * Met à jour un marqueur existant en fonction de son identifiant.
- *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
  */
 exports.updateMarqueur = async (req, res, next) => {
   try {
     const id = req.params.marqueurId || req.params.id;
-
-    const {
-      titre,
-      type,
-      adresse,
-      description,
-      temoignage,
-      image
-    } = req.body;
+    const { titre, type, adresse, description, temoignage, images } = req.body;
 
     const update = {
       $set: {
@@ -152,7 +135,7 @@ exports.updateMarqueur = async (req, res, next) => {
         "properties.adresse": adresse,
         "properties.description": description,
         "properties.temoignage": temoignage,
-        "properties.image": image,
+        "properties.images": images,
       }
     };
 
@@ -184,11 +167,6 @@ exports.updateMarqueur = async (req, res, next) => {
 
 /**
  * Met à jour le statut d’un marqueur (approved, pending, rejected).
- * Si rejeté → ARCHIVAGE au lieu de suppression.
- *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
  */
 exports.updateStatusMarqueur = async (req, res, next) => {
   try {
@@ -198,14 +176,10 @@ exports.updateStatusMarqueur = async (req, res, next) => {
     const allowedStatuses = ["approved", "pending", "rejected"];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json(formatErrorResponse(
-        400,
-        "Bad Request",
-        "Statut invalide.",
-        req.originalUrl
+        400, "Bad Request", "Statut invalide.", req.originalUrl
       ));
     }
 
-    // 🔥 Correction : "rejected" = archive, pas delete
     if (status === "rejected") {
       const archived = await Marqueur.findByIdAndUpdate(
         marqueurId,
@@ -215,22 +189,15 @@ exports.updateStatusMarqueur = async (req, res, next) => {
 
       if (!archived) {
         return res.status(404).json(formatErrorResponse(
-          404,
-          "Not Found",
-          "Le marqueur à archiver n'existe pas.",
-          req.originalUrl
+          404, "Not Found", "Le marqueur à archiver n'existe pas.", req.originalUrl
         ));
       }
 
       return res.status(200).json(formatSuccessResponse(
-        200,
-        "Marqueur rejeté et archivé.",
-        archived,
-        req.originalUrl
+        200, "Marqueur rejeté et archivé.", archived, req.originalUrl
       ));
     }
 
-    // 🔥 Sinon mise à jour standard
     const updated = await Marqueur.findByIdAndUpdate(
       marqueurId,
       { $set: { "properties.status": status } },
@@ -239,18 +206,12 @@ exports.updateStatusMarqueur = async (req, res, next) => {
 
     if (!updated) {
       return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le marqueur à mettre à jour n'existe pas.",
-        req.originalUrl
+        404, "Not Found", "Le marqueur à mettre à jour n'existe pas.", req.originalUrl
       ));
     }
 
     return res.status(200).json(formatSuccessResponse(
-      200,
-      `Statut mis à jour vers '${status}'`,
-      updated,
-      req.originalUrl
+      200, `Statut mis à jour vers '${status}'`, updated, req.originalUrl
     ));
   } catch (err) {
     next(err);
@@ -267,20 +228,14 @@ exports.addCommentMarqueur = async (req, res, next) => {
 
     if (!texte || texte.trim() === "") {
       return res.status(400).json(formatErrorResponse(
-        400,
-        "Bad Request",
-        "Le contenu du témoignage est requis.",
-        req.originalUrl
+        400, "Bad Request", "Le contenu du témoignage est requis.", req.originalUrl
       ));
     }
 
     const marqueur = await Marqueur.findById(marqueurId);
     if (!marqueur) {
       return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le marqueur spécifié n'existe pas.",
-        req.originalUrl
+        404, "Not Found", "Le marqueur spécifié n'existe pas.", req.originalUrl
       ));
     }
 
@@ -294,10 +249,7 @@ exports.addCommentMarqueur = async (req, res, next) => {
     await marqueur.save();
 
     res.status(201).json(formatSuccessResponse(
-      201,
-      "Témoignage ajouté et en attente d'approbation.",
-      comment,
-      req.originalUrl
+      201, "Témoignage ajouté et en attente d'approbation.", comment, req.originalUrl
     ));
   } catch (err) {
     next(err);
@@ -326,10 +278,7 @@ exports.getPendingComments = async (req, res, next) => {
     });
 
     return res.status(200).json(formatSuccessResponse(
-      200,
-      "Commentaires en attente récupérés.",
-      data,
-      req.originalUrl
+      200, "Commentaires en attente récupérés.", data, req.originalUrl
     ));
   } catch (err) {
     next(err);
@@ -344,10 +293,7 @@ exports.updateCommentStatus = async (req, res, next) => {
     const allowed = ["pending", "approved", "rejected"];
     if (!allowed.includes(status)) {
       return res.status(400).json(formatErrorResponse(
-        400,
-        "Bad Request",
-        "Statut invalide.",
-        req.originalUrl
+        400, "Bad Request", "Statut invalide.", req.originalUrl
       ));
     }
 
@@ -368,10 +314,7 @@ exports.updateCommentStatus = async (req, res, next) => {
     await marqueur.save();
 
     res.status(200).json(formatSuccessResponse(
-      200,
-      "Statut du commentaire mis à jour.",
-      comment,
-      req.originalUrl
+      200, "Statut du commentaire mis à jour.", comment, req.originalUrl
     ));
   } catch (err) {
     next(err);
@@ -380,10 +323,6 @@ exports.updateCommentStatus = async (req, res, next) => {
 
 /**
  * Supprime un commentaire spécifique d’un marqueur existant.
- *
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
  */
 exports.deleteCommentMarqueur = async (req, res, next) => {
   try {
@@ -393,34 +332,26 @@ exports.deleteCommentMarqueur = async (req, res, next) => {
 
     if (!marqueur) {
       return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le marqueur spécifié n'existe pas.",
-        req.originalUrl
+        404, "Not Found", "Le marqueur spécifié n'existe pas.", req.originalUrl
       ));
     }
 
-    const index = marqueur.comments.findIndex(
+    // corrigé : commentaires dans properties.comments
+    const index = marqueur.properties.comments.findIndex(
       (c) => c._id.toString() === commentId
     );
 
     if (index === -1) {
       return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le commentaire spécifié n'existe pas.",
-        req.originalUrl
+        404, "Not Found", "Le commentaire spécifié n'existe pas.", req.originalUrl
       ));
     }
 
-    marqueur.comments.splice(index, 1);
+    marqueur.properties.comments.splice(index, 1);
     await marqueur.save();
 
     res.status(200).json(formatSuccessResponse(
-      200,
-      "Témoignage supprimé avec succès.",
-      marqueur,
-      req.originalUrl
+      200, "Témoignage supprimé avec succès.", marqueur, req.originalUrl
     ));
   } catch (err) {
     next(err);
@@ -445,10 +376,7 @@ exports.deleteMarqueur = async (req, res, next) => {
     }
 
     return res.status(200).json(formatSuccessResponse(
-      200,
-      "Marqueur archivé avec succès.",
-      updated,
-      req.originalUrl
+      200, "Marqueur archivé avec succès.", updated, req.originalUrl
     ));
   } catch (err) {
     next(err);
@@ -473,10 +401,7 @@ exports.restoreMarqueur = async (req, res, next) => {
     }
 
     return res.status(200).json(formatSuccessResponse(
-      200,
-      "Marqueur restauré et remis sur la carte.",
-      restored,
-      req.originalUrl
+      200, "Marqueur restauré et remis sur la carte.", restored, req.originalUrl
     ));
   } catch (err) {
     next(err);
@@ -497,10 +422,7 @@ exports.deleteMarqueurPermanently = async (req, res, next) => {
     }
 
     return res.status(200).json(formatSuccessResponse(
-      200,
-      "Marqueur supprimé définitivement.",
-      deleted,
-      req.originalUrl
+      200, "Marqueur supprimé définitivement.", deleted, req.originalUrl
     ));
   } catch (err) {
     next(err);
@@ -515,10 +437,7 @@ exports.getArchivedMarqueurs = async (req, res, next) => {
     const archived = await Marqueur.find({ archived: true });
 
     return res.status(200).json(formatSuccessResponse(
-      200,
-      "Marqueurs archivés récupérés.",
-      archived,
-      req.originalUrl
+      200, "Marqueurs archivés récupérés.", archived, req.originalUrl
     ));
   } catch (err) {
     next(err);
