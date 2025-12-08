@@ -190,3 +190,47 @@ describe("categorieController.patchCategorieActive", () => {
         expect(res.body.data.active).toBe(false);
     });
 })
+
+describe("categorieController.patchCategorieOrdre", () => {
+    it("400 si ordreCategories n'est pas un tableau", async () => {
+        const req = mockReq({ body: { ordreCategories: "invalid" } });
+        const res = mockRes();
+
+        await categorieController.patchCategorieOrdre(req, res, mockNext);
+        expect(res.statusCode).toBe(400);
+        expect(res.body.error).toBe("Bad Request");
+    });
+
+    it("400 si ordreCategories est un tableau vide", async () => {
+        const req = mockReq({ body: { ordreCategories: [] } });
+        const res = mockRes();
+
+        await categorieController.patchCategorieOrdre(req, res, mockNext);
+        expect(res.statusCode).toBe(400);
+        expect(res.body.error).toBe("Bad Request");
+    });
+
+    it("200 et met à jour l'ordre des catégories", async () => {
+        const mockSession = {
+            withTransaction: vi.fn(async (callback) => await callback()),
+            endSession: vi.fn()
+        };
+        
+        vi.spyOn(require("mongoose"), "startSession").mockResolvedValueOnce(mockSession);
+        vi.spyOn(Categorie, "findByIdAndUpdate").mockResolvedValue({ _id: "123", ordre: 0 });
+        vi.spyOn(Categorie, "find").mockReturnValue({
+            sort: vi.fn().mockResolvedValue([
+                { _id: "123", nom: "Cat1", ordre: 0 },
+                { _id: "456", nom: "Cat2", ordre: 1 }
+            ])
+        });
+
+        const req = mockReq({ body: { ordreCategories: ["123", "456"] } });
+        const res = mockRes();
+
+        await categorieController.patchCategorieOrdre(req, res, mockNext);
+        expect(res.statusCode).toBe(200);
+        expect(res.body.data).toHaveLength(2);
+        expect(mockSession.endSession).toHaveBeenCalled();
+    });
+})
