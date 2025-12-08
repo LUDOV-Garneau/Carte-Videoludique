@@ -176,10 +176,9 @@ exports.updateMarqueur = async (req, res, next) => {
   }
 };
 
-
 /**
  * Met à jour le statut d’un marqueur (approved, pending, rejected).
- * Si rejeté → suppression du marqueur.
+ * Si rejeté → ARCHIVE maintenant (ne supprime plus définitivement !)
  *
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -200,28 +199,32 @@ exports.updateStatusMarqueur = async (req, res, next) => {
       ));
     }
 
-    // 🔥 Si rejeté : suppression
+    // Nouvelle logique : rejet = ARCHIVAGE (plus suppression !)
     if (status === "rejected") {
-      const deleted = await Marqueur.findByIdAndDelete(marqueurId);
+      const archived = await Marqueur.findByIdAndUpdate(
+        marqueurId,
+        { archived: true },
+        { new: true }
+      );
 
-      if (!deleted) {
+      if (!archived) {
         return res.status(404).json(formatErrorResponse(
           404,
           "Not Found",
-          "Le marqueur à supprimer n'existe pas.",
+          "Le marqueur à archiver n'existe pas.",
           req.originalUrl
         ));
       }
 
       return res.status(200).json(formatSuccessResponse(
         200,
-        "Marqueur supprimé (rejeté).",
-        deleted,
+        "Marqueur rejeté et archivé.",
+        archived,
         req.originalUrl
       ));
     }
 
-    // 🔥 Sinon on met juste à jour le statut
+    // Sinon mise à jour normale du statut
     const updated = await Marqueur.findByIdAndUpdate(
       marqueurId,
       { $set: { "properties.status": status } },
@@ -396,7 +399,8 @@ exports.deleteCommentMarqueur = async (req, res, next) => {
       ));
     }
 
-    const index = marqueur.comments.findIndex(
+    // Correction : properties.comments (et non marqueur.comments)
+    const index = marqueur.properties.comments.findIndex(
       (c) => c._id.toString() === commentId
     );
 
@@ -409,7 +413,7 @@ exports.deleteCommentMarqueur = async (req, res, next) => {
       ));
     }
 
-    marqueur.comments.splice(index, 1);
+    marqueur.properties.comments.splice(index, 1);
     await marqueur.save();
 
     res.status(200).json(formatSuccessResponse(
@@ -424,7 +428,7 @@ exports.deleteCommentMarqueur = async (req, res, next) => {
 };
 
 /**
- * Supprime un marqueur en fonction de son identifiant.
+ * Archive un marqueur en fonction de son identifiant.
  *
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -524,4 +528,3 @@ exports.deleteMarqueurDefinitif = async (req, res, next) => {
     next(err);
   }
 };
-
