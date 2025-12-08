@@ -54,5 +54,8 @@ router.put("/marqueurs/:marqueurId/restaurer", isAuth, marqueurController.restor
 // GET => /marqueurs
 router.get("/marqueurs-archives", isAuth, marqueurController.getArchivedMarqueurs);
 
+// DELETE => /marqueurs/:marqueurId
+router.delete("/marqueurs/:marqueurId/definitif", isAuth, marqueurController.deleteMarqueurDefinitif);
+
 
 module.exports = router;

@@ -500,3 +500,28 @@ exports.getArchivedMarqueurs = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.deleteMarqueurDefinitif = async (req, res, next) => {
+  try {
+    const deleted = await Marqueur.findByIdAndDelete(req.params.marqueurId);
+
+    if (!deleted) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "Le marqueur n'existe pas.",
+        req.originalUrl
+      ));
+    }
+
+    res.status(200).json(formatSuccessResponse(
+      200,
+      "Marqueur supprimé définitivement.",
+      deleted,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
