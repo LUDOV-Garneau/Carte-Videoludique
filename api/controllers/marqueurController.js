@@ -379,6 +379,55 @@ exports.updateCommentStatus = async (req, res, next) => {
 };
 
 /**
+ * Supprime un commentaire spécifique d’un marqueur existant.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+exports.deleteCommentMarqueur = async (req, res, next) => {
+  try {
+    const { marqueurId, commentId } = req.params;
+
+    const marqueur = await Marqueur.findById(marqueurId);
+
+    if (!marqueur) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "Le marqueur spécifié n'existe pas.",
+        req.originalUrl
+      ));
+    }
+
+    const index = marqueur.comments.findIndex(
+      (c) => c._id.toString() === commentId
+    );
+
+    if (index === -1) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "Le commentaire spécifié n'existe pas.",
+        req.originalUrl
+      ));
+    }
+
+    marqueur.comments.splice(index, 1);
+    await marqueur.save();
+
+    res.status(200).json(formatSuccessResponse(
+      200,
+      "Témoignage supprimé avec succès.",
+      marqueur,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * Archive un marqueur (suppression logique).
  */
 exports.deleteMarqueur = async (req, res, next) => {
