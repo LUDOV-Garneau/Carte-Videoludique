@@ -165,6 +165,9 @@ describe('LeafletMap.vue', () => {
     expect(L.map).toHaveBeenCalledTimes(1)
     expect(L.tileLayer).toHaveBeenCalledTimes(1)
 
+    // Vérifier que les 3 contrôles sont ajoutés (ajout + edit si auth + filter)
+    expect(mapApi.addControl).toHaveBeenCalledTimes(2) // ajout + filter (pas edit car pas auth)
+
     const ajoutBtn = document.querySelector('.btn-ajout-marqueur')
     expect(ajoutBtn).toBeTruthy()
 
@@ -172,7 +175,7 @@ describe('LeafletMap.vue', () => {
 
     wrapper.unmount()
     expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
-    expect(mapApi.remove).toHaveBeenCalled()
+    expect(mapApi.remove).toHaveBeenCalledTimes(1)
   })
 
   it('affiche le contrôle d\'édition des catégories quand l\'utilisateur est connecté', async () => {
@@ -184,8 +187,8 @@ describe('LeafletMap.vue', () => {
       }
     })
 
-    // Vérifier que les deux contrôles sont ajoutés
-    expect(mapApi.addControl).toHaveBeenCalledTimes(2)
+    // Vérifier que les trois contrôles sont ajoutés (ajout + edit + filter)
+    expect(mapApi.addControl).toHaveBeenCalledTimes(3)
 
     // Vérifier que le bouton d'édition des catégories existe
     const editBtn = document.querySelector('.btn-edit-categorie')
@@ -195,8 +198,8 @@ describe('LeafletMap.vue', () => {
 
     wrapper.unmount()
     
-    // Vérifier que les deux contrôles sont supprimés
-    expect(mapApi.removeControl).toHaveBeenCalledTimes(2)
+    // Vérifier que les trois contrôles sont supprimés (ajout + edit + filter)
+    expect(mapApi.removeControl).toHaveBeenCalledTimes(3)
 
     // Reset pour les autres tests
     mockAuthStore.isAuthenticated = false

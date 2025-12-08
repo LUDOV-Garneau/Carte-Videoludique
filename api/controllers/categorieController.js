@@ -120,120 +120,6 @@ exports.getCategorie = async (req, res, next) => {
 }
 
 /**
- * Mettre à jour une catégorie existante en fonction de son identifiant.
- * Ne gère PAS l'ordre (voir updateCategorieOrdre pour cela)
- *
- * @param {import('express').Request} req - Objet de requête Express contenant les données du marqueur dans `req.body`.
- * @param {import('express').Response} res - Objet de réponse Express utilisé pour envoyer le marqueur créé.
- * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
- */
-exports.updateCategorie = async (req, res, next) => {
-    try {
-        const { categorieId } = req.params;
-        const form = req.body;
-        const updateData = {};
-
-        // Validation du nom si fourni
-        if (form.nom !== undefined) {
-            if (!form.nom.trim()) {
-                return res.status(400).json(formatErrorResponse(
-                    400,
-                    "Bad Request",
-                    "Un nom de catégorie est requis.",
-                    req.originalUrl
-                ));
-            }
-            updateData.nom = form.nom.trim();
-        }
-
-        // Validation de la couleur si fournie
-        if (form.couleur !== undefined) {
-            if (form.couleur && !/^#[0-9A-F]{6}$/i.test(form.couleur)) {
-                return res.status(400).json(formatErrorResponse(
-                    400,
-                    "Bad Request",
-                    "Le code couleur doit être un code hexadécimal valide (ex: #FF5733).",
-                    req.originalUrl
-                ));
-            }
-            updateData.couleur = form.couleur;
-        }
-
-        // Validation de la description si fournie
-        if (form.description !== undefined) {
-            if (form.description && form.description.length > 200) {
-                return res.status(400).json(formatErrorResponse(
-                    400,
-                    "Bad Request",
-                    "La description ne doit pas dépasser 200 caractères.",
-                    req.originalUrl
-                ));
-            }
-            updateData.description = form.description;
-        }
-
-        // Gestion de l'image si fournie
-        if (form.image) {
-            // Validation de la structure de l'image
-            if (!form.image.type || !["predefined", "uploaded", "url"].includes(form.image.type)) {
-                return res.status(400).json(formatErrorResponse(
-                    400,
-                    "Bad Request",
-                    "Type d'image invalide. Doit être 'predefined', 'uploaded' ou 'url'.",
-                    req.originalUrl
-                ));
-            }
-
-            // Validation selon le type d'image
-            if (form.image.type === "predefined" && !form.image.filename) {
-                return res.status(400).json(formatErrorResponse(
-                    400,
-                    "Bad Request",
-                    "Le nom de fichier est requis pour une image prédéfinie.",
-                    req.originalUrl
-                ));
-            }
-
-            if (form.image.type === "url" && !form.image.externalUrl) {
-                return res.status(400).json(formatErrorResponse(
-                    400,
-                    "Bad Request",
-                    "L'URL externe est requise pour une image URL.",
-                    req.originalUrl
-                ));
-            }
-
-            updateData.image = form.image;
-        }
-
-        // Mise à jour de la catégorie
-        const updatedCategorie = await Categorie.findByIdAndUpdate(
-            categorieId,
-            updateData,
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedCategorie) {
-            return res.status(404).json(formatErrorResponse(
-                404,
-                "Not Found",
-                "Catégorie non trouvée.",
-                req.originalUrl
-            ));
-        }
-
-        res.status(200).json(formatSuccessResponse(
-            200,
-            "Catégorie mise à jour avec succès.",
-            updatedCategorie,
-            req.originalUrl
-        ));
-    } catch (err) {
-        next(err);
-    }
-}
-
-/**
  * Met à jour l'ordre des catégories basé sur un array d'IDs
  * Utilisé pour le drag & drop dans l'interface d'administration
  *
@@ -241,7 +127,7 @@ exports.updateCategorie = async (req, res, next) => {
  * @param {import('express').Response} res - Objet de réponse Express utilisé pour envoyer les catégories mises à jour.
  * @param {import('express').NextFunction} next - Fonction middleware pour gérer les erreurs.
  */
-exports.updateCategorieOrdre = async (req, res, next) => {
+exports.patchCategorieOrdre = async (req, res, next) => {
     try {
         const { ordreCategories } = req.body;
 

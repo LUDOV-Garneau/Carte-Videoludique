@@ -37,6 +37,7 @@ let controlAjoutMarqueur
 let btnAjoutMarqueur
 let controlEditCategorie
 let btnEditCategorie
+let controlFilter
 
 const longitude = ref('')
 const latitude = ref('')
@@ -501,7 +502,7 @@ function addFilterControl() {
     }
   });
 
-  const controlFilter = new FilterControl();
+  controlFilter = new FilterControl();
   map.addControl(controlFilter);
 }
 
@@ -548,6 +549,7 @@ onUnmounted(() => {
   if (map) {
     if (controlAjoutMarqueur) map.removeControl(controlAjoutMarqueur)
     if (controlEditCategorie) map.removeControl(controlEditCategorie)
+    if (controlFilter) map.removeControl(controlFilter)
     if (map.__onKey) window.removeEventListener('keydown', map.__onKey)
     map.remove()
   }
