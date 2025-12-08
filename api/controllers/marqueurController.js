@@ -74,7 +74,7 @@ exports.createMarqueur = async (req, res, next) => {
  */
 exports.getMarqueurs = async (req, res, next) => {
   try {
-    const marqueurs = await Marqueur.find();
+    const marqueurs = await Marqueur.find({ archived: false });
 
     res.status(200).json(formatSuccessResponse(
       200,
@@ -430,23 +430,55 @@ exports.deleteCommentMarqueur = async (req, res, next) => {
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
  */
-exports.deleteMarqueur = async (req, res, next) => {
+exports.archiveMarqueur = async (req, res, next) => {
   try {
-    const deleted = await Marqueur.findByIdAndDelete(req.params.marqueurId);
+    const marqueur = await Marqueur.findByIdAndUpdate(
+      req.params.marqueurId,
+      { $set: { archived: true } },
+      { new: true }
+    );
 
-    if (!deleted) {
+    if (!marqueur) {
       return res.status(404).json(formatErrorResponse(
         404,
         "Not Found",
-        "Le marqueur à supprimer n'existe pas",
+        "Le marqueur n'existe pas",
         req.originalUrl
       ));
     }
 
     res.status(200).json(formatSuccessResponse(
       200,
-      "Le marqueur a été supprimé avec succès!",
-      deleted,
+      "Le marqueur a été archivé.",
+      marqueur,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.restoreMarqueur = async (req, res, next) => {
+  try {
+    const marqueur = await Marqueur.findByIdAndUpdate(
+      req.params.marqueurId,
+      { $set: { archived: false } },
+      { new: true }
+    );
+
+    if (!marqueur) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "Marqueur introuvable.",
+        req.originalUrl
+      ));
+    }
+
+    res.status(200).json(formatSuccessResponse(
+      200,
+      "Marqueur restauré.",
+      marqueur,
       req.originalUrl
     ));
   } catch (err) {

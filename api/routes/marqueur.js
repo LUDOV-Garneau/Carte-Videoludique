@@ -39,7 +39,7 @@ router.patch("/marqueurs/:marqueurId/commentaires/:commentId/status", isAuth, ma
 router.delete("/marqueurs/:marqueurId/commentaires/:commentId", marqueurController.deleteCommentMarqueur);
 
 // DELETE => /marqueurs/:marqueurId
-router.delete("/marqueurs/:marqueurId", isAuth, marqueurController.deleteMarqueur);
+router.delete("/marqueurs/:marqueurId", isAuth, marqueurController.archiveMarqueur);
 
 // POST => /marqueurs/:marqueurId/edit-requests
 router.post(
@@ -47,5 +47,8 @@ router.post(
   optionalAuth, // ou isAuth si tu veux obliger la connexion
   editRequestController.createEditRequest
 );
+
+// PUT => /marqueurs/:marqueurId
+router.put("/marqueurs/:marqueurId/restaurer", isAuth, marqueurController.restoreMarqueur);
 
 module.exports = router;
