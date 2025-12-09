@@ -1,5 +1,6 @@
 <script setup>
-import { ref, watch } from "vue";
+import { ref, onMounted } from "vue";
+import { useCategorieStore } from '../stores/useCategorie.js';
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
@@ -7,20 +8,13 @@ const props = defineProps({
 
 const emit = defineEmits(["close", "apply-filters", "reset-filters"]);
 
-const CATEGORIES = [
-  'Écoles et instituts de formation',
-  'Développement et édition de jeux',
-  'Boutiques spécialisées',
-  'Magasins à grande surface',
-  'Friperies, marchés aux puces et d\'occasion',
-  'Dépanneurs et marchés',
-  'Clubs vidéo',
-  'Arcades et salles de jeux',
-  'Organismes et institutions',
-  'Autres',
-];
-
+const categorieStore = useCategorieStore();
 const selected = ref([]);
+
+// Charger les catégories au montage du composant
+onMounted(async () => {
+  await categorieStore.fetchCategories();
+});
 
 function closePanel() {
   emit("close");
@@ -57,17 +51,32 @@ function applyFilters() {
         <p class="subtitle">Sélectionnez les catégories à afficher :</p>
 
         <div class="checkboxes">
+          <div v-if="categorieStore.isLoading" class="loading">
+            Chargement des catégories...
+          </div>
+          <div v-else-if="categorieStore.activeCategories.length === 0" class="no-categories">
+            Aucune catégorie disponible.
+          </div>
           <label
-            v-for="cat in CATEGORIES"
-            :key="cat"
+            v-else
+            v-for="category in categorieStore.activeCategories"
+            :key="category._id"
             class="checkbox"
           >
             <input
               type="checkbox"
-              :value="cat"
+              :value="category._id"
               v-model="selected"
             />
-            <span>{{ cat }}</span>
+            <div class="checkbox-content">
+              <img
+                v-if="category.image?.filename"
+                :src="categorieStore.getIconUrl(category.image.filename)"
+                :alt="categorieStore.getIconAltWithSource(category.image.filename)"
+                class="category-icon"
+              />
+              <span>{{ category.nom }}</span>
+            </div>
           </label>
         </div>
       </div>
@@ -163,6 +172,25 @@ function applyFilters() {
 .checkbox input {
   width: 16px;
   height: 16px;
+}
+
+.checkbox-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.loading, .no-categories {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
 }
 
 .panel__footer {

@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { useAuthStore } from '../stores/auth.js';
 import { useMarqueurStore } from '../stores/useMarqueur.js';
+import { useCategorieStore } from '../stores/useCategorie';
 import { useEditRequestStore } from '../stores/useEditRequest';
 import { useLightbox } from '../composables/useLightbox.js';
 
@@ -22,6 +23,7 @@ const emits = defineEmits(['close', 'marqueur-deleted']);
 const marqueurStore = useMarqueurStore();
 const authStore = useAuthStore();
 const editRequestStore = useEditRequestStore();
+const categorieStore = useCategorieStore();
 const lightbox = useLightbox();
 
 const canDisplayPanel = computed(() => {
@@ -173,7 +175,7 @@ async function sendComment() {
 			<img v-if="marqueurProperties.images?.length > 0" class="panel__thumbnail" :src="marqueurProperties.images[0].url" :alt="'image d\'entrée d\'un marqueur'" />
             <header class="panel__header">
                 <h3>{{ marqueurProperties.titre }}</h3>
-				<p>Catégorie : {{ marqueurProperties.type }}</p>
+				<p>Catégorie : {{ categorieStore.getCategorie(marqueurProperties.categorie)?.nom }}</p>
             </header>
             <div class="panel__body">
 				<div class="panel__menu">

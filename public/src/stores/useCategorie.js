@@ -97,6 +97,10 @@ export const useCategorieStore = defineStore("categories", () => {
         categories.value.filter(cat => cat.active)
     );
 
+    function getCategorie(categorieId) {
+        return categories.value.find(cat => cat._id === categorieId) || null;
+    }
+
     const categoriesCount = computed(() => categories.value.length);
 
     const getIconCategories = computed(() => iconCategories);
@@ -514,6 +518,7 @@ export const useCategorieStore = defineStore("categories", () => {
         getAllIcons,
         
         // Fonctions utilitaires icônes
+        getCategorie,
         getIconUrl,
         getIconInfo,
         getIconInfoSync,
