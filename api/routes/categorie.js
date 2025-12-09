@@ -35,7 +35,4 @@ router.patch("/categories/:categorieId/image", isAuth, categorieController.patch
 // PATCH => /categories/:categorieId/active
 router.patch("/categories/:categorieId/active", isAuth, categorieController.patchCategorieActive);
 
-// DELETE => /categories/:categorieId
-router.delete("/categories/:categorieId", isAuth, categorieController.deleteCategorie);
-
 module.exports = router;

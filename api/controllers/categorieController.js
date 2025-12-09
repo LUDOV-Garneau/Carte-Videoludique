@@ -178,42 +178,6 @@ exports.patchCategorieOrdre = async (req, res, next) => {
 }
 
 /**
- * Met à jour l'ordre des catégories basé sur un array d'IDs
- * Utilisé pour le drag & drop dans l'interface d'administration
- *
- * @param {import('express').Request} req - req.body.ordreCategories: Array<string> des IDs dans le nouvel ordre
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
- */
-exports.deleteCategorie = async (req, res, next) => {
-    try {
-        const { categorieId } = req.params;
-        const deletedCategorie = await Categorie.findByIdAndUpdate(
-            categorieId,
-            { active: false },
-            { new: true }
-        );
-        if (!deletedCategorie) {
-            return res.status(404).json(formatErrorResponse(
-                404,
-                "Not Found",
-                "Catégorie non trouvée.",
-                req.originalUrl
-            ));
-        }
-
-        res.status(200).json(formatSuccessResponse(
-            200,
-            "Catégorie désactivée avec succès.",
-            deletedCategorie,
-            req.originalUrl
-        ));
-    } catch (err) {
-        next(err);
-    }
-}
-
-/**
  * Met à jour le nom d'une catégorie
  * @param {import('express').Request} req 
  * @param {import('express').Response} res 
@@ -450,6 +414,17 @@ exports.patchCategorieActive = async (req, res, next) => {
             ));
         }
 
+        const marqueursUsingCategorie = await mongoose.model('Marqueur').countDocuments({ categorie: categorieId });
+        if (active === false && marqueursUsingCategorie > 0) {
+            const deletedCategorie = await Categorie.findByIdAndDelete(categorieId);
+            return res.status(200).json(formatSuccessResponse(
+                200,
+                "Catégorie supprimée avec succès car elle n'est plus utilisée par des marqueurs.",
+                deletedCategorie,
+                req.originalUrl
+            ));
+        }
+        
         const updatedCategorie = await Categorie.findByIdAndUpdate(
             categorieId,
             { active },

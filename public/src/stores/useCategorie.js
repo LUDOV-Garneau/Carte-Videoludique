@@ -236,6 +236,13 @@ export const useCategorieStore = defineStore("categories", () => {
         return null;
     }
 
+    // Fonction pour générer l'alt avec la provenance
+    function getIconAltWithSource(iconName, categoryName = null) {
+        const iconInfo = getIconInfoSync(iconName, categoryName)
+        const source = iconInfo.size === 14 ? 'Osmic' : 'Mapbox'
+    return `${iconName} — © ${source}`
+    }
+
     // Actions CRUD
     async function fetchCategories() {
         isLoading.value = true;
@@ -510,6 +517,7 @@ export const useCategorieStore = defineStore("categories", () => {
         getIconUrl,
         getIconInfo,
         getIconInfoSync,
+        getIconAltWithSource,
         getIconsByCategory,
         findIconCategory,
         

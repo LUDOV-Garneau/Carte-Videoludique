@@ -40,7 +40,7 @@ exports.createMarqueur = async (req, res, next) => {
       },
       properties: {
         titre: form.titre,
-        type: form.type,
+        categorie: form.categorie,
         adresse: form.adresse,
         description: form.description,
         temoignage: form.souvenir,
@@ -131,7 +131,7 @@ exports.updateMarqueur = async (req, res, next) => {
 
     const {
       titre,
-      type,
+      categorie,
       adresse,
       description,
       temoignage,
@@ -141,7 +141,7 @@ exports.updateMarqueur = async (req, res, next) => {
     const update = {
       $set: {
         "properties.titre": titre,
-        "properties.type": type,
+        "properties.categorie": categorie,
         "properties.adresse": adresse,
         "properties.description": description,
         "properties.temoignage": temoignage,

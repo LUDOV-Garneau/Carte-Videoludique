@@ -42,21 +42,9 @@ const MarqueurSchema = new mongoose.Schema(
     },
     properties: {
       titre: { type: String, required: true, trim: true, maxlength: 140 },
-      type: {
-        type: String,
-        enum: [
-          "Écoles et instituts de formation",
-          "Développement et édition de jeux",
-          "Boutiques spécialisées",
-          "Magasins à grande surface",
-          "Friperies, marchés aux puces et d'occasion",
-          "Dépanneurs et marchés",
-          "Clubs vidéo",
-          "Arcades et salles de jeux",
-          "Organismes et institutions",
-          "Autres"
-        ],
-        default: "Autres"
+      categorie: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Categorie",
       },
       adresse: { type: String, trim: true, maxlength: 150 },
       description: { type: String, trim: true, maxlength: 1000 },
