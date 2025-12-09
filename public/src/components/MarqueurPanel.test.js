@@ -17,7 +17,7 @@ const mockMarqueurStore = {
     properties: {
       id: '1',
       titre: 'Titre de test',
-      type: 'Studio',
+      categorie: 'cat1',
       description: 'Description de test',
       adresse: '123 Rue Test, Québec',
       temoignage: 'Témoignage de test',
@@ -44,9 +44,24 @@ const mockEditRequestStore = {
   createEditRequest: vi.fn()
 }
 
+const mockCategorieStore = {
+  categories: [
+    { _id: 'cat1', nom: 'Studio', description: 'Studios de développement' },
+    { _id: 'cat2', nom: 'Magasin', description: 'Magasins de jeux vidéo' }
+  ],
+  getCategorie: (id) => {
+    return mockCategorieStore.categories.find(cat => cat._id === id) || null
+  },
+  fetchCategories: vi.fn(() => Promise.resolve())
+}
+
 // Mock des modules avec des chemins relatifs
 vi.mock('../stores/useMarqueur.js', () => ({
   useMarqueurStore: () => mockMarqueurStore
+}))
+
+vi.mock('../stores/useCategorie', () => ({
+  useCategorieStore: () => mockCategorieStore
 }))
 
 vi.mock('../stores/auth.js', () => ({
@@ -106,7 +121,7 @@ describe('MarqueurPanel.vue', () => {
       properties: {
         id: '1',
         titre: 'Titre de test',
-        type: 'Studio',
+        categorie: 'cat1',
         description: 'Description de test',
         adresse: '123 Rue Test, Québec',
         temoignage: 'Témoignage de test',
