@@ -17,9 +17,6 @@ router.get("/categories", categorieController.getCategories);
 // GET => /categories/:categorieId
 router.get("/categories/:categorieId", categorieController.getCategorie);
 
-// PUT => /categories/:categorieId
-router.put("/categories/:categorieId", isAuth, categorieController.updateCategorie);
-
 // PATCH => /categories/:categorieId/ordre
 router.patch("/categories/:categorieId/ordre", isAuth, categorieController.patchCategorieOrdre);
 
