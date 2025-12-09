@@ -18,7 +18,8 @@ vi.mock('../utils/cloudinary.js', () => ({
 }))
 
 vi.mock('../utils/geocode.js', () => ({
-  geocodeAddress: vi.fn()
+  geocodeAddress: vi.fn(),
+  fetchAdresseSuggestions: vi.fn(() => Promise.resolve([]))
 }))
 
 // Mock du store
@@ -30,6 +31,19 @@ const mockMarqueurStore = {
 
 vi.mock('../stores/useMarqueur.js', () => ({
   useMarqueurStore: vi.fn(() => mockMarqueurStore)
+}))
+
+// Mock du store de catégories
+const mockCategorieStore = {
+  activeCategories: [
+    { _id: 'cat1', nom: 'Restaurant' },
+    { _id: 'cat2', nom: 'Hôtel' }
+  ],
+  fetchCategories: vi.fn(() => Promise.resolve())
+}
+
+vi.mock('../stores/useCategorie.js', () => ({
+  useCategorieStore: vi.fn(() => mockCategorieStore)
 }))
 
 

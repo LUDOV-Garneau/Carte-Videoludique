@@ -177,6 +177,15 @@ describe("categorieController.patchCategorieActive", () => {
     });
 
     it("200 et met à jour le statut", async () => {
+        // Mock du modèle Marqueur pour countDocuments
+        const mockMarqueurModel = {
+            countDocuments: vi.fn().mockResolvedValueOnce(0)
+        };
+        
+        // Mock mongoose.model pour retourner notre mock
+        const originalMongoose = require('mongoose');
+        vi.spyOn(originalMongoose, 'model').mockReturnValueOnce(mockMarqueurModel);
+
         vi.spyOn(Categorie, "findByIdAndUpdate").mockResolvedValueOnce({
             _id: "123",
             active: false

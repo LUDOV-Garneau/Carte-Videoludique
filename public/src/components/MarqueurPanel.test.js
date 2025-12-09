@@ -339,7 +339,7 @@ describe('MarqueurPanel.vue', () => {
       const mockPayload = {
         properties: {
           titre: 'Nouveau titre',
-          type: 'Nouveau type',
+          categorie: 'cat1',
           adresse: 'Nouvelle adresse',
           description: 'Nouvelle description',
           temoignage: 'Nouveau témoignage'
@@ -350,7 +350,7 @@ describe('MarqueurPanel.vue', () => {
       
       expect(mockEditRequestStore.createEditRequest).toHaveBeenCalledWith('1', {
         titre: 'Nouveau titre',
-        type: 'Nouveau type',
+        categorie: 'cat1',
         adresse: 'Nouvelle adresse',
         description: 'Nouvelle description',
         temoignage: 'Nouveau témoignage'
