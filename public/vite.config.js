@@ -14,5 +14,12 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
   },
+  build: {
+    outDir: 'dist', // '../dist/Carte-Videoludique',
+    manifest: true,
+    rollupOptions: {
+      input: 'src/main.js',
+    },
+  },
   
 })
