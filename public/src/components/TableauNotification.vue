@@ -1,13 +1,63 @@
 <script setup>
-import { onMounted, watch } from 'vue'
+import { onMounted, watch, computed } from 'vue'
 import { useEditRequestStore } from '@/stores/useEditRequest'
 import { useAuthStore } from '@/stores/auth'
 import { useCommentRequestStore } from "@/stores/useCommentRequestStore";
+import { useMarqueurStore } from "@/stores/useMarqueur";
+import { API_URL } from '@/config';
 
 
 const editRequestStore = useEditRequestStore()
 const authStore = useAuthStore()
+const marqueurStore = useMarqueurStore()
 const commentRequestStore = useCommentRequestStore();
+const archivedList = computed(() =>
+  (marqueurStore.marqueurs ?? []).filter(m => m.archived === true)
+);
+
+const restoreMarqueur = async (marqueur) => {
+  const id = marqueur.id || marqueur._id || marqueur.properties?.id;
+  if (!id) return;
+
+  try {
+    await fetch(`${API_URL}/marqueurs/${id}/restaurer`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + authStore.token
+      }
+    });
+
+    // Recharge les marqueurs
+    await marqueurStore.getMarqueurs();
+
+    // 🔥 NOTIFIE le parent (AdminView) qu’il faut rafraîchir la carte
+    emit("refresh");
+
+  } catch (err) {
+    console.error("Erreur restauration :", err);
+  }
+};
+
+const deleteMarqueurDefinitif = async (marqueur) => {
+  const id = marqueur.id || marqueur._id || marqueur.properties?.id;
+  if (!id) return;
+
+  try {
+    await fetch(`${API_URL}/marqueurs/${id}/definitif`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + authStore.token
+      }
+    });
+
+    await marqueurStore.getMarqueurs();
+  } catch (err) {
+    console.error("Erreur suppression définitive :", err);
+  }
+};
+
 
 
 const props = defineProps({
@@ -98,7 +148,9 @@ onMounted(() => {
         <button :class="{ active: filtreStatus === 'comments' }" @click="setFiltre('comments')">
           Commentaires à approuver
         </button>
-
+        <button :class="{ active: filtreStatus === 'archived' }" @click="setFiltre('archived')">
+          Marqueurs archivés
+        </button>
       </div>
     </div>
 
@@ -244,6 +296,41 @@ onMounted(() => {
         </tr>
       </tbody>
     </table>
+    <!-- TABLE DES MARQUEURS ARCHIVÉS -->
+    <table v-if="filtreStatus === 'archived'" class="offers-table">
+      <thead>
+        <tr>
+          <th>Titre</th>
+          <th>Auteur</th>
+          <th class="accept-col">Restaurer</th>
+          <th class="reject-col">Supprimer définitivement</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr v-for="m in archivedList" :key="m.id" class="row-hover" @click="focusMarqueur(m)">
+          <td>{{ m.properties.titre }}</td>
+          <td>{{ m.properties.createdByName || 'Non spécifié' }}</td>
+
+          <td class="accept-col" @click.stop>
+            <button class="action-btn accept" @click="restoreMarqueur(m)">
+              Restaurer
+            </button>
+          </td>
+
+          <td class="reject-col" @click.stop>
+            <button class="action-btn reject" @click="deleteMarqueurDefinitif(m)">
+              Supprimer
+            </button>
+          </td>
+        </tr>
+
+        <tr v-if="archivedList.length === 0">
+          <td colspan="4" class="empty">Aucun marqueur archivé.</td>
+        </tr>
+      </tbody>
+    </table>
+
   </div>
 </template>
 

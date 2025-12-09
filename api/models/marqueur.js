@@ -28,6 +28,7 @@ const ImageSchema = new mongoose.Schema({
 
 const MarqueurSchema = new mongoose.Schema(
   {
+    archived: { type: Boolean, default: false },
     type: { type: String, enum: ["Feature"], default: "Feature", required: true },
     geometry: {
       type: { type: String, enum: ["Point"], required: true, default: "Point" },
