@@ -204,7 +204,7 @@ onMounted(() => {
         @accepter-commentaire="accepterCommentaire"
         @refuser-commentaire="refuserCommentaire"
         @focus-marqueur="centrerCarte"
-        @refresh="getMarqueurs"
+        @refresh="() => { getMarqueurs(); leafletMapRef.value?.afficherMarqueurs?.(); }"
       />
 
       <MarqueurModal

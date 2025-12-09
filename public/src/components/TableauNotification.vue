@@ -28,8 +28,12 @@ const restoreMarqueur = async (marqueur) => {
       }
     });
 
-    // On recharge les marqueurs
+    // Recharge les marqueurs
     await marqueurStore.getMarqueurs();
+
+    // 🔥 NOTIFIE le parent (AdminView) qu’il faut rafraîchir la carte
+    emit("refresh");
+
   } catch (err) {
     console.error("Erreur restauration :", err);
   }
