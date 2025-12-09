@@ -51,7 +51,7 @@ app.use((req, res, next) => {
 });
 
 const adminRoutes = require("./routes/admin");
-
+const categorieRoutes = require("./routes/categorie");
 const marqueurRoutes = require("./routes/marqueur")
 const cloudinaryRoutes = require("./routes/cloudinary");
 const editRequestRoutes = require("./routes/editRequest");
@@ -62,6 +62,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(adminRoutes);
+app.use(categorieRoutes);
 app.use(marqueurRoutes);
 app.use(cloudinaryRoutes);
 app.use(editRequestRoutes);

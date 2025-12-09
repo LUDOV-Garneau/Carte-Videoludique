@@ -112,6 +112,14 @@ vi.mock('../stores/useMarqueur.js', () => ({
   useMarqueurStore: vi.fn(() => mockMarqueurStore)
 }))
 
+const mockAuthStore = {
+  isAuthenticated: false
+}
+
+vi.mock('../stores/auth.js', () => ({
+  useAuthStore: vi.fn(() => mockAuthStore)
+}))
+
 // --- Mock geocode
 vi.mock('../utils/geocode.js', () => ({
   reverseGeocode: vi.fn().mockResolvedValue({
@@ -157,6 +165,9 @@ describe('LeafletMap.vue', () => {
     expect(L.map).toHaveBeenCalledTimes(1)
     expect(L.tileLayer).toHaveBeenCalledTimes(1)
 
+    // Vérifier que les 3 contrôles sont ajoutés (ajout + edit si auth + filter)
+    expect(mapApi.addControl).toHaveBeenCalledTimes(2) // ajout + filter (pas edit car pas auth)
+
     const ajoutBtn = document.querySelector('.btn-ajout-marqueur')
     expect(ajoutBtn).toBeTruthy()
 
@@ -164,10 +175,37 @@ describe('LeafletMap.vue', () => {
 
     wrapper.unmount()
     expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
-    expect(mapApi.remove).toHaveBeenCalled()
+    expect(mapApi.remove).toHaveBeenCalledTimes(1)
   })
 
-  it('ajoute un marqueur au clic et met à jour les coordonnées', async () => {
+  it('affiche le contrôle d\'édition des catégories quand l\'utilisateur est connecté', async () => {
+    mockAuthStore.isAuthenticated = true
+
+    const wrapper = mount(LeafletMap, {
+      global: {
+        plugins: [createPinia()]
+      }
+    })
+
+    // Vérifier que les trois contrôles sont ajoutés (ajout + edit + filter)
+    expect(mapApi.addControl).toHaveBeenCalledTimes(3)
+
+    // Vérifier que le bouton d'édition des catégories existe
+    const editBtn = document.querySelector('.btn-edit-categorie')
+    expect(editBtn).toBeTruthy()
+    expect(editBtn.getAttribute('role')).toBe('button')
+    expect(editBtn.getAttribute('aria-label')).toBe('Gérer les catégories')
+
+    wrapper.unmount()
+    
+    // Vérifier que les trois contrôles sont supprimés (ajout + edit + filter)
+    expect(mapApi.removeControl).toHaveBeenCalledTimes(3)
+
+    // Reset pour les autres tests
+    mockAuthStore.isAuthenticated = false
+  })
+
+  it('ajoute un marqueur au clic carte et met à jour les coordonnées', async () => {
     const wrapper = mount(LeafletMap)
 
     const ajoutBtn = document.querySelector('.btn-ajout-marqueur')
