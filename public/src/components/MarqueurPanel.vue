@@ -72,7 +72,7 @@ async function handleEditRequestSubmit(payloadFromModal) {
 		const props = payloadFromModal.properties || {};	
 		const body = {
 			titre: props.titre,
-			type: props.type,
+			categorie: props.categorie,
 	  		adresse: props.adresse,
 	  		description: props.description,
 	  		temoignage: props.temoignage,

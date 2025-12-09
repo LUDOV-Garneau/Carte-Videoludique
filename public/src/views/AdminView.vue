@@ -124,7 +124,7 @@ const validerModification = async (marqueurModifie) => {
 
     const payload = {
       titre: props.titre,
-      type: props.type,
+      categorie: props.categorie,
       adresse: props.adresse,
       description: props.description,
       temoignage: props.temoignage,
@@ -185,7 +185,9 @@ onMounted(() => {
         @focus-marqueur="centrerCarte" />
 
 
-      <MarqueurModal v-if="modalVisible && selectedMarqueur" :marqueur="selectedMarqueur"
+      <MarqueurModal v-if="modalVisible && selectedMarqueur"
+        :is-open="modalVisible"
+        :marqueur="selectedMarqueur"
         @fermer="modalVisible = false; selectedMarqueur = null" @locate-from-address="handleLocateFromAddressFromModal"
         @valider="validerModification" />
 
