@@ -97,6 +97,10 @@ export const useCategorieStore = defineStore("categories", () => {
         categories.value.filter(cat => cat.active)
     );
 
+    function getCategorie(categorieId) {
+        return categories.value.find(cat => cat._id === categorieId) || null;
+    }
+
     const categoriesCount = computed(() => categories.value.length);
 
     const getIconCategories = computed(() => iconCategories);
@@ -234,6 +238,13 @@ export const useCategorieStore = defineStore("categories", () => {
             }
         }
         return null;
+    }
+
+    // Fonction pour générer l'alt avec la provenance
+    function getIconAltWithSource(iconName, categoryName = null) {
+        const iconInfo = getIconInfoSync(iconName, categoryName)
+        const source = iconInfo.size === 14 ? 'Osmic' : 'Mapbox'
+    return `${iconName} — © ${source}`
     }
 
     // Actions CRUD
@@ -507,9 +518,11 @@ export const useCategorieStore = defineStore("categories", () => {
         getAllIcons,
         
         // Fonctions utilitaires icônes
+        getCategorie,
         getIconUrl,
         getIconInfo,
         getIconInfoSync,
+        getIconAltWithSource,
         getIconsByCategory,
         findIconCategory,
         

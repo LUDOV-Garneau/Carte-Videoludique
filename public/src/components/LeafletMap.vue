@@ -254,9 +254,9 @@ async function afficherMarqueurs() {
     marqueurs.value = [];
 
     const filtered = marqueurStore.marqueurs.filter(m => {
-      const type = m.properties?.type || "";
+      const categorie = m.properties?.categorie || null;
       if (activeFilters.value.length === 0) return true;
-      return activeFilters.value.includes(type);
+      return activeFilters.value.includes(categorie);
     });
 
     noResults.value = (filtered.length === 0);

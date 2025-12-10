@@ -40,6 +40,7 @@ const mockCategorieStore = {
   updateCategoryImage: vi.fn(() => Promise.resolve()),
   deleteCategory: vi.fn(() => Promise.resolve()),
   getIconUrl: vi.fn((filename) => `/icons/${filename}.png`),
+  getIconAltWithSource: vi.fn((filename) => `Icône ${filename} (14px)`),
   findIconCategory: vi.fn(() => "shapes"),
   getIconInfoSync: vi.fn(() => ({ size: 14 })),
   getIconCategories: () => ({

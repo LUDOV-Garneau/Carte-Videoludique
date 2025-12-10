@@ -211,13 +211,6 @@ async function deleteCategory() {
   }
 }
 
-// Fonction pour générer l'alt avec la provenance
-function getIconAltWithSource(iconName, categoryName = null) {
-  const iconInfo = categorieStore.getIconInfoSync(iconName, categoryName)
-  const source = iconInfo.size === 14 ? 'Osmic' : 'Mapbox'
-  return `${iconName} — © ${source}`
-}
-
 onMounted(async () => {
   // Charger les catégories dès le montage du composant
   await categorieStore.fetchCategories()
@@ -269,18 +262,14 @@ watch(() => props.isOpen, async (newValue) => {
           </div>
 
           <div v-else class="categories-list">
-            <div 
-              v-for="category in categorieStore.categories" 
-              :key="category._id"
-              class="category-item"
-            >
+            <div v-for="category in categorieStore.categories" :key="category._id" class="category-item">
               <div class="category-content">
                 <div class="category-icon" :style="{ backgroundColor: category.couleur }">
                   <img 
                     v-if="category.image?.filename"
                     :src="categorieStore.getIconUrl(category.image.filename)" 
-                    :alt="getIconAltWithSource(category.image.filename)"
-                    :title="getIconAltWithSource(category.image.filename)"
+                    :alt="categorieStore.getIconAltWithSource(category.image.filename)"
+                    :title="categorieStore.getIconAltWithSource(category.image.filename)"
                     class="category-icon-img"
                   >
                 </div>
@@ -375,7 +364,7 @@ watch(() => props.isOpen, async (newValue) => {
             <div class="panel__section">
               <label>Icône sélectionnée</label>
               <div class="selected-icon-display">
-                <img :src="selectedIconUrl" :alt="getIconAltWithSource(selectedIcon, selectedIconCategory)" :title="getIconAltWithSource(selectedIcon, selectedIconCategory)" class="selected-icon-img">
+                <img :src="selectedIconUrl" :alt="categorieStore.getIconAltWithSource(selectedIcon, selectedIconCategory)" :title="categorieStore.getIconAltWithSource(selectedIcon, selectedIconCategory)" class="selected-icon-img">
                 <span class="selected-icon-name">{{ selectedIcon }}</span>
               </div>
               
@@ -392,12 +381,12 @@ watch(() => props.isOpen, async (newValue) => {
                     :key="icon"
                     class="icon-option"
                     @click="selectIcon(icon, categoryName)"
-                    :title="getIconAltWithSource(icon, categoryName)"
+                    :title="categorieStore.getIconAltWithSource(icon, categoryName)"
                     :class="{ selected: selectedIcon === icon }"
                   >
                     <img 
                       :src="categorieStore.getIconUrl(icon, categoryName)" 
-                      :alt="getIconAltWithSource(icon, categoryName)"
+                      :alt="categorieStore.getIconAltWithSource(icon, categoryName)"
                       class="icon-img"
                     >
                   </div>

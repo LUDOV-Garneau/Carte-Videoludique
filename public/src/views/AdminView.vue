@@ -147,7 +147,7 @@ const validerModification = async (marqueurModifie) => {
 
     const payload = {
       titre: props.titre,
-      type: props.type,
+      categorie: props.categorie,
       adresse: props.adresse,
       description: props.description,
       temoignage: props.temoignage,
@@ -207,12 +207,12 @@ onMounted(() => {
         @refresh="() => { getMarqueurs(); leafletMapRef.value?.afficherMarqueurs?.(); }"
       />
 
-      <MarqueurModal
-        v-if="modalVisible && selectedMarqueur"
+
+      <MarqueurModal v-if="modalVisible && selectedMarqueur"
+        :is-open="modalVisible"
         :marqueur="selectedMarqueur"
-        @fermer="modalVisible = false; selectedMarqueur = null"
-        @valider="validerModification"
-      />
+        @fermer="modalVisible = false; selectedMarqueur = null" @locate-from-address="handleLocateFromAddressFromModal"
+        @valider="validerModification" />
 
       <section class="map-wrapper">
         <LeafletMap ref="leafletMapRef" />
