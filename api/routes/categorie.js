@@ -17,9 +17,6 @@ router.get("/categories", categorieController.getCategories);
 // GET => /categories/:categorieId
 router.get("/categories/:categorieId", categorieController.getCategorie);
 
-// PUT => /categories/:categorieId
-router.put("/categories/:categorieId", isAuth, categorieController.updateCategorie);
-
 // PATCH => /categories/:categorieId/ordre
 router.patch("/categories/:categorieId/ordre", isAuth, categorieController.patchCategorieOrdre);
 
@@ -37,8 +34,5 @@ router.patch("/categories/:categorieId/image", isAuth, categorieController.patch
 
 // PATCH => /categories/:categorieId/active
 router.patch("/categories/:categorieId/active", isAuth, categorieController.patchCategorieActive);
-
-// DELETE => /categories/:categorieId
-router.delete("/categories/:categorieId", isAuth, categorieController.deleteCategorie);
 
 module.exports = router;

@@ -2,6 +2,7 @@
 import { defineProps, defineEmits, ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import AddImage from './AddImage.vue'
 import { fetchAdresseSuggestions, geocodeAddress } from '../utils/geocode'
+import { useCategorieStore } from '../stores/useCategorie.js'
 import { useBodyScroll } from '../composables/useBodyScroll.js'
 
 const props = defineProps({
@@ -11,8 +12,10 @@ const props = defineProps({
 
 const emit = defineEmits(['fermer', 'valider', 'locate-from-address'])
 
+const categorieStore = useCategorieStore()
+
 const titre = ref('')
-const type = ref('')
+const categorie = ref(null)
 const adresse = ref('')
 const suggestions = ref([])
 const showSuggestions = ref(false)
@@ -22,19 +25,6 @@ const latitude = ref(null)
 const longitude = ref(null)
 
 const files = ref([])
-
-const TYPES = [
-  'Écoles et instituts de formation',
-  'Développement et édition de jeux',
-  'Boutiques spécialisées',
-  'Magasins à grande surface',
-  'Friperies, marchés aux puces et d\'occasion',
-  'Dépanneurs et marchés',
-  'Clubs vidéo',
-  'Arcades et salles de jeux',
-  'Organismes et institutions',
-  'Autres',
-]
 
 const descCount = ref(0)
 
@@ -57,17 +47,17 @@ function updateDescCount() {
 }
 
 const titreEl = ref(null)
-const typeEl = ref(null)
+const categorieEl = ref(null)
 const adresseEl = ref(null)
 const descriptionEl = ref(null)
 
 const titreValidation = ref(false)
-const typeValidation = ref(false)
+const categorieValidation = ref(false)
 const adresseValidation = ref(false)
 const descriptionValidation = ref(false)
 
 const titreMessage = ref('')
-const typeMessage = ref('')
+const categorieMessage = ref('')
 const adresseMessage = ref('')
 const descriptionMessage = ref('')
 
@@ -84,7 +74,7 @@ const { disableScroll, enableScroll } = useBodyScroll()
 const hydrateFromProps = () => {
   const p = props.marqueur?.properties ?? {}
   titre.value = p.titre ?? ''
-  type.value = p.type ?? ''
+  categorie.value = p.categorie ?? null
   adresse.value = p.adresse ?? ''
   description.value = p.description ?? ''
   temoignage.value = p.temoignage ?? ''
@@ -96,6 +86,12 @@ watch(
   () => { hydrateFromProps(); resetErrors() },
   { immediate: true }
 )
+
+watch(() => props.isOpen, (newVal) => {
+  if (newVal && newVal === true) {
+    categorieStore.fetchCategories();
+  }
+})
 
 /**
  * Réinitialise tous les indicateurs et messages d’erreur de validation du formulaire.
@@ -115,11 +111,11 @@ watch(
  */
 function resetErrors() {
   titreValidation.value = false
-  typeValidation.value = false
+  categorieValidation.value = false
   adresseValidation.value = false
   descriptionValidation.value = false
   titreMessage.value = ''
-  typeMessage.value = ''
+  categorieMessage.value = ''
   adresseMessage.value = ''
   descriptionMessage.value = ''
 }
@@ -188,11 +184,6 @@ async function valider() {
     titreMessage.value = 'Le titre est obligatoire.'
     invalid.push(titreEl)
   }
-  if (!type.value.trim()) {
-    typeValidation.value = true
-    typeMessage.value = 'Le type est obligatoire.'
-    invalid.push(typeEl)
-  }
   if (!adresse.value.trim()) {
     adresseValidation.value = true
     adresseMessage.value = "L'adresse est obligatoire."
@@ -238,7 +229,7 @@ async function valider() {
     properties: {
       ...originalProps,
       titre: titre.value.trim(),
-      type: type.value.trim(),
+      categorie: categorie.value,
       adresse: adresse.value.trim(),
       description: description.value.trim(),
       temoignage: temoignage.value.trim(),   
@@ -421,16 +412,17 @@ onUnmounted(() => {
             <p v-if="titreValidation" class="error-message">{{ titreMessage }}</p>
           </div>
 
-          <div class="form-control" :class="{ invalid: typeValidation }">
-            <label for="typeMarqueur">Type</label>
-              <select id="typeMarqueur" v-model.trim="type"
-                :aria-invalid="typeValidation ? 'true':'false'"
-                @input="typeValidation=false" >
-                <option v-for="option in TYPES" :key="option" :value="option">{{ option }}</option>
+          <div class="form-control" :class="{ invalid: categorieValidation }">
+            <label for="categorieMarqueur">Categorie</label>
+              <select id="categorieMarqueur" v-model="categorie"
+                :aria-invalid="categorieValidation ? 'true':'false'"
+                @input="categorieValidation=false" >
+                <option :value="null" selected>Aucune</option>
+                <option v-for="categorie in categorieStore.activeCategories" :key="categorie._id" :value="categorie._id">{{ categorie.nom }}</option>
               </select>
                 
          
-            <p v-if="typeValidation" class="error-message">{{ typeMessage }}</p>
+            <p v-if="categorieValidation" class="error-message">{{ categorieMessage }}</p>
           </div>
 
           <div class="form-control form-col-2" :class="{ invalid: adresseValidation }">
