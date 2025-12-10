@@ -506,7 +506,6 @@ function addFilterControl() {
   map.addControl(controlFilter);
 }
 
-
 /**
  * Configure les raccourcis clavier globaux liés à la carte.
  *
@@ -617,8 +616,8 @@ defineExpose({
 /* ---------- Contrôle Leaflet custom ---------- */
 :deep(.btn-ajout-marqueur) {
   background-color: white;
-  border: 2px solid #4CAF50;
-  color: #4CAF50;
+  border: 2px solid var(--accent);
+  color: var(--accent-dark);
   padding: 5px 10px;
   text-align: center;
   text-decoration: none;
@@ -629,13 +628,13 @@ defineExpose({
   transition: all 0.3s ease;
 }
 :deep(.btn-ajout-marqueur:hover) {
-  background-color: #4CAF50;
+  background-color: var(--accent);
   color: white;
 }
 :deep(.btn-edit-categorie) {
   background-color: white;
-  border: 2px solid #4CAF50;
-  color: #4CAF50;
+  border: 2px solid var(--accent);
+  color: var(--accent-dark);
   padding: 5px 10px;
   text-align: center;
   text-decoration: none;
@@ -646,7 +645,7 @@ defineExpose({
   transition: all 0.3s ease;
 }
 :deep(.btn-edit-categorie:hover) {
-  background-color: #4CAF50;
+  background-color: var(--accent);
   color: white;
 }
 
@@ -687,7 +686,7 @@ defineExpose({
 
 :deep(.btn-filter-map) {
   background: white;
-  border: 2px solid #0077ff;
+  border: 2px solid var(--accent);
   padding: 6px;
   border-radius: 6px;
   cursor: pointer;
@@ -700,7 +699,7 @@ defineExpose({
 }
 
 :deep(.btn-filter-map:hover) {
-  background: #0077ff;
+  background: var(--accent);
   color: white;
 }
 

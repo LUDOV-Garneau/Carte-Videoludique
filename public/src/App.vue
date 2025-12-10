@@ -10,6 +10,8 @@ import { RouterView } from 'vue-router'
 
 <style>
 /* fond global pour toute l’appli */
+
+
 html,
 body,
 #plugin-verusvueapp {

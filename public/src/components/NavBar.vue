@@ -117,7 +117,7 @@ p {
 .section-separator {
   width: 80px;
   height: 4px;
-  background-color: #2c7a7b;
+  background-color: var(--accent-dark);
   border-radius: 999px;
   margin: 14px 0 4px;
   opacity: 0.9;
@@ -174,7 +174,7 @@ p {
 .navbar-toggler-icon {
   width: 22px;
   height: 2px;
-  background-color: #111827;
+  background-color: var(--accent);
   border-radius: 2px;
   position: relative;
   display: block;
@@ -234,8 +234,8 @@ p {
 }
 
 .nav-link:hover {
-  background-color: rgba(15, 23, 42, 0.06);
-  color: #0f172a;
+  background-color: var(--accent);
+  color:white;
   box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04);
 }
 

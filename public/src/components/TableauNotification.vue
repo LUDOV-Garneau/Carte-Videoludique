@@ -467,7 +467,7 @@ tbody tr:nth-child(odd) td {
   background: transparent;
   cursor: pointer;
   padding: 0;
-  color: #2563eb;
+  color: var(--accent-dark);
 }
 .info-btn:hover {
   text-decoration: underline;
@@ -514,11 +514,12 @@ tbody tr:nth-child(odd) td {
 }
 
 .action-btn.accept {
-  background: #e8fbef;
-  color: #0f9b63; /* vert doux */
+  background: var(--accent);
+  color: white; 
 }
 .action-btn.accept:hover {
-  filter: brightness(0.98);
+  background: var(--accent-dark);
+  /* filter: brightness(0.50); */
 }
 
 .action-btn.reject {

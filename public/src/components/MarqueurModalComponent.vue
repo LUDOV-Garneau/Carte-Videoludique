@@ -504,16 +504,6 @@ onUnmounted(() => {
 
 <style scoped>
 
-:global(:root)  {
-  --bg-page:   #E6E6E6;  /* fond gris de la page */
-  --card-bg:   #FFFFFF;  /* blocs de contenu */
-  --border:    #D4D4D4;  /* lignes/bordures douces */
-  --text-main: #333333;  /* texte principal */
-  --text-soft: #666666;  /* texte secondaire */
-  --accent:    #00D8E0;  /* turquoise comme l’onglet Accueil */
-  --accent-dark: #00AEB5;
-}
-
 /* voile plein écran */
 .overlay {
   position: fixed;
