@@ -1,5 +1,5 @@
 <script setup>
-import { defineProps, defineEmits, watch, onMounted, onUnmounted } from 'vue'
+import { defineProps, defineEmits, onMounted, onUnmounted, ref } from 'vue'
 import { useBodyScroll } from '../composables/useBodyScroll.js'
 import { useLightbox } from '../composables/useLightbox.js'
 import ImageLightbox from './ImageLightbox.vue'
@@ -11,10 +11,10 @@ const props = defineProps({
   }
 })
 
-const lightbox = useLightbox()
 const emit = defineEmits(['fermer'])
-
 const { disableScroll, enableScroll } = useBodyScroll()
+const lightbox = useLightbox()
+const overlayRef = ref(null)
 
 const getImageUrl = (image) => {
   if (!image) return ''
@@ -22,17 +22,25 @@ const getImageUrl = (image) => {
   return image.url || image.secure_url || image.imageUrl || image.src || ''
 }
 
-const openLightboxAt = (index) => {
-  const urls = (props.marqueur.properties.images || []).map(getImageUrl)
-  lightbox.openLightbox(urls, index)
+const buildLightboxImages = () => {
+  const source = props.marqueur.properties.images || []
+  return source.map((img, index) => {
+    const url = getImageUrl(img)
+    return {
+      id: img.id || `info-${index}`,
+      url
+    }
+  })
 }
 
-watch(
-    () => props.marqueur
-)
+const openLightboxAt = (index) => {
+  const imagesForLightbox = buildLightboxImages()
+  lightbox.openLightbox(imagesForLightbox, index)
+}
 
 onMounted(() => {
   disableScroll()
+  overlayRef.value?.focus()
 })
 
 onUnmounted(() => {
@@ -42,12 +50,12 @@ onUnmounted(() => {
 const fermer = () => {
   emit('fermer')
 }
+
 const onKeydown = (event) => {
   if (event.key === 'Escape') {
     fermer()
   }
 }
-
 </script>
 
 <template>
@@ -257,7 +265,6 @@ const onKeydown = (event) => {
 }
 
 .image-thumb::after {
-  content: "Cliquer pour agrandir";
   position: absolute;
   left: 8px;
   bottom: 6px;
@@ -267,15 +274,7 @@ const onKeydown = (event) => {
   color: #e5e7eb;
   font-size: 0.7rem;
   opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.16s ease, transform 0.16s ease;
   pointer-events: none;
-}
-
-.image-thumb:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
-  border-color: var(--accent, #0ea5e9);
 }
 
 .image-thumb:hover::after {
@@ -321,8 +320,6 @@ const onKeydown = (event) => {
 
 .btn-primary:hover { 
   background: var(--accent-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(14, 165, 233, 0.45);
 }
 
 /* SCROLLBAR */
