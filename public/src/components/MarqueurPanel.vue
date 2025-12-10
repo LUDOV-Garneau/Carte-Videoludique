@@ -5,6 +5,7 @@ import { useMarqueurStore } from '../stores/useMarqueur.js';
 import { useCategorieStore } from '../stores/useCategorie';
 import { useEditRequestStore } from '../stores/useEditRequest';
 import { useLightbox } from '../composables/useLightbox.js';
+import { useCommentRequestStore } from '@/stores/useCommentRequestStore.js';
 
 import { API_URL } from '../config';
 // import { svg } from 'leaflet';
@@ -172,7 +173,8 @@ async function deleteComment(commentId) {
 
     const marqueurId = marqueurStore.marqueurActif?.properties?.id;
 
-    const response = await fetch(`${API_URL}/marqueurs/${marqueurId}/commentaires/${commentId}`, {
+    // 🟢 ROUTE EXACTE POUR ARCHIVER UN COMMENTAIRE
+    const response = await fetch(`${API_URL}/marqueurs/${marqueurId}/commentaires/${commentId}/archive`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -182,15 +184,19 @@ async function deleteComment(commentId) {
 
     if (!response.ok) {
       const err = await response.json();
-      throw new Error(err.message || "Erreur lors de la suppression du témoignage.");
+      throw new Error(err.message || "Erreur lors de l'archivage du commentaire.");
     }
 
-    // ❌ Retirer du marqueur actif côté FE
+    // 🟢 Retirer le commentaire du panneau local
     marqueurStore.marqueurActif.properties.comments =
       marqueurStore.marqueurActif.properties.comments.filter(c => c._id !== commentId);
 
+    // 🟢 Rafraîchir les archives dans AdminView
+    const commentStore = useCommentRequestStore();
+    await commentStore.getArchivedComments();
+
   } catch (err) {
-    console.error("Erreur suppression témoignage:", err);
+    console.error("Erreur lors de l'archivage du témoignage :", err);
   }
 }
 </script>

@@ -118,24 +118,34 @@ const loadEditRequests = async () => {
 
 watch(
   () => props.filtreStatus,
-  (newVal) => {
+  async (newVal) => {
     if (newVal === 'edit-request') {
-      loadEditRequests()
+      await loadEditRequests();
     }
+
     if (newVal === "comments") {
-      commentRequestStore.getPendingComments();
+      await commentRequestStore.getPendingComments();
+    }
+
+    if (newVal === "comment-archived") {
+      await commentRequestStore.getArchivedComments();
     }
   }
-)
+);
 
 onMounted(() => {
   if (props.filtreStatus === 'edit-request') {
-    loadEditRequests()
+    loadEditRequests();
   }
+
   if (props.filtreStatus === "comments") {
     commentRequestStore.getPendingComments();
   }
-})
+
+  if (props.filtreStatus === "comment-archived") {
+    commentRequestStore.getArchivedComments();
+  }
+});
 </script>
 
 <template>
@@ -154,6 +164,9 @@ onMounted(() => {
         </button>
         <button :class="{ active: filtreStatus === 'archived' }" @click="setFiltre('archived')">
           Marqueurs archivés
+        </button>
+        <button :class="{ active: filtreStatus === 'comment-archived' }" @click="setFiltre('comment-archived')">
+          Commentaires archivés
         </button>
       </div>
     </div>
@@ -334,6 +347,50 @@ onMounted(() => {
         </tr>
       </tbody>
     </table>
+    <!-- COMMENTAIRES ARCHIVÉS -->
+    <table v-if="filtreStatus === 'comment-archived'" class="offers-table">
+      <thead>
+        <tr>
+          <th>Marqueur</th>
+          <th>Auteur</th>
+          <th>Commentaire</th>
+          <th class="accept-col">Restaurer</th>
+          <th class="reject-col">Supprimer</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr v-for="item in commentRequestStore.archivedComments" :key="item.commentId" class="row-hover"
+          @click="focusMarqueur(item.marqueur)">
+
+          <td>{{ item.marqueur?.properties?.titre }}</td>
+          <td>{{ item.comment?.auteur }}</td>
+          <td>{{ item.comment?.contenu }}</td>
+
+          <!-- Restaurer -->
+          <td class="accept-col" @click.stop>
+            <button class="action-btn accept"
+              @click="commentRequestStore.restore(item.marqueurId, item.commentId).then(() => emit('refresh'))">
+              Restaurer
+            </button>
+
+          </td>
+
+          <!-- Supprimer -->
+          <td class="reject-col" @click.stop>
+            <button class="action-btn reject"
+              @click="commentRequestStore.deletePermanent(item.marqueurId, item.commentId)">
+              Supprimer
+            </button>
+          </td>
+        </tr>
+
+        <tr v-if="commentRequestStore.archivedComments.length === 0">
+          <td colspan="5" class="empty">Aucun commentaire archivé.</td>
+        </tr>
+      </tbody>
+    </table>
+
 
   </div>
 </template>
