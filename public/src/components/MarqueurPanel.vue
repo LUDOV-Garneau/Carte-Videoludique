@@ -69,9 +69,9 @@ function openLightboxAt(index) {
 async function handleEditRequestSubmit(payloadFromModal) {
 	try {
 		const original = marqueurStore.marqueurActif;
-		if (!original) return;	
-		const marqueurId = original.properties?.id || original._id;	
-		const props = payloadFromModal.properties || {};	
+		if (!original) return;
+		const marqueurId = original.properties?.id || original._id;
+		const props = payloadFromModal.properties || {};
 		const body = {
 			titre: props.titre,
 			categorie: props.categorie,
@@ -165,123 +165,151 @@ async function sendComment() {
 		throw err;
 	}
 }
+
+async function deleteComment(commentId) {
+  try {
+    if (!authStore.isAuthenticated) return;
+
+    const marqueurId = marqueurStore.marqueurActif?.properties?.id;
+
+    const response = await fetch(`${API_URL}/marqueurs/${marqueurId}/commentaires/${commentId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + authStore.token
+      }
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || "Erreur lors de la suppression du témoignage.");
+    }
+
+    // ❌ Retirer du marqueur actif côté FE
+    marqueurStore.marqueurActif.properties.comments =
+      marqueurStore.marqueurActif.properties.comments.filter(c => c._id !== commentId);
+
+  } catch (err) {
+    console.error("Erreur suppression témoignage:", err);
+  }
+}
 </script>
 <template>
-    <transition name="panel-fade">
-        <aside v-if="canDisplayPanel" class="panel" role="dialog" aria-label="information du marqueur">
-			<div class="panel__close-wrapper">
-				<button class="panel__close" @click="closePanel" aria-label="Fermer">×</button>
-			</div>
-			<img v-if="marqueurProperties.images?.length > 0" class="panel__thumbnail" :src="marqueurProperties.images[0].url" :alt="'image d\'entrée d\'un marqueur'" />
-            <header class="panel__header">
-                <h3>{{ marqueurProperties.titre }}</h3>
-				<p>Catégorie : {{ categorieStore.getCategorie(marqueurProperties.categorie)?.nom }}</p>
-            </header>
-            <div class="panel__body">
-				<div class="panel__menu">
-					<button 
-						:class="{ active: activeTab === 'apercu' }"
-						@click="setActiveTab('apercu')"
-					>
-						Aperçu
-					</button>
-					<button  
-						:class="{ active: activeTab === 'images' }"
-						@click="setActiveTab('images')"
-					>
-						Images
-					</button>
-				</div>
-				<div v-if="activeTab === 'apercu'">
-					<div class="panel__section">
-						<h5>Description</h5>
-						<p>{{ marqueurProperties.description }}</p>
-						<span>Créé par : {{ marqueurProperties.createdByName }}</span>
-					</div>
-					<button class="btn-panel1" @click="openModificationRequest()">
-						Demander une modification
-					</button>
-					<div class="panel__info-list">
-						<div v-if="marqueurProperties.adresse" class="info-item">
-							<svg class="info-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
-							</svg>
-							<span class="info-text">{{ marqueurProperties.adresse }}</span>
-							<button class="info-copy-button" @click="copyToClipboard(marqueurProperties.adresse)" title="Copier l'adresse">
-								<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="currentColor"/>
-								</svg>
-							</button>
-						</div>
-						<div v-if="marqueurStore.marqueurActif?.geometry?.coordinates" class="info-item">
-							<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none " class="info-icon">
-								<path fill="currentColor" stroke="currentColor" stroke-width="2" d="M12,10 C14.209139,10 16,8.209139 16,6 C16,3.790861 14.209139,2 12,2 C9.790861,2 8,3.790861 8,6 C8,8.209139 9.790861,10 12,10 Z M12,10 L12,22"></path>
-							</svg>
-							<span class="info-text">Coordonnées : {{ marqueurStore.marqueurActif?.geometry?.coordinates?.join(', ') }}</span>
-							<button class="info-copy-button" @click="copyToClipboard(marqueurStore.marqueurActif?.geometry?.coordinates?.join(', ') || '')" title="Copier les coordonnées">
-								<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="currentColor"/>
-								</svg>
-							</button>
-						</div>
-					</div>
-					<button v-if="authStore.isAuthenticated && !isDeletingMarqueur" class="btn-panel1" @click="toggleDeleteMarqueur">Supprimer le marqueur</button>
-					<div v-if="authStore.isAuthenticated && isDeletingMarqueur" class="panel__section delete-confirmation">
-						<p>Êtes-vous sûr de vouloir supprimer ce marqueur ? Cette action est irréversible.</p>
-						<button @click="deleteMarqueur">Supprimer</button>
-						<button @click="toggleDeleteMarqueur">Annuler</button>
-					</div>
-					<div class="panel__section">
-						<h5>Témoignages</h5>
-						<button v-if="!isCommenting" class="btn-panel1" @click="toggleCommenting">Ajouter un témoignage</button>
-						<form v-if="isCommenting" class="add-comment-form"  @submit.prevent="sendComment">
-							<div class="add-comment-nom">
-								<label for="auteur">Votre nom :</label>
-								<input type="text" id="auteur" v-model.trim="formData.auteur" name="auteur" />
-							</div>
-							<textarea id="contenu" v-model.trim="formData.contenu" name="contenu" rows="4" placeholder="Votre témoignage..."></textarea>
-							<div class="add-comment-actions">
-								<button type="submit" class="btn-submit-comment">Envoyer</button>
-								<button type="button" class="btn-cancel-comment" @click="toggleCommenting">Annuler</button>
-							</div>
-						</form>
-						<span class="no-comments" v-if="marqueurStore.marqueurActif?.properties.comments.length === 0">Aucun témoignage</span>
-						<div v-else>
-							<div v-for="(comment, index) in marqueurStore.marqueurActif?.properties.comments || []" :key="index" class="panel__comments">
-								<span>Auteur(e) : {{ comment.auteur }}</span>
-								<p>{{ comment.contenu }}</p>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div v-else-if="activeTab === 'images'">
-					<img 
-						v-for="(image, index) in marqueurStore.marqueurActif?.properties.images || []" 
-						:key="image.publicId" 
-						:src="image.url" 
-						:alt="'Image du lieu du marqueur'" 
-						class="panel__images" 
-						@click="openLightboxAt(index)" 
-					/>
-				</div>
+  <transition name="panel-fade">
+    <aside v-if="canDisplayPanel" class="panel" role="dialog" aria-label="information du marqueur">
+      <div class="panel__close-wrapper">
+        <button class="panel__close" @click="closePanel" aria-label="Fermer">×</button>
+      </div>
+      <img v-if="marqueurProperties.images?.length > 0" class="panel__thumbnail" :src="marqueurProperties.images[0].url"
+        :alt="'image d\'entrée d\'un marqueur'" />
+      <header class="panel__header">
+        <h3>{{ marqueurProperties.titre }}</h3>
+        <p>Catégorie : {{ categorieStore.getCategorie(marqueurProperties.categorie)?.nom }}</p>
+      </header>
+      <div class="panel__body">
+        <div class="panel__menu">
+          <button :class="{ active: activeTab === 'apercu' }" @click="setActiveTab('apercu')">
+            Aperçu
+          </button>
+          <button :class="{ active: activeTab === 'images' }" @click="setActiveTab('images')">
+            Images
+          </button>
+        </div>
+        <div v-if="activeTab === 'apercu'">
+          <div class="panel__section">
+            <h5>Description</h5>
+            <p>{{ marqueurProperties.description }}</p>
+            <span>Créé par : {{ marqueurProperties.createdByName }}</span>
+          </div>
+          <button class="btn-panel1" @click="openModificationRequest()">
+            Demander une modification
+          </button>
+          <div class="panel__info-list">
+            <div v-if="marqueurProperties.adresse" class="info-item">
+              <svg class="info-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                  fill="currentColor" />
+              </svg>
+              <span class="info-text">{{ marqueurProperties.adresse }}</span>
+              <button class="info-copy-button" @click="copyToClipboard(marqueurProperties.adresse)"
+                title="Copier l'adresse">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
+                    fill="currentColor" />
+                </svg>
+              </button>
             </div>
-        </aside>
+            <div v-if="marqueurStore.marqueurActif?.geometry?.coordinates" class="info-item">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none " class="info-icon">
+                <path fill="currentColor" stroke="currentColor" stroke-width="2"
+                  d="M12,10 C14.209139,10 16,8.209139 16,6 C16,3.790861 14.209139,2 12,2 C9.790861,2 8,3.790861 8,6 C8,8.209139 9.790861,10 12,10 Z M12,10 L12,22">
+                </path>
+              </svg>
+              <span class="info-text">Coordonnées : {{ marqueurStore.marqueurActif?.geometry?.coordinates?.join(', ')
+                }}</span>
+              <button class="info-copy-button"
+                @click="copyToClipboard(marqueurStore.marqueurActif?.geometry?.coordinates?.join(', ') || '')"
+                title="Copier les coordonnées">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
+                    fill="currentColor" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button v-if="authStore.isAuthenticated && !isDeletingMarqueur" class="btn-panel1"
+            @click="toggleDeleteMarqueur">Supprimer le marqueur</button>
+          <div v-if="authStore.isAuthenticated && isDeletingMarqueur" class="panel__section delete-confirmation">
+            <p>Êtes-vous sûr de vouloir supprimer ce marqueur ? Cette action est irréversible.</p>
+            <button @click="deleteMarqueur">Supprimer</button>
+            <button @click="toggleDeleteMarqueur">Annuler</button>
+          </div>
+          <div class="panel__section">
+            <h5>Témoignages</h5>
+            <button v-if="!isCommenting" class="btn-panel1" @click="toggleCommenting">Ajouter un témoignage</button>
+            <form v-if="isCommenting" class="add-comment-form" @submit.prevent="sendComment">
+              <div class="add-comment-nom">
+                <label for="auteur">Votre nom :</label>
+                <input type="text" id="auteur" v-model.trim="formData.auteur" name="auteur" />
+              </div>
+              <textarea id="contenu" v-model.trim="formData.contenu" name="contenu" rows="4"
+                placeholder="Votre témoignage..."></textarea>
+              <div class="add-comment-actions">
+                <button type="submit" class="btn-submit-comment">Envoyer</button>
+                <button type="button" class="btn-cancel-comment" @click="toggleCommenting">Annuler</button>
+              </div>
+            </form>
+            <span class="no-comments" v-if="marqueurStore.marqueurActif?.properties.comments.length === 0">Aucun
+              témoignage</span>
+            <div v-else>
+              <div v-for="(comment) in marqueurStore.marqueurActif?.properties.comments || []" :key="comment._id"
+                class="panel__comments">
+                <span>Auteur(e) : {{ comment.auteur }}</span>
+                <p>{{ comment.contenu }}</p>
 
-    </transition>
-	<MarqueurModal
-    	v-if="isEditModalOpen"
-    	:marqueur="marqueurStore.marqueurActif"
-		:is-open="isEditModalOpen"
-    	@fermer="isEditModalOpen = false"
-    	@valider="handleEditRequestSubmit"
-  	/>
-	<ImageLightbox
-		v-if="lightbox.isOpen"
-		:images="lightbox.images.value"
-		v-model:currentIndex="lightbox.currentIndex.value"
-		:currentIndex="lightbox.currentIndex"
-		@close="lightbox.closeLightbox"
-	/>
+                <button class="btn-delete-comment" @click="deleteComment(comment._id)">
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="activeTab === 'images'">
+          <img v-for="(image, index) in marqueurStore.marqueurActif?.properties.images || []" :key="image.publicId"
+            :src="image.url" :alt="'Image du lieu du marqueur'" class="panel__images" @click="openLightboxAt(index)" />
+        </div>
+      </div>
+    </aside>
+
+  </transition>
+  <MarqueurModal v-if="isEditModalOpen" :marqueur="marqueurStore.marqueurActif" :is-open="isEditModalOpen"
+    @fermer="isEditModalOpen = false" @valider="handleEditRequestSubmit" />
+  <ImageLightbox v-if="lightbox.isOpen" :images="lightbox.images.value"
+    v-model:currentIndex="lightbox.currentIndex.value" :currentIndex="lightbox.currentIndex"
+    @close="lightbox.closeLightbox" />
 
 </template>
 <style scoped>
@@ -672,5 +700,22 @@ async function sendComment() {
 /* Effet au hover */
 ::-webkit-scrollbar-thumb:hover {
   background: #b6b6b6;
+}
+
+.btn-delete-comment {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 10px;
+  background: #ffe5e5;
+  color: #cc0000;
+  border: 1px solid #cc0000;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+.btn-delete-comment:hover {
+  background: #cc0000;
+  color: white;
 }
 </style>

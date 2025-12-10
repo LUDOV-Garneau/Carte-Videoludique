@@ -9,190 +9,145 @@ import TableauNotification from '../components/TableauNotification.vue'
 import NavBar from '../components/NavBar.vue'
 import { useCommentRequestStore } from "@/stores/useCommentRequestStore.js"
 
-const commentStore = useCommentRequestStore()
+/* ------------------ STORES ------------------ */
 const authStore = useAuthStore()
 const marqueurStore = useMarqueurStore()
+const commentStore = useCommentRequestStore()
 
-const messageErreur = ref('')
-const filtreStatus = ref('pending')
+/* ------------------ ÉTATS ------------------ */
+const filtreStatus = ref("pending")
 const modalVisible = ref(false)
 const selectedMarqueur = ref(null)
 const leafletMapRef = ref(null)
 
-/* --------------------------------------------------------
-   🔥 Filtrage local pour l'onglet pending / edit-request
--------------------------------------------------------- */
+/* ----------------------------------------------------
+   ⭐ Filtrage local selon pending / edit-request
+---------------------------------------------------- */
 const marqueursFiltres = computed(() => {
   return (marqueurStore.marqueurs ?? []).filter(
-    m => (m.properties.status ?? '').toLowerCase() === filtreStatus.value.toLowerCase()
+    m => (m.properties?.status ?? "").toLowerCase() === filtreStatus.value.toLowerCase()
   )
 })
 
-/* --------------------------------------------------------
-   🔥 getMarqueurs intelligent (inclut archivé si demandé)
--------------------------------------------------------- */
-const getMarqueurs = async () => {
-  try {
-    await marqueurStore.getMarqueurs()  // charge les non-archivés
-  } catch (error) {
-    messageErreur.value = error.message
+/* ----------------------------------------------------
+   ⭐ Charger selon onglet
+---------------------------------------------------- */
+async function rechargerSelonOnglet() {
+  if (filtreStatus.value === "archived") {
+    await marqueurStore.getArchivedMarqueurs()
+  } else {
+    await marqueurStore.getMarqueurs()
   }
 }
 
-/* --------------------------------------------------------
-   🔥 Lorsqu’on passe à l’onglet archived → recharge complet
--------------------------------------------------------- */
-
 watch(filtreStatus, async (newVal) => {
-  if (newVal === "archived") {
-    await marqueurStore.getArchivedMarqueurs();
-  } else {
-    await marqueurStore.getMarqueurs();
+  if (newVal === "comments") {
+    await commentStore.getPendingComments()
   }
-});
+  await rechargerSelonOnglet()
+})
 
-/* --------------------------------------------------------
-   Ouvrir modal
--------------------------------------------------------- */
-const ouvrirModal = (marqueur) => {
+/* ----------------------------------------------------
+   ⭐ Modal
+---------------------------------------------------- */
+function ouvrirModal(marqueur) {
   selectedMarqueur.value = marqueur
   modalVisible.value = true
 }
 
-/* --------------------------------------------------------
-   Valider un marqueur
--------------------------------------------------------- */
-const accepterMarqueur = async (marqueur) => {
-  if (!authStore.token) {
-    messageErreur.value = "Non authentifié"
-    return
-  }
-
-  const id = marqueur?.properties?.id || marqueur.id || marqueur._id
+/* ----------------------------------------------------
+   ⭐ Accepter un marqueur
+---------------------------------------------------- */
+async function accepterMarqueur(marqueur) {
+  const id = marqueur?.properties?.id || marqueur._id
   if (!id) return
 
-  try {
-    const updated = await marqueurStore.modifierMarqueurStatus(id, authStore.token, {
-      status: 'approved'
-    })
+  await marqueurStore.modifierMarqueurStatus(id, authStore.token, { status: "approved" })
 
-    if (updated?.properties?.status) {
-      marqueur.properties.status = updated.properties.status
-    }
-
-    leafletMapRef.value?.afficherMarqueurs?.()
-  } catch (err) {
-    messageErreur.value = err.message
-  }
+  await rechargerSelonOnglet()
+  leafletMapRef.value?.afficherMarqueurs?.()
 }
 
-/* --------------------------------------------------------
-   Rejeter un marqueur → archive, NE SUPPRIME PLUS localement
--------------------------------------------------------- */
-const refuserMarqueur = async (marqueur) => {
-  const id = marqueur?.properties?.id || marqueur.id || marqueur._id
+/* ----------------------------------------------------
+   ⭐ Refuser / Archiver un marqueur
+---------------------------------------------------- */
+async function refuserMarqueur(marqueur) {
+  const id = marqueur?.properties?.id || marqueur._id
   if (!id) return
 
-  try {
-    await marqueurStore.supprimerMarqueur(id, authStore.token)
+  await marqueurStore.supprimerMarqueur(id, authStore.token)
 
-    // ❗ NE PLUS SUPPRIMER ICI → sinon il est invisible dans les archives
-    // marqueurStore.marqueurs = marqueurStore.marqueurs.filter(...)
-
-    await getMarqueurs()
-
-    leafletMapRef.value?.afficherMarqueurs?.()
-  } catch (err) {
-    console.error("Erreur suppression:", err)
-  }
+  await rechargerSelonOnglet()
+  leafletMapRef.value?.afficherMarqueurs?.()
 }
 
-/* --------------------------------------------------------
-   Commentaires
--------------------------------------------------------- */
-const accepterCommentaire = async (marqueurId, commentId) => {
-  try {
-    await commentStore.accepter(marqueurId, commentId)
-  } catch (err) {
-    console.error(err)
-  }
+/* ----------------------------------------------------
+   ⭐ Gestion des commentaires
+---------------------------------------------------- */
+async function accepterCommentaire(marqueurId, commentId) {
+  await commentStore.accepter(marqueurId, commentId)
+  await commentStore.getPendingComments()
 }
 
-const refuserCommentaire = async (marqueurId, commentId) => {
-  try {
-    await commentStore.refuser(marqueurId, commentId)
-  } catch (err) {
-    console.error(err)
-  }
+async function refuserCommentaire(marqueurId, commentId) {
+  await commentStore.refuser(marqueurId, commentId)
+  await commentStore.getPendingComments()
 }
 
-/* --------------------------------------------------------
-   Centrer sur la carte
--------------------------------------------------------- */
-const centrerCarte = (marqueur) => {
+/* ----------------------------------------------------
+   ⭐ Centrer sur la carte
+---------------------------------------------------- */
+function centrerCarte(marqueur) {
   if (!marqueur?.geometry?.coordinates) return
   const [lat, lng] = marqueur.geometry.coordinates
   leafletMapRef.value?.focusOn?.(lat, lng)
 }
 
-/* --------------------------------------------------------
-   Valider modification
--------------------------------------------------------- */
-const validerModification = async (marqueurModifie) => {
-  try {
-    const id = marqueurModifie?.properties?.id || marqueurModifie?._id
-    if (!id) throw new Error('Identifiant du marqueur manquant')
+/* ----------------------------------------------------
+   ⭐ Valider modification
+---------------------------------------------------- */
+async function validerModification(marqueurModifie) {
+  const id = marqueurModifie?.properties?.id || marqueurModifie?._id
+  if (!id) return
 
-    const props = marqueurModifie?.properties ?? {}
+  const props = marqueurModifie.properties
 
-    const payload = {
-      titre: props.titre,
-      categorie: props.categorie,
-      adresse: props.adresse,
-      description: props.description,
-      temoignage: props.temoignage,
-    }
-
-    const lat = marqueurModifie.lat
-    const lng = marqueurModifie.lng
-    if (lat != null && lng != null) {
-      payload.lat = Number(lat)
-      payload.lng = Number(lng)
-    }
-
-    let imagesPayload = Array.isArray(props.images) ? [...props.images] : []
-
-    if (marqueurModifie.files?.length > 0) {
-      const uploaded = await cloudinary.uploadMultipleImages(marqueurModifie.files)
-      if (Array.isArray(uploaded)) imagesPayload = [...imagesPayload, ...uploaded]
-    }
-
-    payload.images = imagesPayload
-
-    await marqueurStore.modifierMarqueur(id, authStore.token, payload)
-
-    modalVisible.value = false
-    messageErreur.value = ''
-
-    await getMarqueurs()
-    leafletMapRef.value?.afficherMarqueurs?.()
-  } catch (err) {
-    messageErreur.value = err.message || String(err)
+  const payload = {
+    titre: props.titre,
+    categorie: props.categorie,
+    adresse: props.adresse,
+    description: props.description,
+    temoignage: props.temoignage,
+    images: [...props.images]
   }
+
+  if (marqueurModifie.files?.length > 0) {
+    const uploaded = await cloudinary.uploadMultipleImages(marqueurModifie.files)
+    payload.images.push(...uploaded)
+  }
+
+  await marqueurStore.modifierMarqueur(id, authStore.token, payload)
+
+  modalVisible.value = false
+
+  await rechargerSelonOnglet()
+  leafletMapRef.value?.afficherMarqueurs?.()
 }
 
-/* --------------------------------------------------------
-   Montée initiale
--------------------------------------------------------- */
-onMounted(() => {
-  getMarqueurs()
+/* ----------------------------------------------------
+   ⭐ Chargement initial
+---------------------------------------------------- */
+onMounted(async () => {
+  await marqueurStore.getMarqueurs()
 })
 </script>
 
 <template>
   <NavBar />
+
   <div class="layout">
     <main class="content">
+
       <h2 class="section-title">Notifications</h2>
 
       <TableauNotification
@@ -204,15 +159,16 @@ onMounted(() => {
         @accepter-commentaire="accepterCommentaire"
         @refuser-commentaire="refuserCommentaire"
         @focus-marqueur="centrerCarte"
-        @refresh="() => { getMarqueurs(); leafletMapRef.value?.afficherMarqueurs?.(); }"
+        @refresh="async () => { await rechargerSelonOnglet(); leafletMapRef.value?.afficherMarqueurs?.(); }"
       />
 
-
-      <MarqueurModal v-if="modalVisible && selectedMarqueur"
+      <MarqueurModal
+        v-if="modalVisible && selectedMarqueur"
         :is-open="modalVisible"
         :marqueur="selectedMarqueur"
-        @fermer="modalVisible = false; selectedMarqueur = null" @locate-from-address="handleLocateFromAddressFromModal"
-        @valider="validerModification" />
+        @fermer="modalVisible = false; selectedMarqueur = null"
+        @valider="validerModification"
+      />
 
       <section class="map-wrapper">
         <LeafletMap ref="leafletMapRef" />
@@ -222,71 +178,29 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Tableau de notification */
-
-/* Titre */
-/* ---------- Typo & couleurs locales (sans :root) ---------- */
-h1,
-h2,
-p,
-table {
-  color: #111827;
-}
-
-/* ---------- Layout & fond blanc texturé ---------- */
 .layout {
   display: flex;
   min-height: 100vh;
-  position: relative;
-  isolation: isolate;
 }
-
-/* ---------- Contenu & header ---------- */
 .content {
   flex: 1;
   padding: 28px clamp(16px, 3vw, 40px);
-  margin: 0;
 }
-
-/* ---------- Titre section ---------- */
 .section-title {
-  margin: 8px auto 12px;
   font-size: 1.25rem;
   font-weight: 800;
   color: #0f172a;
-  max-width: 1100px;
 }
-
-/* ---------- Carte encadrée premium ---------- */
 .map-wrapper {
-  position: relative;
-  margin: 18px auto 0;
-  width: 100%;
-  max-width: 1200px;
+  margin-top: 18px;
   height: min(78vh, 900px);
+  max-width: 1200px;
+  width: 100%;
   border-radius: 20px;
-  overflow: clip;
-  background: #ffffff;
+  background: white;
   border: 1px solid #e5e7eb;
   box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.08),
     0 6px 14px rgba(0, 0, 0, 0.06);
 }
-
-/* ---------- Titres par défaut ---------- */
-h1 {
-  color: #0f172a;
-}
-h2 {
-  color: #0f172a;
-  text-decoration: underline;
-}
-.logout-btn:hover {
-  background: #dc2626;
-}
-.logout-btn:active {
-  transform: scale(0.97);
-}
-
-/* tout ton CSS en dessous est inchangé */
 </style>
