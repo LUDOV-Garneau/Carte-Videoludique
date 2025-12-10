@@ -521,33 +521,6 @@ exports.deleteCommentaireDefinitif = async (req, res, next) => {
   }
 };
 
-    // Correction : properties.comments (et non marqueur.comments)
-    const index = marqueur.properties.comments.findIndex(
-      (c) => c._id.toString() === commentId
-    );
-
-    if (index === -1) {
-      return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le commentaire spécifié n'existe pas.",
-        req.originalUrl
-      ));
-    }
-
-    marqueur.properties.comments.splice(index, 1);
-    await marqueur.save();
-
-    res.status(200).json(formatSuccessResponse(
-      200,
-      "Témoignage supprimé avec succès.",
-      marqueur,
-      req.originalUrl
-    ));
-  } catch (err) {
-    next(err);
-  }
-};
 
 /**
  * Archive un marqueur en fonction de son identifiant.
