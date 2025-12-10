@@ -2,7 +2,6 @@
 import { defineProps, defineEmits, onMounted, onUnmounted, ref } from 'vue'
 import { useBodyScroll } from '../composables/useBodyScroll.js'
 import { useLightbox } from '../composables/useLightbox.js'
-import ImageLightbox from './ImageLightbox.vue'
 
 const props = defineProps({
   marqueur: {
@@ -142,12 +141,6 @@ const onKeydown = (event) => {
         </footer>
       </section>
     </div>
-    <ImageLightbox
-      v-if="lightbox.isOpen"
-      :images="lightbox.images"
-      v-model:currentIndex="lightbox.currentIndex"
-      @close="lightbox.closeLightbox"
-    />
   </div>
 </template>
 
