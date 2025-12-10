@@ -418,7 +418,7 @@ watch(() => props.isOpen, async (newValue) => {
   width: 320px;
   background: #f2f2f2;
   color: #111;
-  border: 2px solid #4CAF50;
+  border: 2px solid var(--accent);
   border-radius: 4px;
   z-index: 1000;
   display: flex;
@@ -441,9 +441,9 @@ watch(() => props.isOpen, async (newValue) => {
   width: 28px;
   height: 28px;
   border-radius: 4px;
-  border: 2px solid #4CAF50;
+  border: 2px solid var(--accent);
   background: white;
-  color: #4CAF50;
+  color: var(--accent);
   line-height: 22px;
   font-size: 18px;
   cursor: pointer;
@@ -454,7 +454,7 @@ watch(() => props.isOpen, async (newValue) => {
 }
 
 .panel__close:hover {
-  background: #4CAF50;
+  background: var(--accent);
   color: white;
 }
 
@@ -515,8 +515,8 @@ watch(() => props.isOpen, async (newValue) => {
 .panel__section input:focus,
 .panel__section textarea:focus {
   outline: none;
-  border-color: #4CAF50;
-  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(76, 152, 175, 0.2);
 }
 
 /* ---------- Couleur ---------- */
@@ -544,7 +544,7 @@ watch(() => props.isOpen, async (newValue) => {
   align-items: center;
   gap: 10px;
   padding: 12px;
-  border: 2px solid #4CAF50;
+  border: 2px solid var(--accent);
   border-radius: 8px;
   background: #f8fff8;
   margin-bottom: 15px;
@@ -557,7 +557,7 @@ watch(() => props.isOpen, async (newValue) => {
 
 .selected-icon-name {
   font-weight: 600;
-  color: #2e7d32;
+  color: var(--accent);
   text-transform: capitalize;
 }
 
@@ -604,7 +604,7 @@ watch(() => props.isOpen, async (newValue) => {
 }
 
 .icon-option.selected {
-  background: #4CAF50;
+  background: var(--accent);
 }
 
 .icon-img {
@@ -668,7 +668,7 @@ watch(() => props.isOpen, async (newValue) => {
 
 .category-status {
   font-size: 11px;
-  color: #4CAF50;
+  color: var(--accent);
   font-weight: 500;
 }
 
@@ -719,9 +719,9 @@ watch(() => props.isOpen, async (newValue) => {
   border-radius: 25px;
   padding: 0 12px;
   margin: 12px auto;
-  border: 1px solid rgba(67, 160, 71, 0.35);
+  border: 1px solid var(--accent);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
-  color: #4CAF50;
+  color: var(--accent);
   cursor: pointer;
   font-weight: 600;
   font-size: small;
@@ -730,7 +730,7 @@ watch(() => props.isOpen, async (newValue) => {
 }
 
 .btn-panel1:hover {
-  background: #4CAF50;
+  background: var(--accent);
   color: white;
 }
 
@@ -741,7 +741,7 @@ watch(() => props.isOpen, async (newValue) => {
   gap: 8px;
   width: 100%;
   padding: 12px 16px;
-  background: #4CAF50;
+  background: var(--accent);
   color: white;
   border: none;
   border-radius: 8px;
@@ -753,7 +753,7 @@ watch(() => props.isOpen, async (newValue) => {
 }
 
 .btn-add-category:hover {
-  background: #45a049;
+  background: var(--accent-dark);
   transform: translateY(-1px);
 }
 
@@ -806,7 +806,7 @@ watch(() => props.isOpen, async (newValue) => {
 
 .save-indicator {
   font-size: 12px;
-  color: #4CAF50;
+  color: var(--accent);
   font-weight: 500;
 }
 
@@ -830,7 +830,7 @@ watch(() => props.isOpen, async (newValue) => {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  border: 2px solid #4CAF50;
+  border: 2px solid var(--accent);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
   border-radius: 20px;
   box-sizing: border-box;
@@ -852,7 +852,7 @@ watch(() => props.isOpen, async (newValue) => {
   height: 36px;
   box-sizing: border-box;
   border: none;
-  border-top: 2px solid #4CAF50;
+  border-top: 2px solid var(--accent);
   background: white;
   color: #4CAF50;
   cursor: pointer;
@@ -860,7 +860,7 @@ watch(() => props.isOpen, async (newValue) => {
 }
 
 .delete-confirmation button:hover {
-  background-color: #4CAF50;
+  background-color: var(--accent);
   color: white;
 }
 

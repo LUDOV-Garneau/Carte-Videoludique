@@ -1,6 +1,7 @@
 <script setup>
 import LeafletMap from '../components/LeafletMap.vue'
 import MarqueurModal from '../components/MarqueurModalComponent.vue'
+import InfoMarqueur from '../components/InfoMarqueurComponant.vue'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'
@@ -15,8 +16,10 @@ const marqueurStore = useMarqueurStore()
 
 const messageErreur = ref('')
 const filtreStatus = ref('pending')
-const modalVisible = ref(false)
-const selectedMarqueur = ref(null)
+const modalInfoVisible = ref(false)
+const selectedInfoMarqueur = ref(null)
+const modalModifVisible = ref(false)
+const selectedModifMarqueur = ref(null)
 const leafletMapRef = ref(null)
 
 /* --------------------------------------------------------
@@ -54,10 +57,17 @@ watch(filtreStatus, async (newVal) => {
 /* --------------------------------------------------------
    Ouvrir modal
 -------------------------------------------------------- */
-const ouvrirModal = (marqueur) => {
-  selectedMarqueur.value = marqueur
-  modalVisible.value = true
+const ouvrirInfoModal = (marqueur) => {
+  selectedInfoMarqueur.value = marqueur
+  modalInfoVisible.value = true
 }
+
+const ouvrirModifModal = (marqueur) => {
+  selectedModifMarqueur.value = { ...marqueur }
+  modalModifVisible.value = true
+  console.log("ouvrirModifModal marqueur :", marqueur)
+}
+
 
 /* --------------------------------------------------------
    Valider un marqueur
@@ -171,7 +181,7 @@ const validerModification = async (marqueurModifie) => {
 
     await marqueurStore.modifierMarqueur(id, authStore.token, payload)
 
-    modalVisible.value = false
+    modalModifVisible.value = false
     messageErreur.value = ''
 
     await getMarqueurs()
@@ -198,7 +208,8 @@ onMounted(() => {
       <TableauNotification
         v-model:filtre-status="filtreStatus"
         :marqueurs-filtres="marqueursFiltres"
-        @ouvrir-modal="ouvrirModal"
+        @ouvrir-modif-modal="ouvrirModifModal"
+        @ouvrir-info-modal="ouvrirInfoModal"
         @accepter-marqueur="accepterMarqueur"
         @refuser-marqueur="refuserMarqueur"
         @accepter-commentaire="accepterCommentaire"
@@ -207,12 +218,17 @@ onMounted(() => {
         @refresh="() => { getMarqueurs(); leafletMapRef.value?.afficherMarqueurs?.(); }"
       />
 
-
-      <MarqueurModal v-if="modalVisible && selectedMarqueur"
-        :is-open="modalVisible"
-        :marqueur="selectedMarqueur"
-        @fermer="modalVisible = false; selectedMarqueur = null" @locate-from-address="handleLocateFromAddressFromModal"
-        @valider="validerModification" />
+      <MarqueurModal
+        v-if="modalModifVisible && selectedModifMarqueur"
+        :marqueur="selectedModifMarqueur"
+        @fermer="modalModifVisible = false; selectedModifMarqueur = null"
+        @valider="validerModification"
+      />
+      <InfoMarqueur
+        v-if="modalInfoVisible && selectedInfoMarqueur"
+        :marqueur="selectedInfoMarqueur"
+        @fermer="modalInfoVisible = false; selectedInfoMarqueur = null"
+      />
 
       <section class="map-wrapper">
         <LeafletMap ref="leafletMapRef" />

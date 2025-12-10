@@ -156,7 +156,7 @@ function isValidEmail(email) {
 
 /* focus turquoise */
 .field input:focus {
-  border-color: #2c7a7b;
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(44, 122, 123, 0.2);
 }
 
@@ -179,7 +179,7 @@ function isValidEmail(email) {
   padding: 12px 0;
   margin-top: 10px;
 
-  background-color: #2c7a7b;
+  background-color: var(--accent);
   color: white;
   border: none;
   border-radius: 10px;
@@ -190,7 +190,7 @@ function isValidEmail(email) {
 }
 
 .btn:hover {
-  background-color: #256f70;
+  background-color: var(--accent-dark);
 }
 
 .btn:active {

@@ -15,9 +15,6 @@ import NavBar from '../components/NavBar.vue';
 </template>
 
 <style scoped>
-
-
-
 /* Layout général avec fond subtil “grid” + dégradé */
 .layout {
   display: flex;
@@ -32,8 +29,6 @@ import NavBar from '../components/NavBar.vue';
   padding: 28px clamp(16px, 3vw, 40px);
   margin: 0;
 }
-
-
 
 /* Carte avec cadre premium */
 .map-wrapper{

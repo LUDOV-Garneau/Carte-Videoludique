@@ -579,7 +579,7 @@ function hideSuggestions() {
 
   background: #f2f2f2;
   color: #111;
-  border: 2px solid #4CAF50;
+  border: 2px solid var(--accent);
   border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
   z-index: 1000;
@@ -609,16 +609,16 @@ function hideSuggestions() {
   font-size: 18px;
 
   border-radius: 4px;
-  border: 2px solid #4CAF50;
+  border: 2px solid var(--accent);
   background: white;
-  color: #4CAF50;
+  color: var(--accent);
 
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .panel__close:hover {
-  background: #4CAF50;
+  background: var(--accent);
   color: white;
 }
 
@@ -637,7 +637,6 @@ function hideSuggestions() {
 
 .form {
   flex: 1;
-
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -698,8 +697,8 @@ function hideSuggestions() {
   padding: 10px;
 
   background-color: white;
-  color: #4CAF50;
-  border: 2px solid #4CAF50;
+  color: var(--accent);
+  border: 2px solid var(--accent);
   border-radius: 4px;
 
   cursor: pointer;
@@ -718,8 +717,8 @@ function hideSuggestions() {
   padding: 8px;
 
   background-color: white;
-  color: #4CAF50;
-  border: 2px solid #4CAF50;
+  color: var(--accent);
+  border: 2px solid var(--accent);
   border-radius: 4px;
 
   cursor: pointer;
@@ -729,7 +728,7 @@ function hideSuggestions() {
 }
 
 .btn-locate:hover {
-  background-color: #4CAF50;
+  background-color: var(--accent);
   color: white;
 }
 
@@ -738,10 +737,8 @@ function hideSuggestions() {
 .form-submit {
   position: sticky;
   bottom: 0;
-
   padding: 12px 0;
   margin-top: auto;
-
   background: #f2f2f2;
   border-top: 1px solid #ddd;
 }
