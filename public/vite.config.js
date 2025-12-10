@@ -2,8 +2,8 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
-export default defineConfig({
-  base: '/Carte-Videoludique/',
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? './' : '/',
   plugins: [vue()],
   resolve: {
     alias: {
@@ -15,11 +15,11 @@ export default defineConfig({
     globals: true,
   },
   build: {
-    outDir: 'dist', // '../dist/Carte-Videoludique',
+    outDir: 'dist', 
     manifest: true,
     rollupOptions: {
       input: 'src/main.js',
     },
   },
   
-})
+}))

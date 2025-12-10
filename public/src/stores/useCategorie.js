@@ -3,6 +3,12 @@ import { ref, computed } from "vue";
 import { API_URL } from "../config.js";
 import { useAuthStore } from "./auth.js";
 
+const isDev = import.meta.env.DEV;
+
+const iconsBase = isDev
+    ? import.meta.env.BASE_URL + 'icons/'
+    : (window.LUDOV_VUE?.iconsBase ?? './icons/');
+
 export const useCategorieStore = defineStore("categories", () => {
     const authStore = useAuthStore();
     
@@ -112,7 +118,7 @@ export const useCategorieStore = defineStore("categories", () => {
                 allIcons.push({
                     name: icon,
                     category: categoryName,
-                    url: `/icons/categories/${categoryName}/${icon}-15.svg`
+                    url: `${iconsBase}categories/${categoryName}/${icon}-15.svg`
                 });
             });
         });
@@ -146,7 +152,7 @@ export const useCategorieStore = defineStore("categories", () => {
         let availableSize = 15; // par défaut
         
         for (const size of sizes) {
-            const testUrl = `${import.meta.env.BASE_URL}icons/categories/${categoryName}/${iconName}-${size}.svg`;
+            const testUrl = `${iconsBase}categories/${categoryName}/${iconName}-${size}.svg`;
             try {
                 // Tester si l'image existe
                 const response = await fetch(testUrl, { method: 'HEAD' });
@@ -159,7 +165,7 @@ export const useCategorieStore = defineStore("categories", () => {
             }
         }
         
-        const url = `${import.meta.env.BASE_URL}icons/categories/${categoryName}/${iconName}-${availableSize}.svg`;
+        const url = `${iconsBase}categories/${categoryName}/${iconName}-${availableSize}.svg`;
         const copyright = availableSize === 15 ? '© Mapbox' : '© Osmic';
         
         return {
@@ -215,7 +221,7 @@ export const useCategorieStore = defineStore("categories", () => {
         const categoryInfo = iconSizeMap[categoryName] || { defaultSize: 15, exceptions: {} };
         const probableSize = categoryInfo.exceptions[iconName] || categoryInfo.defaultSize;
         
-        const url = `${import.meta.env.BASE_URL}icons/categories/${categoryName}/${iconName}-${probableSize}.svg`;
+        const url = `${iconsBase}categories/${categoryName}/${iconName}-${probableSize}.svg`;
         const copyright = probableSize === 15 ? '© Mapbox' : '© Osmic';
         
         return {
