@@ -414,6 +414,38 @@ exports.archiveCommentaire = async (req, res, next) => {
   }
 };
 
+exports.restoreCommentaire = async (req, res, next) => {
+  try {
+    const { marqueurId, commentId } = req.params;
+
+    const marqueur = await Marqueur.findById(marqueurId);
+    if (!marqueur) {
+      return res.status(404).json(formatErrorResponse(
+        404, "Not Found", "Marqueur introuvable.", req.originalUrl
+      ));
+    }
+
+    const comment = marqueur.properties.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json(formatErrorResponse(
+        404, "Not Found", "Commentaire introuvable.", req.originalUrl
+      ));
+    }
+
+    comment.archived = false;
+    await marqueur.save();
+
+    return res.status(200).json(formatSuccessResponse(
+      200,
+      "Commentaire restauré.",
+      comment,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 /**
  * Supprime un commentaire spécifique d’un marqueur existant.
