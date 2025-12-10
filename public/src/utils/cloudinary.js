@@ -1,10 +1,10 @@
 "use strict";
 
-import { CLOUD_NAME } from '../config.js';
+import { CLOUD_NAME, API_URL } from '../config.js';
 
 async function uploadOneImage(file) {
     try {
-        const signatureResponse = await fetch("https://carte-videoludique.vercel.app/upload-signature?folder=MapImages/tmp");
+        const signatureResponse = await fetch(`${API_URL}/upload-signature?folder=MapImages/tmp`);
         if (!signatureResponse.ok) throw new Error('Impossible de récupérer la signature d\'upload');
         const signatureData = await signatureResponse.json();
 
@@ -57,7 +57,7 @@ async function uploadMultipleImages(files) {
 
 async function cleanupImages(publicIds) {
     try {
-        await fetch("https://carte-videoludique.vercel.app/cleanup-images", {
+        await fetch(`${API_URL}/cleanup-images`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ publicIds })

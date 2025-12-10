@@ -157,7 +157,7 @@ const validerModification = async (marqueurModifie) => {
 
     const payload = {
       titre: props.titre,
-      type: props.type,
+      categorie: props.categorie,
       adresse: props.adresse,
       description: props.description,
       temoignage: props.temoignage,
@@ -229,7 +229,6 @@ onMounted(() => {
         :marqueur="selectedInfoMarqueur"
         @fermer="modalInfoVisible = false; selectedInfoMarqueur = null"
       />
-
 
       <section class="map-wrapper">
         <LeafletMap ref="leafletMapRef" />
