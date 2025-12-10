@@ -454,20 +454,40 @@ exports.restoreCommentaire = async (req, res, next) => {
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
  */
-exports.deleteCommentMarqueur = async (req, res, next) => {
+exports.deleteCommentaireDefinitif = async (req, res, next) => {
   try {
     const { marqueurId, commentId } = req.params;
 
     const marqueur = await Marqueur.findById(marqueurId);
-
     if (!marqueur) {
       return res.status(404).json(formatErrorResponse(
-        404,
-        "Not Found",
-        "Le marqueur spécifié n'existe pas.",
-        req.originalUrl
+        404, "Not Found", "Marqueur introuvable.", req.originalUrl
       ));
     }
+
+    const index = marqueur.properties.comments.findIndex(
+      c => c._id.toString() === commentId
+    );
+
+    if (index === -1) {
+      return res.status(404).json(formatErrorResponse(
+        404, "Not Found", "Commentaire introuvable.", req.originalUrl
+      ));
+    }
+
+    marqueur.properties.comments.splice(index, 1);
+    await marqueur.save();
+
+    return res.status(200).json(formatSuccessResponse(
+      200,
+      "Commentaire supprimé définitivement.",
+      null,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
 
     // Correction : properties.comments (et non marqueur.comments)
     const index = marqueur.properties.comments.findIndex(
