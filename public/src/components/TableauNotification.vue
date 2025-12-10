@@ -59,7 +59,6 @@ const deleteMarqueurDefinitif = async (marqueur) => {
 };
 
 
-
 const props = defineProps({
   filtreStatus: { type: String, default: 'pending' },
   marqueursFiltres: { type: Array, default: () => [] }
@@ -67,10 +66,10 @@ const props = defineProps({
 
 const emit = defineEmits([
   'update:filtreStatus',
-  'ouvrir-modal',
+  'ouvrir-modif-modal',
+  'ouvrir-info-modal',
   'accepter-marqueur',
   'refuser-marqueur',
-  'show-info',
   'focus-marqueur'
 ])
 
@@ -78,8 +77,8 @@ const setFiltre = (status) => {
   emit('update:filtreStatus', status)
 }
 
-const ouvrirModalLocal = (marqueur) => {
-  emit('ouvrir-modal', marqueur)
+const ouvrirModifLocal = (marqueur) => {
+  emit('ouvrir-modif-modal', marqueur)
 }
 
 const accepterLocal = (marqueur) => {
@@ -89,6 +88,11 @@ const accepterLocal = (marqueur) => {
 const refuserLocal = (marqueur) => {
   emit('refuser-marqueur', marqueur)
 }
+const showInfoLocal = (marqueur) => {
+  emit('ouvrir-info-modal', marqueur)
+}
+
+
 
 // --- ICI le fix complet ---
 const focusMarqueur = (marqueur) => {
@@ -174,7 +178,7 @@ onMounted(() => {
           <td class="address">{{ marqueur.properties.adresse }}</td>
 
           <td class="info-col" @click.stop>
-            <button class="info-btn" @click="emit('show-info', marqueur)">
+            <button class="info-btn" @click="showInfoLocal(marqueur)">
               <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.75" />
                 <line x1="12" y1="10.5" x2="12" y2="17" stroke="currentColor" stroke-width="1.75" />
@@ -185,7 +189,7 @@ onMounted(() => {
           </td>
 
           <td class="menu-col" @click.stop>
-            <button class="kebab" aria-label="Modifier" @click="ouvrirModalLocal(marqueur)">
+            <button class="kebab" aria-label="Modifier" @click="ouvrirModifLocal(marqueur)">
               Modifier
             </button>
           </td>
