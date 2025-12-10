@@ -382,6 +382,38 @@ exports.updateCommentStatus = async (req, res, next) => {
   }
 };
 
+exports.getArchivedCommentaires = async (req, res, next) => {
+  try {
+    const marqueurs = await Marqueur.find({
+      "properties.comments.archived": true
+    });
+
+    const data = [];
+
+    marqueurs.forEach(m => {
+      m.properties.comments
+        .filter(c => c.archived === true)
+        .forEach(c => {
+          data.push({
+            marqueurId: m._id,
+            marqueur: m,
+            commentId: c._id,
+            comment: c
+          });
+        });
+    });
+
+    return res.status(200).json(formatSuccessResponse(
+      200,
+      "Commentaires archivés récupérés.",
+      data,
+      req.originalUrl
+    ));
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.archiveCommentaire = async (req, res, next) => {
   try {
     const { marqueurId, commentId } = req.params;
