@@ -1,6 +1,7 @@
 <script setup>
 import LeafletMap from '../components/LeafletMap.vue'
 import MarqueurModal from '../components/MarqueurModalComponent.vue'
+import InfoMarqueur from '../components/InfoMarqueurComponant.vue'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useMarqueurStore } from '../stores/useMarqueur'
 import { useAuthStore } from '@/stores/auth'

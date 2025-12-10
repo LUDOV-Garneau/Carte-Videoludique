@@ -576,7 +576,7 @@ tbody tr:nth-child(odd) td {
 
 .action-btn.accept {
   background: var(--accent);
-  color: white;
+  color: white; 
 }
 .action-btn.accept:hover {
   background: var(--accent-dark);
