@@ -11,6 +11,7 @@ const CommentSchema = new mongoose.Schema({
     default: "pending",
     index: true
   },
+  archived: { type: Boolean, default: false, index: true },
   createdAt: { type: Date, default: Date.now }
 });
 
