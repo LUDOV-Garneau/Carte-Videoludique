@@ -8,6 +8,7 @@ import CategorieEditPanel from './CategorieEditPanel.vue'
 import { useAuthStore } from '../stores/auth.js'
 import FilterPanel from './FilterPanel.vue'
 import { useMarqueurStore } from '../stores/useMarqueur.js'
+import { useCategorieStore } from '@/stores/useCategorie.js'
 
 import 'leaflet.fullscreen'
 import 'leaflet.fullscreen/Control.FullScreen.css'
@@ -30,6 +31,7 @@ L.Marker.prototype.options.icon = DefaultIcon
 
 const authStore = useAuthStore()
 const marqueurStore = useMarqueurStore()
+const categorieStore = useCategorieStore()
 
 const mapEl = ref(null)
 let map
@@ -250,6 +252,7 @@ async function afficherMarqueurs() {
   try {
     await marqueurStore.getMarqueurs();
 
+    // Supprimer les anciens marqueurs
     marqueurs.value.forEach(m => map.removeLayer(m));
     marqueurs.value = [];
 
@@ -260,34 +263,57 @@ async function afficherMarqueurs() {
     });
 
     noResults.value = (filtered.length === 0);
-
     if (filtered.length === 0) return;
 
-    filtered.forEach(marqueurData => {
-      if (!marqueurData.geometry?.coordinates) return;
+    filtered.forEach(mData => {
+      if (!mData.geometry?.coordinates) return;
 
-      const [lat, lng] = marqueurData.geometry.coordinates;
-      const properties = marqueurData.properties;
+      const [lat, lng] = mData.geometry.coordinates;
+      const props = mData.properties;
 
-      const marker = L.marker([lat, lng]);
+      // -------------------------------
+      // 1️⃣ Icône basée sur la catégorie
+      // -------------------------------
+      let icon = DefaultIcon;
 
-      if (properties.status === "pending") marker.setOpacity(0.5);
+      if (props.categorie) {
+        const cat = categorieStore.getCategorie(props.categorie);
 
-      marker.addTo(map);
-      marker.properties = properties;
+        if (cat?.image?.filename) {
+          const iconUrl = categorieStore.getIconUrl(cat.image.filename);
+
+          icon = L.icon({
+            iconUrl,
+            iconSize: [28, 28],
+            iconAnchor: [14, 28],
+          });
+        }
+      }
+
+      // -------------------------------
+      // 2️⃣ Création du marker Leaflet
+      // -------------------------------
+      const marker = L.marker([lat, lng], { icon });
+
+      if (props.status === "pending") {
+        marker.setOpacity(0.45);
+      }
+
+      marker.properties = props;
 
       marker.on("click", () => {
         selectedMarqueur.value = marker;
-        marqueurStore.getMarqueur(properties.id);
+        marqueurStore.getMarqueur(props.id);
         openInfoPanel();
         map.setView([lat, lng], Math.max(map.getZoom(), 15));
       });
 
+      marker.addTo(map);
       marqueurs.value.push(marker);
     });
 
-  } catch (err) {
-    console.error("afficherMarqueurs error:", err);
+  } catch (e) {
+    console.error("afficherMarqueurs ERROR →", e);
   }
 }
 
@@ -585,13 +611,13 @@ defineExpose({
     @marqueur-deleted="handleMarqueurDeleted"
   />
 
-  <AddMarqueurPanel 
-    :is-open="createPanelOpen" 
+  <AddMarqueurPanel
+    :is-open="createPanelOpen"
     :coordinates="{ lat: latitude, lng: longitude }"
-    :adresse="currentAdresse" 
-    @close="closeCreatePanel" 
+    :adresse="currentAdresse"
+    @close="closeCreatePanel"
     @marqueur-added="handleMarqueurAdded"
-    @locate-address="handlelocateFromAddress" 
+    @locate-address="handlelocateFromAddress"
   />
 
   <CategorieEditPanel
@@ -599,11 +625,11 @@ defineExpose({
     @close="closeCategorieEditPanel"
   />
 
-  <FilterPanel 
-    :is-open="filterPanelOpen" 
-    @close="closeFilterPanel" 
+  <FilterPanel
+    :is-open="filterPanelOpen"
+    @close="closeFilterPanel"
     @apply-filters="applyFilters"
-    @reset-filters="resetFilters" 
+    @reset-filters="resetFilters"
   />
 </template>
 
