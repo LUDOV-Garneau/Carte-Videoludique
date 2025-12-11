@@ -1,5 +1,3 @@
-"use strict"
-
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import * as adminController from './adminController.js'       
 import Admin from '../models/admin.js'                          
