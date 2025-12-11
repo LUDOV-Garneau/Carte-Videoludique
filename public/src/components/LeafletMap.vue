@@ -254,6 +254,7 @@ async function verifyAdressInQuebec(lat, lng) {
  */
 async function afficherMarqueurs() {
   try {
+    await categorieStore.fetchCategories();
     await marqueurStore.getMarqueurs();
 
     // Supprimer les anciens marqueurs
@@ -582,14 +583,14 @@ function setupKeyboardShortcuts() {
   map.__onKey = onKey
 }
 
-function applyFilters(filters) {
+async function applyFilters(filters) {
   activeFilters.value = filters;
-  afficherMarqueurs(); // refresh
+  await afficherMarqueurs(); // refresh
 }
 
-function resetFilters() {
+async function resetFilters() {
   activeFilters.value = [];
-  afficherMarqueurs();
+  await afficherMarqueurs();
 }
 
 /**
