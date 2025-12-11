@@ -10,6 +10,14 @@ const {
 
 dotenv.config();
 
+// Configuration Cloudinary
+const cloudinary = require("cloudinary").v2;
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 /**
  * Crée un nouveau Marqueur et le sauvegarde en base de données.
  * Renvoie le marqueur créé en réponse JSON avec un statut 201 et un header `Location`.
@@ -163,7 +171,7 @@ exports.updateMarqueur = async (req, res, next) => {
   try {
     const id = req.params.marqueurId || req.params.id;
 
-    const { titre, categorie, adresse, description, temoignage, image } =
+    const { titre, categorie, adresse, description, temoignage, images, lat, lng, removedImages } =
       req.body;
 
     const update = {
@@ -173,9 +181,18 @@ exports.updateMarqueur = async (req, res, next) => {
         "properties.adresse": adresse,
         "properties.description": description,
         "properties.temoignage": temoignage,
-        "properties.image": image,
       },
     };
+
+    // Mettre à jour les images si fournies
+    if (images !== undefined) {
+      update.$set["properties.images"] = images;
+    }
+
+    // Mettre à jour les coordonnées si fournies
+    if (lat != null && lng != null) {
+      update.$set["geometry.coordinates"] = [Number(lat), Number(lng)];
+    }
 
     const updated = await Marqueur.findByIdAndUpdate(id, update, {
       new: true,
@@ -193,6 +210,30 @@ exports.updateMarqueur = async (req, res, next) => {
             req.originalUrl
           )
         );
+    }
+
+    // Nettoyer les images supprimées si nécessaire
+    if (removedImages && removedImages.length > 0) {
+      try {
+        const publicIds = removedImages.map(img => img.publicId);
+        
+        for (const publicId of publicIds) {
+          await cloudinary.uploader.destroy(publicId);
+        }
+        
+        // Optionnel: supprimer le dossier s'il est vide
+        try {
+          await cloudinary.api.delete_folder(`MapImages/Marqueurs/${id}`);
+        } catch (folderErr) {
+          // Le dossier n'est pas vide ou n'existe pas, ce n'est pas grave
+          console.log('Impossible de supprimer le dossier (probablement non vide):', folderErr.message);
+        }
+        
+        console.log(`Images supprimées de Cloudinary: ${publicIds.join(', ')}`);
+      } catch (cleanupError) {
+        console.error('Erreur lors du nettoyage des images:', cleanupError);
+        // Ne pas faire échouer la modification pour une erreur de nettoyage
+      }
     }
 
     return res

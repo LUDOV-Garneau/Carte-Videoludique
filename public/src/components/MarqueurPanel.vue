@@ -90,9 +90,14 @@ async function handleEditRequestSubmit(payloadFromModal) {
 				updatePayload.lng = payloadFromModal.lng;
 			}
 
-			// Ajouter les images si il y en a
-			if (payloadFromModal.files && payloadFromModal.files.length > 0) {
-				updatePayload.files = payloadFromModal.files;
+			// Ajouter les images modifiées
+			if (payloadFromModal.properties && payloadFromModal.properties.images) {
+				updatePayload.images = payloadFromModal.properties.images;
+			}
+
+			// Ajouter les images supprimées pour le nettoyage côté serveur
+			if (payloadFromModal.removedImages && payloadFromModal.removedImages.length > 0) {
+				updatePayload.removedImages = payloadFromModal.removedImages;
 			}
 
 			await marqueurStore.modifierMarqueur(marqueurId, authStore.token, updatePayload);
