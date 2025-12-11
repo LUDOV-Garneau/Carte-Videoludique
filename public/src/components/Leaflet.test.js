@@ -200,8 +200,8 @@ describe('LeafletMap.vue', () => {
       }
     })
 
-    // Vérifier que les trois contrôles sont ajoutés (ajout + edit + filter)
-    expect(mapApi.addControl).toHaveBeenCalledTimes(3)
+    // Vérifier que les quatre contrôles sont ajoutés (ajout + edit + filter + import GeoJSON)
+    expect(mapApi.addControl).toHaveBeenCalledTimes(4)
 
     // Vérifier que le bouton d'édition des catégories existe
     const editBtn = document.querySelector('.btn-edit-categorie')
@@ -211,8 +211,8 @@ describe('LeafletMap.vue', () => {
 
     wrapper.unmount()
 
-    // Vérifier que les trois contrôles sont supprimés (ajout + edit + filter)
-    expect(mapApi.removeControl).toHaveBeenCalledTimes(3)
+    // Vérifier que les quatre contrôles sont supprimés (ajout + edit + filter + import GeoJSON)
+    expect(mapApi.removeControl).toHaveBeenCalledTimes(4)
 
     // Reset pour les autres tests
     mockAuthStore.isAuthenticated = false
