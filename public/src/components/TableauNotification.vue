@@ -307,7 +307,7 @@ onMounted(() => {
           </select>
       </label>
     </div>
-    <table v-if="filtreStatus === 'edit-request'">
+    <table v-if="filtreStatus === 'edit-request'" class="offers-table">
       <thead>
         <tr>
           <th>Lieu</th>
@@ -507,7 +507,7 @@ onMounted(() => {
 <style scoped>
 .offers-wrapper {
   width: 100%;
-  max-width: 1100px;
+  /* max-width: 1100px; */
   margin: 0 auto;
   overflow-x: auto;
   background: #ffffff;
@@ -520,7 +520,7 @@ onMounted(() => {
 
 .offers-table {
   width: 100%;
-  border-collapse: separate;
+  border-collapse: fixed;
   border-spacing: 0;
   table-layout: fixed;
   color: #111827;
@@ -531,7 +531,8 @@ onMounted(() => {
 .tabs-wrapper {
   display:flex;
   justify-content: flex-start;
-  max-width: 1100px;
+  width: 100%;
+  max-width: none;
   margin: 0 auto -1px;
   padding-top: 5px;
   background: #d7dce2;
