@@ -9,6 +9,8 @@ import AccountsView from '@/views/AccountsView.vue'
 import ForbiddenView from '@/views/ForbiddenView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 
+const LUDOV_FRONT_HOME =
+  'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/#/'
 
 const router = createRouter({
   //history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,6 +27,13 @@ const router = createRouter({
         } else {
           next()
         }
+      },
+    },
+    {
+      path: '/retour-accueil',
+      name: 'RetourAccueil',
+      beforeEnter() {
+        window.location.href = LUDOV_FRONT_HOME
       },
     },
     {
