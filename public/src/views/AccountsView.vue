@@ -53,6 +53,7 @@
         </tr>
       </tbody>
     </table>
+    <a :href="homeUrl">Retour à la carte</a>
   </div>
 </template>
 
@@ -74,6 +75,13 @@ const roleFilter = ref("")
 
 const userId = auth.decodedToken.id
 
+const isDev = import.meta.env.DEV
+
+const homeUrl = computed(() => 
+  isDev
+    ? '/'
+    : 'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/'
+)
 
 const filteredUsers = computed(() => {
   return users.value.filter(user => {

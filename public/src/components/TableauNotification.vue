@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, watch, computed } from 'vue'
+import { onMounted, watch, computed, ref} from 'vue'
 import { useEditRequestStore } from '@/stores/useEditRequest'
 import { useAuthStore } from '@/stores/auth'
 import { useCommentRequestStore } from "@/stores/useCommentRequestStore";
@@ -73,7 +73,6 @@ const deleteMarqueurDefinitif = async (marqueur) => {
   }
 };
 
-
 const props = defineProps({
   filtreStatus: { type: String, default: 'pending' },
   marqueursFiltres: { type: Array, default: () => [] }
@@ -108,6 +107,54 @@ const showInfoLocal = (marqueur) => {
 }
 
 
+// --- Trie ---
+
+const sortByDate = (array, order, getDate) => {
+  return [...(array ?? [])].sort((a, b) => {
+    const dateA = new Date(getDate(a))
+    const dateB = new Date(getDate(b))
+
+    if (isNaN(dateA) || isNaN(dateB)) return 0
+
+    return order === 'newest' ? dateB - dateA : dateA - dateB
+  })
+}
+
+const sortPendingOption = ref('newest')
+const sortEditOption = ref('newest')
+const sortArchivedOption = ref('newest')
+const sortCommentOption = ref('newest')
+
+const pendingSorted = computed(() =>
+  sortByDate(props.marqueursFiltres, sortPendingOption.value, m => m.createdAt)
+)
+
+const editRequestSorted = computed(() =>
+  sortByDate(editRequestStore.editRequests, sortEditOption.value, r => r.createdAt)
+)
+
+const archivedSorted = computed(() =>
+  sortByDate(
+    (marqueurStore.marqueurs ?? []).filter(m => m.archived === true),
+    sortArchivedOption.value,
+    m => m.createdAt
+  )
+)
+
+const pendingCommentSorted = computed(() =>
+  sortByDate(
+    commentRequestStore.pendingComments,
+    sortCommentOption.value,
+    c => c.comment?.createdAt || c.createdAt
+  )
+)
+const archivedCommentSorted = computed(() =>
+  sortByDate(
+    commentRequestStore.archivedComments,
+    sortCommentOption.value,
+    c => c.comment?.createdAt || c.createdAt
+  )
+)
 
 // --- ICI le fix complet ---
 const focusMarqueur = (marqueur) => {
@@ -187,6 +234,15 @@ onMounted(() => {
     </div>
 
     <!-- TABLE DES DEMANDES D'AJOUT -->
+    <div v-if="filtreStatus === 'pending'" class="sort-wrapper">
+      <label>
+        Trier par :
+          <select v-model="sortPendingOption">
+            <option value="newest">Plus récent d'abord</option>
+            <option value="oldest">Plus ancien d'abord</option>
+          </select>
+      </label>
+    </div>
     <table v-if="filtreStatus === 'pending'" class="offers-table" role="table" aria-label="Offres fournisseur">
       <thead>
         <tr>
@@ -200,7 +256,7 @@ onMounted(() => {
       </thead>
 
       <tbody>
-        <tr v-for="marqueur in marqueursFiltres" :key="marqueur.id || marqueur._id" class="row-hover"
+        <tr v-for="marqueur in pendingSorted" :key="marqueur.id || marqueur._id" class="row-hover"
           @click="focusMarqueur(marqueur)">
           <td class="provider">{{ marqueur.properties.titre }}</td>
           <td class="address">{{ marqueur.properties.adresse }}</td>
@@ -242,6 +298,15 @@ onMounted(() => {
     </table>
 
     <!-- TABLE DES DEMANDES DE MODIFICATION -->
+    <div v-if="filtreStatus === 'edit-request'" class="sort-wrapper">
+      <label>
+        Trier par :
+          <select v-model="sortEditOption">
+            <option value="newest">Plus récent d'abord</option>
+            <option value="oldest">Plus ancien d'abord</option>
+          </select>
+      </label>
+    </div>
     <table v-if="filtreStatus === 'edit-request'">
       <thead>
         <tr>
@@ -254,7 +319,7 @@ onMounted(() => {
       </thead>
 
       <tbody>
-        <tr v-for="req in editRequestStore.editRequests" :key="req._id" class="row-hover"
+        <tr v-for="req in editRequestSorted" :key="req._id" class="row-hover"
           @click="focusMarqueur(req.marqueur)">
           <td>
             {{ req.proposedProperties?.titre || req.marqueur?.properties?.titre }}
@@ -286,6 +351,15 @@ onMounted(() => {
       </tbody>
     </table>
     <!-- TABLE DES COMMENTAIRES À APPROUVER -->
+    <div v-if="filtreStatus === 'comments'" class="sort-wrapper">
+      <label>
+        Trier par :
+          <select v-model="sortCommentOption">
+            <option value="newest">Plus récent d'abord</option>
+            <option value="oldest">Plus ancien d'abord</option>
+          </select>
+      </label>
+    </div>
     <table v-if="filtreStatus === 'comments'" class="offers-table">
       <thead>
         <tr>
@@ -298,7 +372,7 @@ onMounted(() => {
       </thead>
 
       <tbody>
-        <tr v-for="item in commentRequestStore.pendingComments" :key="item.commentId" class="row-hover"
+        <tr v-for="item in pendingCommentSorted" :key="item.commentId" class="row-hover"
           @click="focusMarqueur(item.marqueur)">
           <td>{{ item.marqueur?.properties?.titre }}</td>
 
@@ -329,6 +403,16 @@ onMounted(() => {
       </tbody>
     </table>
     <!-- TABLE DES MARQUEURS ARCHIVÉS -->
+
+    <div v-if="filtreStatus === 'archived'" class="sort-wrapper">
+      <label>
+        Trier par :
+          <select v-model="sortArchivedOption">
+            <option value="newest">Plus récent d'abord</option>
+            <option value="oldest">Plus ancien d'abord</option>
+          </select>
+      </label>
+    </div>
     <table v-if="filtreStatus === 'archived'" class="offers-table">
       <thead>
         <tr>
@@ -340,7 +424,7 @@ onMounted(() => {
       </thead>
 
       <tbody>
-        <tr v-for="m in archivedList" :key="m.id" class="row-hover" @click="focusMarqueur(m)">
+        <tr v-for="m in archivedSorted" :key="m.id" class="row-hover" @click="focusMarqueur(m)">
           <td>{{ m.properties.titre }}</td>
           <td>{{ m.properties.createdByName || 'Non spécifié' }}</td>
 
@@ -363,6 +447,15 @@ onMounted(() => {
       </tbody>
     </table>
     <!-- COMMENTAIRES ARCHIVÉS -->
+    <div v-if="filtreStatus === 'comment-archived'" class="sort-wrapper">
+      <label>
+        Trier par :
+          <select v-model="sortCommentOption">
+            <option value="newest">Plus récent d'abord</option>
+            <option value="oldest">Plus ancien d'abord</option>
+          </select>
+      </label>
+    </div>
     <table v-if="filtreStatus === 'comment-archived'" class="offers-table">
       <thead>
         <tr>
@@ -375,7 +468,7 @@ onMounted(() => {
       </thead>
 
       <tbody>
-        <tr v-for="item in commentRequestStore.archivedComments" :key="item.commentId" class="row-hover"
+        <tr v-for="item in archivedCommentSorted" :key="item.commentId" class="row-hover"
           @click="focusMarqueur(item.marqueur)">
 
           <td>{{ item.marqueur?.properties?.titre }}</td>
@@ -465,7 +558,48 @@ onMounted(() => {
   position: relative;
   transition: 0.2s;
 }
+/* sorted */
+.sort-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin: 1rem 0;
+  padding-right: 0.5rem;
+  font-size: 0.95rem;
+  color: #333;
+}
 
+.sort-wrapper label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.sort-wrapper select {
+  appearance: none;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0.4rem 1.5rem 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23999' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 0.8em;
+}
+
+.sort-wrapper select:hover {
+  border-color: #999;
+}
+
+.sort-wrapper select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
 /* ONGLET ACTIF */
 .tabs button.active {
   background: #ffffff;
