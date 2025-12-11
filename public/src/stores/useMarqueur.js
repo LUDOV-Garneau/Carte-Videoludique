@@ -27,18 +27,13 @@ export const useMarqueurStore = defineStore(
       })
         .then(async (response) => {
           const data = await response.json()
-
+          console.log(data)
           if (response.status !== 201) {
             throw new Error(data.message || 'Erreur inconnue')
           }
 
-          const mapped = {
-            ...data.data,
-            id: data.data._id,
-          }
-
-          marqueurs.value.push(mapped)
-          return mapped
+          marqueurs.value.push(data.data)
+          return data.data
         })
         .catch((error) => {
           console.error('Erreur ajout marqueur:', error)
@@ -61,10 +56,7 @@ export const useMarqueurStore = defineStore(
             throw new Error(data.message || 'Erreur inconnue')
           }
 
-          marqueurs.value = data.data.map((m) => ({
-            ...m,
-            id: m._id,
-          }))
+          marqueurs.value = data.data;
 
           return marqueurs.value
         })
@@ -89,10 +81,7 @@ export const useMarqueurStore = defineStore(
             throw new Error(data.message || 'Erreur inconnue')
           }
 
-          marqueurActif.value = {
-            ...data.data,
-            id: data.data._id,
-          }
+          marqueurActif.value = data.data;
 
           return marqueurActif.value
         })
@@ -175,6 +164,51 @@ export const useMarqueurStore = defineStore(
         })
         .catch((error) => {
           console.error('Erreur modifierMarqueurStatus:', error)
+          throw error
+        })
+    }
+
+    /* --------------------------------------------
+       MODIFIER LES IMAGES D'UN MARQUEUR
+    -------------------------------------------- */
+    function updateMarqueurImages(marqueurId, images) {
+      const headers = { 'Content-Type': 'application/json' }
+
+      if (authStore.isAuthenticated && authStore.token) {
+        headers.Authorization = `Bearer ${authStore.token}`
+      }
+
+      return fetch(`${API_URL}/marqueurs/${marqueurId}/images`, {
+        method: 'PATCH',
+        headers: headers,
+        body: JSON.stringify({ images }),
+      })
+        .then(async (response) => {
+          const data = await response.json()
+
+          if (!response.ok) {
+            throw new Error(data.message || 'Erreur lors de la mise à jour des images')
+          }
+
+          // Mettre à jour le marqueur dans le store local
+          const updated = {
+            ...data.data,
+            id: data.data._id,
+          }
+
+          const index = marqueurs.value.findIndex((m) => m.id === marqueurId)
+          if (index !== -1) {
+            marqueurs.value[index] = updated
+          }
+
+          if (marqueurActif.value?.id === marqueurId) {
+            marqueurActif.value.properties.images = images
+          }
+
+          return updated
+        })
+        .catch((error) => {
+          console.error('Erreur updateMarqueurImages:', error)
           throw error
         })
     }
@@ -283,6 +317,7 @@ async function deleteMarqueurDefinitif(id) {
       getMarqueur,
       modifierMarqueur,
       modifierMarqueurStatus,
+      updateMarqueurImages,
       supprimerMarqueur,
       getArchivedMarqueurs,
       restaurerMarqueur,

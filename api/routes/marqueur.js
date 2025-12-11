@@ -33,6 +33,9 @@ router.put("/marqueurs/:marqueurId", isAuth, marqueurController.updateMarqueur);
 // PUT => /marqueurs/:marqueurId/status (changer statut pending/approved/rejected)
 router.put("/marqueurs/:marqueurId/status", isAuth, marqueurController.updateStatusMarqueur);
 
+// PATCH => /marqueurs/:marqueurId/images (ajouter des images après création)
+router.patch("/marqueurs/:marqueurId/images", optionalAuth, marqueurController.updateMarqueurImages);
+
 // DELETE => /marqueurs/:marqueurId (ARCHIVER un marqueur → NE SUPPRIME PLUS)
 router.delete("/marqueurs/:marqueurId", isAuth, marqueurController.archiveMarqueur);
 
