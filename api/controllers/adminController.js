@@ -62,7 +62,12 @@ exports.signup = async (req, res, next) => {
           )
         );
     }
-    const adminExistant = await Admin.findOne({ courriel: courriel });
+   
+    const adminExistant = await Admin.findOne({
+      courriel: courriel,
+      status: { $ne: "Inactif" }, // seulement ceux qui ne sont pas inactifs
+    });
+
     if (adminExistant) {
       return res
         .status(409)
@@ -70,7 +75,7 @@ exports.signup = async (req, res, next) => {
           formatErrorResponse(
             409,
             "Conflict",
-            "Un administrateur avec ce courriel existe déjà.",
+            "Un administrateur actif avec ce courriel existe déjà.",
             req.originalUrl
           )
         );
@@ -115,7 +120,7 @@ exports.login = async (req, res, next) => {
   const { courriel, mdp } = req.body;
 
   try {
-    const admin = await Admin.findOne({ courriel });
+    const admin = await Admin.findOne({ courriel, status: "Actif" });
     if (!admin) {
       return res
         .status(401)
@@ -176,8 +181,8 @@ exports.login = async (req, res, next) => {
  */
 exports.getAdmins = async (req, res, next) => {
   try {
-    const admins = await Admin.find().sort({ 
-      status: 1 // "actif" < "inactif" en ordre alphabétique
+    const admins = await Admin.find().sort({
+      status: 1, // "actif" < "inactif" en ordre alphabétique
     });
     return res
       .status(200)
@@ -232,6 +237,61 @@ exports.getAdmin = (req, res, next) => {
 };
 
 /**
+ * Fonction permettant de modifier le rôle d'un administrateur
+ * @param {*} req - L'objet de requête Express.
+ * @param {*} res - L'objet de réponse Express.
+ * @param {*} next - La fonction middleware suivante
+ * @returns - retourne l'administrateur modifié
+ */
+exports.updateAdmin = async (req, res, next) => {
+  const adminId = req.params.adminId;
+
+  try {
+    const admin = req.admin;
+    const { nom, prenom, role } = req.body;
+
+    if (admin.id === adminId || admin.role === "Éditeur") {
+      return res.status(403).json({
+        status: 403,
+        message: "Cette ressource ne vous appartient pas",
+        path: req.originalUrl,
+      });
+    }
+    // Vérification que le rôle est valide
+    const rolesValides = Admin.schema.path("role").enumValues;
+    if (!rolesValides.includes(role)) {
+      return res.status(400).json({
+        status: 400,
+        message: `Le rôle doit être l'un de : ${rolesValides.join(", ")}`,
+        path: req.originalUrl,
+      });
+    }
+
+    // Mise à jour de l’administrateur
+    const updatedAdmin = {};
+    if (nom) updatedAdmin.nom = nom;
+    if (prenom) updatedAdmin.prenom = prenom;
+    if (role) updatedAdmin.role = role;
+
+    const resultat = await Admin.findByIdAndUpdate(adminId, updatedAdmin, {
+      new: true,
+    });
+
+    if (!resultat) {
+      return res.status(404).json({ message: "Administrateur introuvable" });
+    }
+
+    res.json({
+      status: 200,
+      message: "Administrateur modifié",
+      admin: resultat,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * Fonction permettant de supprimer un administrateur en le rendant inactif
  * @param {*} req - L'objet de requête Express.
  * @param {*} res - L'objet de réponse Express.
@@ -254,8 +314,8 @@ exports.deleteAdmin = async (req, res, next) => {
     // Mettre l'admin inactif
     const resultat = await Admin.findByIdAndUpdate(
       adminId,
-      { status: 'inactif' },  
-      { new: true }            
+      { status: "Inactif" },
+      { new: true }
     );
 
     if (!resultat) {
@@ -271,5 +331,3 @@ exports.deleteAdmin = async (req, res, next) => {
     next(err);
   }
 };
-
-

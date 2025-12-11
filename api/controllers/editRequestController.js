@@ -44,8 +44,8 @@ exports.createEditRequest = async (req, res, next) => {
         images,
         tags,
       },
-      requestedByUserId: req.user?._id,
-      requestedByName: req.user?.name,
+      requestedByUserId: req.admin?._id,
+      requestedByName: req.admin?.nom || req.admin?.email,
     }); 
 
     res.status(201).json(formatSuccessResponse(
@@ -86,7 +86,7 @@ exports.getEditRequests = async (req, res, next) => {
 
 exports.getEditRequest = async (req, res, next) => {
   try {
-    const requestId = req.params.id;
+    const requestId = req.params.editRequestId;
     const editRequest = await EditRequest.findById(requestId).populate("marqueur");
     if (!editRequest) {
       return res.status(404).json(formatErrorResponse(
@@ -109,7 +109,7 @@ exports.getEditRequest = async (req, res, next) => {
 
 exports.approveEditRequest = async (req, res, next) => {
   try {
-    const requestId = req.params.id;
+    const requestId = req.params.editRequestId;
 
     const editRequest = await EditRequest.findById(requestId);
     if (!editRequest) {
@@ -157,18 +157,14 @@ exports.approveEditRequest = async (req, res, next) => {
 
     await marqueur.save();
 
-    editRequest.status = "approved";
-    editRequest.reviewedAt = new Date();
-    editRequest.reviewedByUserId = req.user?._id;
-    editRequest.reviewedByName = req.user?.name;
-
-    await editRequest.save();
+    // Supprimer la demande de modification après l'avoir appliquée
+    await EditRequest.findByIdAndDelete(requestId);
 
     return res.status(200).json(
       formatSuccessResponse(
         200,
-        "Demande de modification approuvée avec succès",
-        { editRequest, marqueur },
+        "Demande de modification acceptée et appliquée avec succès",
+        { marqueur },
         req.originalUrl
       )
     );
@@ -179,7 +175,7 @@ exports.approveEditRequest = async (req, res, next) => {
 
 exports.rejectEditRequest = async (req, res, next) => {
   try {
-    const requestId = req.params.id;
+    const requestId = req.params.editRequestId;
     const { adminComment } = req.body;
 
     const editRequest = await EditRequest.findById(requestId);
@@ -205,19 +201,14 @@ exports.rejectEditRequest = async (req, res, next) => {
       );
     }
 
-    editRequest.status = "rejected";
-    editRequest.adminComment = adminComment || null;
-    editRequest.reviewedAt = new Date();
-    editRequest.reviewedByUserId = req.user?._id;
-    editRequest.reviewedByName = req.user?.name;
-
-    await editRequest.save();
+    // Supprimer la demande de modification après l'avoir refusée
+    await EditRequest.findByIdAndDelete(requestId);
 
     return res.status(200).json(
       formatSuccessResponse(
         200,
-        "Demande de modification rejetée avec succès",
-        editRequest,
+        "Demande de modification refusée et supprimée avec succès",
+        { message: "Demande supprimée" },
         req.originalUrl
       )
     );

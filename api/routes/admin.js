@@ -23,7 +23,10 @@ router.get("/admins",isAuth, adminController.getAdmins);
 router.get("/admins/:adminId",isAuth, adminController.getAdmin); 
 
 
-// PATCH => /admins/:adminId
+// PATCH => /admins/:adminId/inactif
 router.patch("/admins/:adminId/inactif",isAuth, adminController.deleteAdmin)
+
+// PATCH => /admins/:adminId
+router.patch("/admins/:adminId",isAuth, adminController.updateAdmin)
 
 module.exports = router;

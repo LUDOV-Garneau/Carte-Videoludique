@@ -414,15 +414,21 @@ exports.patchCategorieActive = async (req, res, next) => {
             ));
         }
 
-        const marqueursUsingCategorie = await mongoose.model('Marqueur').countDocuments({ categorie: categorieId });
-        if (active === false && marqueursUsingCategorie > 0) {
-            const deletedCategorie = await Categorie.findByIdAndDelete(categorieId);
-            return res.status(200).json(formatSuccessResponse(
-                200,
-                "Catégorie supprimée avec succès car elle n'est plus utilisée par des marqueurs.",
-                deletedCategorie,
-                req.originalUrl
-            ));
+        const marqueursUsingCategorie = await mongoose.model('Marqueur').countDocuments({ 'properties.categorie': categorieId });
+        
+        if (active === false) {
+            if (marqueursUsingCategorie === 0) {
+                // Supprimer complètement la catégorie si elle n'est pas utilisée
+                const deletedCategorie = await Categorie.findByIdAndDelete(categorieId);
+                return res.status(200).json(formatSuccessResponse(
+                    200,
+                    "Catégorie supprimée avec succès car elle n'est plus utilisée par des marqueurs.",
+                    deletedCategorie,
+                    req.originalUrl
+                ));
+            }
+            // Si la catégorie est utilisée, on la désactive seulement (pas de suppression)
+            // On continue avec la logique normale de mise à jour
         }
         
         const updatedCategorie = await Categorie.findByIdAndUpdate(
@@ -449,4 +455,4 @@ exports.patchCategorieActive = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-}
+};

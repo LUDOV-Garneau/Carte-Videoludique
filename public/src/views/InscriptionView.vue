@@ -1,6 +1,9 @@
 <template>
   <div class="container mt-5">
     <h2>Créer un compte</h2>
+    <div v-if="messageSucces" class="alert alert-success mt-3" role="alert">
+        {{ messageSucces }}
+      </div>
     <form @submit.prevent="soumettreFormulaire" novalidate>
       <div class="mb-3">
         <label for="nom" class="form-label">Nom</label>
@@ -49,10 +52,6 @@
 
       <button type="submit" class="btn btn-primary">S'inscrire</button>
       <div v-if="erreurServeur" class="mt-3 text-danger">{{ erreurServeur }}</div>
-
-      <div v-if="messageSucces" class="alert alert-success mt-3" role="alert">
-        {{ messageSucces }}
-      </div>
     </form>
     <a :href="homeUrl">Retour à la carte</a>
   </div>
@@ -146,7 +145,7 @@ const soumettreFormulaire = async () => {
     messageSucces.value = 'Compte créé avec succès ! Redirection en cours...'
 
     setTimeout(() => {
-      router.push('/connexion')
+      router.push('/')
     }, 2000)
   } catch (err) {
     erreurServeur.value = 'Erreur de connexion au serveur'

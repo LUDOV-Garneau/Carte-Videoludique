@@ -655,11 +655,13 @@ watch(() => props.isOpen, async (newValue) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .category-icon-img {
   width: 20px;
   height: 20px;
+  object-fit: contain;
   filter: brightness(0) invert(1);
 }
 
