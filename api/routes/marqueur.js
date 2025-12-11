@@ -63,11 +63,13 @@ router.patch(
   marqueurController.updateCommentStatus
 );
 
-// DELETE => /marqueurs/:marqueurId/commentaires/:commentId (supprimer un témoignage)
-router.delete(
-  "/marqueurs/:marqueurId/commentaires/:commentId",
-  marqueurController.deleteCommentMarqueur
-);
+router.get("/commentaires-archives", isAuth, marqueurController.getArchivedCommentaires);
+
+router.delete("/marqueurs/:marqueurId/commentaires/:commentId/archive", isAuth, marqueurController.archiveCommentaire);
+
+router.put("/marqueurs/:marqueurId/commentaires/:commentId/restaurer", isAuth, marqueurController.restoreCommentaire);
+
+router.delete("/marqueurs/:marqueurId/commentaires/:commentId/definitif", isAuth, marqueurController.deleteCommentaireDefinitif);
 
 
 // -------------------------------------------------------
