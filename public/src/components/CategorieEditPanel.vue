@@ -104,7 +104,7 @@ function editCategory(category) {
     nom: category.nom || '',
     description: category.description || '',
     couleur: category.couleur || '#3498db',
-    image: category.image || { filename: 'marker', size: 14 }
+    image: category.image || { type: 'predefined', filename: 'marker' }
   }
   
   // Mettre à jour l'icône sélectionnée
@@ -122,7 +122,12 @@ function editCategory(category) {
 function selectIcon(iconName, category) {
   selectedIcon.value = iconName
   selectedIconCategory.value = category
-  form.value.image.filename = iconName
+  
+  // S'assurer que l'objet image existe avec la bonne structure
+  form.value.image = {
+    type: 'predefined',
+    filename: iconName
+  }
   
   // Sauvegarder automatiquement si on est en train d'éditer
   if (editingCategoryId.value) {
@@ -150,7 +155,11 @@ const debouncedSaveChanges = debounce(async () => {
           await categorieStore.updateCategoryCouleur(editingCategoryId.value, form.value.couleur)
         }
         
-        if (form.value.image !== currentCategory.image) {
+        // Comparer le filename de l'image plutôt que l'objet entier
+        const currentImageFilename = currentCategory.image?.filename
+        const newImageFilename = form.value.image?.filename
+        
+        if (newImageFilename && newImageFilename !== currentImageFilename) {
           await categorieStore.updateCategoryImage(editingCategoryId.value, form.value.image)
         }
       }

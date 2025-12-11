@@ -94,8 +94,7 @@ function applyFilters() {
 .panel {
   position: absolute;
   top: 12px;
-  bottom: 12px;
-  right: 12px;
+  left: 56px;
   width: 320px;
 
   display: flex;
