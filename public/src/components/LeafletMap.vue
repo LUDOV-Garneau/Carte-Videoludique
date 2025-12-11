@@ -537,7 +537,7 @@ function addCustomControl() {
  */
 function addFilterControl() {
   const FilterControl = L.Control.extend({
-    options: { position: "topright" },
+    options: { position: "topleft" },
     onAdd() {
       const container = L.DomUtil.create("div", "leaflet-control leaflet-control-custom");
 
