@@ -20,7 +20,6 @@ const AdminSchema = new Schema(
     courriel: {
       type: String,
       required: true,
-      unique: true,
       match: /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/,
     },
     role: {

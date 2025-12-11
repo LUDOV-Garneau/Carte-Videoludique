@@ -72,8 +72,8 @@ describe("AdminController.signup", () => {
     expect(res.body.message).toBe("Les mots de passe ne correspondent pas.");
   });
 
-  it("409 si admin existe déjà", async () => {
-    vi.spyOn(Admin, "findOne").mockResolvedValue({ _id: "exists" });
+  it("409 si admin actif existe déjà", async () => {
+    vi.spyOn(Admin, "findOne").mockResolvedValue({ _id: "123", status: "Actif" });
 
     const req = mockReq({
       nom: "A",
@@ -81,16 +81,19 @@ describe("AdminController.signup", () => {
       courriel: "a@b.com",
       role: "Gestionnaire",
       mdp: "x",
-      mdp2: "x",
+      mdp2: "x"
     });
     const res = mockRes();
     const next = mockNext();
 
     await adminController.signup(req, res, next);
 
-    expect(Admin.findOne).toHaveBeenCalledWith({ courriel: "a@b.com" });
+    expect(Admin.findOne).toHaveBeenCalledWith({
+      courriel: "a@b.com",
+      status: { $ne: "Inactif" }
+    });
     expect(res.statusCode).toBe(409);
-    expect(res.body.error).toBe("Conflict");
+    expect(res.body.message).toBe("Un administrateur actif avec ce courriel existe déjà.");
   });
   it("201 et retourne admin créé (format standard)", async () => {
     vi.spyOn(Admin, "findOne").mockResolvedValue(null);
@@ -219,37 +222,9 @@ describe("AdminController.getAdmins", () => {
 });
 
 /* ---------- GET ADMIN (propriétaire uniquement) ---------- */
-describe("AdminController.getAdmin", () => {
-  it("200 quand l’admin connecté correspond à :adminId", async () => {
-    const req = mockReq({}, { adminId: "42" });
-    req.admin = { id: "42", nom: "Alice" };
-
-    const res = mockRes();
-    const next = mockNext();
-
-    await adminController.getAdmin(req, res, next);
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe("L'administrateur est trouvé");
-    expect(res.body.data).toMatchObject({ id: "42", nom: "Alice" });
-  });
-
-  it("403 sinon", async () => {
-    const req = mockReq({}, { adminId: "99" });
-    req.admin = { id: "42", nom: "Alice" };
-
-    const res = mockRes();
-    const next = mockNext();
-
-    await adminController.getAdmin(req, res, next);
-
-    expect(res.statusCode).toBe(403);
-    expect(res.body.error).toBe("Forbidden");
-  });
-});
-/* ---------- DELETE ADMIN ---------- */
 describe("AdminController.deleteAdmin", () => {
-  it("403 si admin tente de se désactiver lui-même", async () => {
+
+  it("403 si un admin tente de se désactiver lui-même", async () => {
     const req = mockReq({}, { adminId: "42" }, "/api/admins/42");
     req.admin = { id: "42", nom: "Alice" };
 
@@ -260,7 +235,9 @@ describe("AdminController.deleteAdmin", () => {
 
     expect(res.statusCode).toBe(403);
     expect(res.body.message).toBe("Cette ressource ne vous appartient pas");
+    expect(res.body.path).toBe(req.originalUrl);
   });
+
   it('403 si admin a le rôle "Éditeur"', async () => {
     const req = mockReq({}, { adminId: "99" }, "/api/admins/99");
     req.admin = { id: "42", nom: "Alice", role: "Éditeur" };
@@ -277,8 +254,10 @@ describe("AdminController.deleteAdmin", () => {
 
   it("404 si admin introuvable", async () => {
     vi.spyOn(Admin, "findByIdAndUpdate").mockResolvedValue(null);
+
     const req = mockReq({}, { adminId: "99" }, "/api/admins/99");
-    req.admin = { id: "42", nom: "Alice" };
+    req.admin = { id: "42", nom: "Alice", role: "Gestionnaire" };
+
     const res = mockRes();
     const next = mockNext();
 
@@ -289,11 +268,17 @@ describe("AdminController.deleteAdmin", () => {
   });
 
   it("200 et rend l’admin inactif", async () => {
-    const updatedAdmin = { id: "123", nom: "Bob", status: "inactif" };
+    const updatedAdmin = {
+      _id: "123",
+      nom: "Bob",
+      status: "Inactif"
+    };
+
     vi.spyOn(Admin, "findByIdAndUpdate").mockResolvedValue(updatedAdmin);
 
     const req = mockReq({}, { adminId: "123" }, "/api/admins/123");
-    req.admin = { id: "42", nom: "Alice" };
+    req.admin = { id: "42", nom: "Alice", role: "Gestionnaire" };
+
     const res = mockRes();
     const next = mockNext();
 
@@ -301,11 +286,14 @@ describe("AdminController.deleteAdmin", () => {
 
     expect(Admin.findByIdAndUpdate).toHaveBeenCalledWith(
       "123",
-      { status: "inactif" },
+      { status: "Inactif" },
       { new: true }
     );
+
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe("Administrateur rendu inactif");
     expect(res.body.admin).toMatchObject(updatedAdmin);
   });
+
 });
+

@@ -44,7 +44,7 @@
             </div>
 
             <!-- 2. Si l'utilisateur est inactif -->
-            <div v-else-if="user.status === 'inactif'" class="text-muted">Profil inactif</div>
+            <div v-else-if="user.status === 'Inactif'" class="text-muted">Profil inactif</div>
 
             <!-- 3. Sinon : afficher Modifier / Supprimer -->
             <div v-else class="d-flex gap-4">
@@ -70,6 +70,33 @@
         </div>
       </div>
     </div>
+    <!-- Boîte de dialogue d'édition -->
+    <div v-if="showEdit" class="dialog-backdrop">
+      <div class="dialog-box">
+        <h5>Modifier l'utilisateur</h5>
+
+        <div class="mb-2">
+          <label class="form-label">Nom</label>
+          <input v-model="editForm.nom" type="text" class="form-control" />
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Prénom</label>
+          <input v-model="editForm.prenom" type="text" class="form-control" />
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Rôle</label>
+          <select v-model="editForm.role" class="form-select">
+            <option value="Gestionnaire">Gestionnaire</option>
+            <option value="Éditeur">Éditeur</option>
+          </select>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <button class="btn btn-secondary" @click="cancelEdit">Annuler</button>
+          <button class="btn btn-primary" @click="saveEdit">Enregistrer</button>
+        </div>
+      </div>
+    </div>
     <a :href="homeUrl">Retour à la carte</a>
   </div>
 </template>
@@ -91,31 +118,48 @@ const userToDelete = ref(null)
 const searchQuery = ref('')
 const roleFilter = ref('')
 
+const showEdit = ref(false)
+const userToEdit = ref(null)
+
+
+// Formulaire temporaire
+const editForm = ref({
+  nom: '',
+  prenom: '',
+  role: ''
+})
+
 const userId = auth.decodedToken.id
 const isDev = import.meta.env.DEV
 
-const homeUrl = computed(() => 
-  isDev
-    ? '/'
-    : 'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/'
+const homeUrl = computed(() =>
+  isDev ? '/' : 'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/',
 )
 
+
 const filteredUsers = computed(() => {
-  return users.value.filter((user) => {
+  return users.value.filter(user => {
     const matchesSearch =
       user.nom.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       user.prenom.toLowerCase().includes(searchQuery.value.toLowerCase())
 
-    let matchesRoleOrStatus = false
+    let matches = false
+
+    // Tous (aucun filtre)
     if (roleFilter.value === '') {
-      matchesRoleOrStatus = true
+      matches = true
+
+    // Inactifs
     } else if (roleFilter.value === 'Inactif') {
-      matchesRoleOrStatus = user.status === 'inactif'
+      matches = user.status === 'Inactif'
+
+    // Gestionnaire ou Éditeur → seulement ACTIFS
     } else {
-      matchesRoleOrStatus = user.role === roleFilter.value
+      matches =
+        user.role === roleFilter.value && user.status === 'Actif'
     }
 
-    return matchesSearch && matchesRoleOrStatus
+    return matchesSearch && matches
   })
 })
 
@@ -163,8 +207,9 @@ async function confirmDelete() {
 
     // Met à jour la liste localement
     users.value = users.value.map((u) =>
-      u.id === userToDelete.value.id ? { ...u, status: 'inactif' } : u,
+      u._id === userToDelete.value._id ? { ...u, status: 'Inactif' } : u,
     )
+
   } catch (err) {
     console.error(err)
   } finally {
@@ -177,7 +222,48 @@ async function deleteUser(user) {
   userToDelete.value = user
   showConfirm.value = true
 }
-async function editUser(user) {}
+
+function editUser(user) {
+  userToEdit.value = user
+  editForm.value = {
+    nom: user.nom,
+    prenom: user.prenom,
+    role: user.role
+  }
+  showEdit.value = true
+}
+
+function cancelEdit() {
+  showEdit.value = false
+  userToEdit.value = null
+}
+
+async function saveEdit() {
+  try {
+    const response = await fetch(`${API_URL}/admins/${userToEdit.value._id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${auth.token}`,
+      },
+      body: JSON.stringify(editForm.value),
+    })
+
+    if (!response.ok) throw new Error('Erreur lors de la modification.')
+
+    const data = await response.json()
+
+    // Met à jour la liste localement
+    users.value = users.value.map((u) =>
+      u._id === userToEdit.value._id ? data.admin : u
+    )
+  } catch (err) {
+    console.error(err)
+  } finally {
+    showEdit.value = false
+    userToEdit.value = null
+  }
+}
 </script>
 
 <style>
