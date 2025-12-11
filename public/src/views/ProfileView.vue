@@ -19,23 +19,31 @@
         <p><strong>Créé le :</strong> {{ formatDate(user.createdAt) }}</p>
         <p><strong>Mis à jour le :</strong> {{ formatDate(user.updatedAt) }}</p>
 
-
+         
         <!-- <router-link to="/profil/modifier" class="btn btn-outline-primary mt-3">
           Modifier le profil
         </router-link> -->
       </div>
+      <a :href="homeUrl">Retour à la carte</a>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref,onBeforeMount } from 'vue'
+import { ref,onBeforeMount, computed} from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { API_URL } from '@/config'
 
 
 const auth = useAuthStore()
 
+const isDev = import.meta.env.DEV
+
+const homeUrl = computed(() => 
+  isDev
+    ? '/'
+    : 'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/'
+)
 
 // États réactifs
 const user = ref(null)

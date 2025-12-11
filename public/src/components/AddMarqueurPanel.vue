@@ -222,24 +222,50 @@ function validateForm() {
  * @throws {Error} Si la requête réseau échoue ou si la réponse du serveur contient une erreur.
  */
 async function sendRequest() {
+  let created = null;
+  let uploadedImages = [];
+  
   try {
-    if (validateForm()) {
-      if (files.value.length > 0) {
-        form.value.images = await cloudinary.uploadMultipleImages(files.value);
-      }
-      const created = await marqueurStore.ajouterMarqueur(form.value);
+    if (!validateForm()) {
+      return;
+    }
 
-      emit('marqueur-added', created);
-      closePanel();
+    // 1. Créer le marqueur sans images
+    const formData = { ...form.value };
+    delete formData.images; // On enlève les images du formulaire initial
+    
+    created = await marqueurStore.ajouterMarqueur(formData);
+
+    // 2. Si il y a des fichiers, les uploader avec l'ID du marqueur
+    if (files.value.length > 0) {
+      // Upload avec l'ID du marqueur comme nom de dossier
+      uploadedImages = await cloudinary.uploadMultipleImages(files.value, created.id);
+      
+      // 3. Mettre à jour le marqueur avec les images
+      await marqueurStore.updateMarqueurImages(created.id, uploadedImages);
+      
+      // Mettre à jour l'objet created localement pour l'émission
+      if (!created.properties) created.properties = {};
+      created.properties.images = uploadedImages;
     }
+
+    emit('marqueur-added', created);
+    closePanel();
+    
   } catch (err) {
-    if (form.value.images.length) {
+    // Rollback: si on a uploadé des images mais que la mise à jour a échoué
+    if (uploadedImages.length > 0) {
       try {
-        await cloudinary.cleanupImages(form.value.images.map(img => img.publicId));
-      } catch (e) {
-        console.warn('Rollback Cloudinary a échoué :', e);
+        await cloudinary.cleanupImages(uploadedImages.map(img => img.publicId));
+      } catch (cleanupErr) {
+        console.warn('Rollback Cloudinary a échoué :', cleanupErr);
       }
     }
+    
+    // Si la création du marqueur a réussi mais l'upload d'images a échoué,
+    // on pourrait aussi supprimer le marqueur, mais c'est peut-être mieux 
+    // de le laisser sans images plutôt que de perdre toutes les données
+    
     console.error('sendRequest error:', err);
     throw err;
   }
