@@ -485,11 +485,14 @@ export const useCategorieStore = defineStore("categories", () => {
         error.value = null;
         
         try {
-            const response = await fetch(`${API_URL}/categories/${categoryId}`, {
-                method: 'DELETE',
+            // Utiliser PATCH /active avec false pour désactiver/supprimer la catégorie
+            const response = await fetch(`${API_URL}/categories/${categoryId}/active`, {
+                method: 'PATCH',
                 headers: {
+                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authStore.token}`
-                }
+                },
+                body: JSON.stringify({ active: false })
             });
 
             if (!response.ok) {
@@ -497,10 +500,21 @@ export const useCategorieStore = defineStore("categories", () => {
                 throw new Error(errorData.message || 'Erreur lors de la suppression');
             }
 
-            categories.value = categories.value.filter(cat => cat._id !== categoryId);
+            const responseData = await response.json();
+            
+            // Si la catégorie a été supprimée (message contient "supprimée"), la retirer de la liste
+            if (responseData.message && responseData.message.includes('supprimée')) {
+                categories.value = categories.value.filter(cat => cat._id !== categoryId);
+            } else {
+                // Sinon, juste la marquer comme inactive
+                const categoryIndex = categories.value.findIndex(cat => cat._id === categoryId);
+                if (categoryIndex !== -1) {
+                    categories.value[categoryIndex].active = false;
+                }
+            }
         } catch (err) {
             error.value = err.message;
-            console.error('Erreur lors de la suppression de la catégorie:', err);
+            console.error('Erreur lors de la suppression/désactivation de la catégorie:', err);
             throw err;
         } finally {
             isLoading.value = false;

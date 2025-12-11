@@ -176,10 +176,35 @@ describe("categorieController.patchCategorieActive", () => {
         expect(res.body.error).toBe("Bad Request");
     });
 
-    it("200 et met à jour le statut", async () => {
-        // Mock du modèle Marqueur pour countDocuments
+    it("200 et supprime la catégorie si elle n'est pas utilisée", async () => {
+        // Mock du modèle Marqueur pour countDocuments (aucun marqueur utilise cette catégorie)
         const mockMarqueurModel = {
             countDocuments: vi.fn().mockResolvedValueOnce(0)
+        };
+        
+        // Mock mongoose.model pour retourner notre mock
+        const originalMongoose = require('mongoose');
+        vi.spyOn(originalMongoose, 'model').mockReturnValueOnce(mockMarqueurModel);
+
+        vi.spyOn(Categorie, "findByIdAndDelete").mockResolvedValueOnce({
+            _id: "123",
+            nom: "Test Category",
+            active: false
+        });
+
+        const req = mockReq({ body: { active: false }, params: { categorieId: "123" } });
+        const res = mockRes();
+
+        await categorieController.patchCategorieActive(req, res, mockNext);
+        expect(res.statusCode).toBe(200);
+        expect(res.body.message).toContain("supprimée");
+        expect(Categorie.findByIdAndDelete).toHaveBeenCalledWith("123");
+    });
+
+    it("200 et désactive la catégorie si elle est utilisée", async () => {
+        // Mock du modèle Marqueur pour countDocuments (1 marqueur utilise cette catégorie)
+        const mockMarqueurModel = {
+            countDocuments: vi.fn().mockResolvedValueOnce(1)
         };
         
         // Mock mongoose.model pour retourner notre mock
@@ -197,6 +222,7 @@ describe("categorieController.patchCategorieActive", () => {
         await categorieController.patchCategorieActive(req, res, mockNext);
         expect(res.statusCode).toBe(200);
         expect(res.body.data.active).toBe(false);
+        expect(Categorie.findByIdAndUpdate).toHaveBeenCalledWith("123", { active: false }, { new: true, runValidators: true });
     });
 })
 
