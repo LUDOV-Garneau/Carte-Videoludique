@@ -26,7 +26,12 @@ vi.mock('../utils/geocode.js', () => ({
 const mockMarqueurStore = {
   marqueurs: [],
   getMarqueurs: vi.fn(() => Promise.resolve()),
-  ajouterMarqueur: vi.fn(() => Promise.resolve({ id: 1, message: 'Marqueur créé' }))
+  ajouterMarqueur: vi.fn(() => Promise.resolve({ 
+    id: 1, 
+    message: 'Marqueur créé',
+    properties: {}
+  })),
+  updateMarqueurImages: vi.fn(() => Promise.resolve({ id: 1, properties: { images: [] } }))
 }
 
 vi.mock('../stores/useMarqueur.js', () => ({
@@ -320,23 +325,35 @@ describe('AddMarqueurPanel.vue', () => {
       wrapper.vm.files.splice(0, wrapper.vm.files.length, ...files)
 
       // Mock réponses
-      uploadMultipleImages.mockResolvedValueOnce([
+      const mockImages = [
         { publicId: 'img1', url: 'http://example.com/img1.jpg' },
         { publicId: 'img2', url: 'http://example.com/img2.jpg' }
-      ])
+      ]
+      uploadMultipleImages.mockResolvedValueOnce(mockImages)
+      vi.spyOn(marqueurStore, 'updateMarqueurImages').mockResolvedValueOnce({
+        id: 1, 
+        properties: { images: mockImages }
+      })
 
       await wrapper.vm.sendRequest()
 
-      expect(uploadMultipleImages).toHaveBeenCalledWith(files)
+      // Vérifie que le marqueur est créé SANS images d'abord
       expect(marqueurStore.ajouterMarqueur).toHaveBeenCalledWith(
         expect.objectContaining({
-          titre: 'Mon lieu avec images',
-          images: [
-            { publicId: 'img1', url: 'http://example.com/img1.jpg' },
-            { publicId: 'img2', url: 'http://example.com/img2.jpg' }
-          ]
+          titre: 'Mon lieu avec images'
         })
       )
+      expect(marqueurStore.ajouterMarqueur).toHaveBeenCalledWith(
+        expect.not.objectContaining({
+          images: expect.anything()
+        })
+      )
+      
+      // Vérifie l'upload avec l'ID du marqueur
+      expect(uploadMultipleImages).toHaveBeenCalledWith(files, 1)
+      
+      // Vérifie la mise à jour des images
+      expect(marqueurStore.updateMarqueurImages).toHaveBeenCalledWith(1, mockImages)
 
       expect(wrapper.emitted('marqueur-added')).toBeTruthy()
       expect(wrapper.emitted('close')).toBeTruthy()
@@ -371,7 +388,9 @@ describe('AddMarqueurPanel.vue', () => {
       ])
 
       // Mock échec API
-      marqueurStore.ajouterMarqueur.mockRejectedValueOnce(new Error('Erreur serveur'))
+      // Simule une erreur lors de la mise à jour des images (après création du marqueur)
+      uploadMultipleImages.mockResolvedValueOnce([{ publicId: 'img1' }])
+      vi.spyOn(marqueurStore, 'updateMarqueurImages').mockRejectedValueOnce(new Error('Erreur serveur'))
 
       await expect(wrapper.vm.sendRequest()).rejects.toThrow('Erreur serveur')
 

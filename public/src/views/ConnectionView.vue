@@ -18,7 +18,7 @@ const isDev = import.meta.env.DEV
 const homeUrl = computed(() => 
   isDev
     ? '/'
-    : 'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/#/'
+    : 'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/'
 )
 
 const validateForm = () => {

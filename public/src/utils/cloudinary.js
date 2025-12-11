@@ -2,9 +2,9 @@
 
 import { CLOUD_NAME, API_URL } from '../config.js';
 
-async function uploadOneImage(file) {
+async function uploadOneImage(file, folder) {
     try {
-        const signatureResponse = await fetch(`${API_URL}/upload-signature?folder=MapImages/tmp`);
+        const signatureResponse = await fetch(`${API_URL}/upload-signature?folder=MapImages/Marqueurs/${folder}`);
         if (!signatureResponse.ok) throw new Error('Impossible de récupérer la signature d\'upload');
         const signatureData = await signatureResponse.json();
 
@@ -38,9 +38,9 @@ async function uploadOneImage(file) {
     }
 }
 
-async function uploadMultipleImages(files) {
+async function uploadMultipleImages(files, folder) {
     try {
-        const uploadPromises = await Promise.allSettled(files.map(file => uploadOneImage(file)));
+        const uploadPromises = await Promise.allSettled(files.map(file => uploadOneImage(file, folder)));
         const successes = uploadPromises.filter(result => result.status === 'fulfilled').map(result => result.value);
         const failures = uploadPromises.filter(result => result.status === 'rejected').map(result => result.reason);
         if (successes === 0) throw new Error('Aucun upload réussi');
@@ -55,13 +55,25 @@ async function uploadMultipleImages(files) {
     }
 }
 
-async function cleanupImages(publicIds) {
+async function cleanupImages(publicIds, options = {}) {
     try {
-        await fetch(`${API_URL}/cleanup-images`, {
+        const body = { 
+            publicIds,
+            folderPath: options.folderPath || null
+        };
+
+        const response = await fetch(`${API_URL}/cleanup-images`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ publicIds })
+            body: JSON.stringify(body)
         });
+        
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        return result;
     } catch (err) {
         console.error("Erreur lors du nettoyage des images :", err);
         throw err;
