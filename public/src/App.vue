@@ -1,9 +1,9 @@
 <script setup>
 import { RouterView } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+
 
 // store d'authentification (pour savoir si l’utilisateur est admin)
-const auth = useAuthStore()
+
 
 // base URL pour bien gérer les chemins (utile si déployé dans un sous-dossier)
 const base = import.meta.env.BASE_URL
