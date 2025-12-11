@@ -322,23 +322,21 @@ describe('afficherMarqueurs', () => {
   })
 
   it('met noResults = true si aucun marqueur après filtrage', async () => {
-    wrapper.vm.applyFilters(["Z"]) // Aucun marqueur ayant categorie = "Z"
+    await wrapper.vm.applyFilters(["Z"]) // Aucun marqueur ayant categorie = "Z"
 
     await nextTick()
-    await nextTick() // async + rendu DOM
 
     expect(wrapper.vm.noResults).toBe(true)
     expect(wrapper.find(".no-results").exists()).toBe(true)
   })
 
   it('resetFilters réaffiche tous les marqueurs', async () => {
-    wrapper.vm.applyFilters(["Z"])
+    await wrapper.vm.applyFilters(["Z"])
     await nextTick()
 
     expect(wrapper.vm.noResults).toBe(true)
 
-    wrapper.vm.resetFilters()
-    await nextTick()
+    await wrapper.vm.resetFilters()
     await nextTick()
 
     expect(wrapper.vm.noResults).toBe(false)
