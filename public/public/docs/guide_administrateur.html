@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Guide d'utilisation – Administrateur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1rem 3rem;
+      line-height: 1.6;
+      color: #222;
+    }
+    h1, h2, h3 {
+      color: #111;
+    }
+    h1 {
+      margin-bottom: 0.25rem;
+    }
+    .version {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+    ul {
+      padding-left: 1.2rem;
+    }
+    .bloc {
+      margin-bottom: 2rem;
+    }
+    .note {
+      background: #f3f7fb;
+      border-left: 4px solid #3b82f6;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Guide d'utilisation – Administrateur</h1>
+  <p class="version">
+    Application : <strong>Le jeu vidéo au Québec</strong> – Interface d'administration
+  </p>
+
+  <div class="bloc" id="intro">
+    <h2>1. Rôle de l'administrateur</h2>
+    <p>
+      L'administrateur est responsable de la modération et de la qualité des données
+      affichées sur la carte <em>« Le jeu vidéo au Québec »</em>. Il ou elle :
+    </p>
+    <ul>
+      <li>valide les demandes d'ajout et de modification de lieux ;</li>
+      <li>approuve ou refuse les commentaires ;</li>
+      <li>gère les marqueurs archivés ;</li>
+      <li>ajoute de nouveaux marqueurs ;</li>
+      <li>gère les catégories utilisées sur la carte.</li>
+    </ul>
+    <p class="note">
+      Seuls les utilisateurs possédant un compte avec droits d'administration ont accès
+      à cette interface (bouton <strong>Admin</strong> et vue d'administration).
+    </p>
+  </div>
+
+  <div class="bloc" id="acces">
+    <h2>2. Accès à l'interface d'administration</h2>
+    <ul>
+      <li>Connectez-vous à l'application avec votre compte administrateur.</li>
+      <li>La page admin est disponible en ecrivant "admin" dans l'url du site, cela vous dirigera vers connexion si non connecté</li>
+      <li>Vous arrivez sur la page <strong>Journal d'activité</strong>.</li>
+    </ul>
+    <p>
+      Dans le bandeau supérieur, vous pouvez également accéder à :
+    </p>
+    <ul>
+        <li><strong>Admin</strong> : affiche les information du compte admin connecté</li>
+      <li><strong>Administrateurs</strong> : gestion ou liste des comptes administrateurs (modification et suppression) ;</li>
+      <li><strong>Créer un compte</strong> : ajout d’un nouveau compte administrateur ;</li>
+      <li><strong>Se déconnecter</strong> : fermeture de la session actuelle.</li>
+    </ul>
+  </div>
+
+  <div class="bloc" id="journal">
+    <h2>3. Journal d'activité</h2>
+    <p>
+      Le bloc supérieur de la page présente le <strong>Journal d'activité</strong> sous forme
+      d’onglets. Chaque onglet correspond à un type d’élément à modérer.
+    </p>
+
+    <h3>3.1 Les onglets de modération</h3>
+    <ul>
+      <li>
+        <strong>Demande d'ajout</strong> : lieux proposés par les utilisateurs pour être ajoutés à la carte.
+      </li>
+      <li>
+        <strong>Demande de modification</strong> : modifications suggérées sur des lieux déjà existants
+        (ex. correction d'adresse, description, catégorie, etc.).
+      </li>
+      <li>
+        <strong>Commentaires à approuver</strong> : commentaires laissés par les utilisateurs,
+        en attente de validation avant d’être visibles sur la carte.
+      </li>
+      <li>
+        <strong>Marqueurs archivés</strong> : liste des lieux qui ont été archivés (non visibles
+        sur la carte publique, mais conservés pour référence).
+      </li>
+      <li>
+        <strong>Commentaires archivés</strong> : commentaires retirés de l’affichage public.
+      </li>
+    </ul>
+
+    <h3>3.2 Tableau de modération</h3>
+    <p>
+      Pour les demandes d'ajout et de modification, un tableau affiche la liste des éléments.
+      Les colonnes principales sont :
+    </p>
+    <ul>
+      <li><strong>Lieu</strong> : nom du lieu (ex. salle, boutique, événement, etc.).</li>
+      <li><strong>Adresse</strong> : adresse complète du lieu.</li>
+      <li>
+        <strong>Info</strong> : lien <strong>Afficher la description</strong> pour consulter la description détaillée
+        proposée par l'utilisateur.
+      </li>
+      <li>
+        <strong>Modification</strong> : bouton <strong>Modifier</strong> pour ajuster le contenu
+        avant de l'accepter (ex. corriger l’orthographe, ajuster la catégorie, etc.).
+      </li>
+      <li>
+        <strong>Accepter</strong> : bouton turquoise permettant de valider la demande.
+      </li>
+      <li>
+        <strong>Refuser</strong> : bouton rouge permettant de rejeter la demande.
+      </li>
+    </ul>
+
+    <h3>3.3 Accepter ou refuser une demande</h3>
+    <p>
+      Pour chaque ligne du tableau :
+    </p>
+    <ol>
+      <li>Cliquez sur <strong>Afficher la description</strong> pour lire les détails du lieu.</li>
+      <li>
+        Si nécessaire, cliquez sur <strong>Modifier</strong> pour ajuster les informations
+        (nom, adresse, catégorie, description, etc.).
+      </li>
+      <li>
+        Cliquez sur <strong>Accepter</strong> pour valider l’ajout ou la modification.<br />
+        Le marqueur sera alors mis à jour sur la carte.
+      </li>
+      <li>
+        Cliquez sur <strong>Refuser</strong> si la demande est incomplète, non pertinente
+        ou ne respecte pas les critères de la carte.
+      </li>
+    </ol>
+
+    <h3>3.4 Tri des éléments</h3>
+    <p>
+      En haut à droite du tableau, un menu <strong>Trier par</strong> permet d’ordonner
+      les éléments, par exemple <em>« Plus récent d'abord »</em>.  
+      Utilisez ce tri pour traiter en priorité les demandes les plus récentes.
+    </p>
+  </div>
+
+  <div class="bloc" id="actions-carte">
+    <h2>4. Actions sur la carte</h2>
+    <p>
+      Sous le tableau du journal d'activité, la carte affiche les marqueurs géolocalisés.
+      Elle permet de visualiser rapidement la position des lieux en cours de traitement
+      ou déjà présents dans la base.
+    </p>
+
+    <h3>4.1 Bouton « + Ajouter un marqueur »</h3>
+    <p>
+      Le bouton turquoise <strong>+ Ajouter un marqueur</strong>, situé au-dessus de la carte
+      (côté droit), permet de créer un lieu directement en tant qu'administrateur.
+    </p>
+    <ol>
+      <li>Cliquez sur <strong>+ Ajouter un marqueur</strong>.</li>
+      <li>Cliquez sur la carte pour positionner le marqueur à l’emplacement souhaité.</li>
+      <li>Remplissez les informations demandées (titre, adresse, description, catégorie, etc.).</li>
+      <li>Enregistrez pour ajouter le lieu à la carte.</li>
+    </ol>
+
+    <h3>4.2 Bouton « Gérer les catégories »</h3>
+    <p>
+      Le bouton <strong>Gérer les catégories</strong> ouvre l’interface de gestion des catégories
+      utilisées pour classer les lieux.
+    </p>
+    <ul>
+      <li>Ajouter une nouvelle catégorie (ex. <em>Arcade</em>, <em>Magasin spécialisé</em>, etc.).</li>
+      <li>Renommer ou corriger une catégorie existante.</li>
+      <li>Supprimer ou désactiver une catégorie qui n’est plus utilisée.</li>
+    </ul>
+    <p class="note">
+      Assurez-vous de garder une liste de catégories claire et cohérente pour faciliter
+      la recherche et la compréhension des utilisateurs.
+    </p>
+  </div>
+
+  <div class="bloc" id="bonnes-pratiques">
+    <h2>5. Bonnes pratiques de modération</h2>
+    <ul>
+      <li>Vérifier rapidement les demandes d’ajout pour éviter les doublons.</li>
+      <li>
+        Lire attentivement la description et l’adresse pour s’assurer que le lieu
+        correspond bien au thème <em>« jeu vidéo au Québec »</em>.
+      </li>
+      <li>
+        Utiliser le bouton <strong>Modifier</strong> pour harmoniser les titres
+        (orthographe, casse, uniformité des noms).
+      </li>
+      <li>
+        Archiver plutôt que supprimer définitivement lorsqu’un lieu n’est plus d’actualité,
+        mais qu’il peut avoir une valeur historique.
+      </li>
+    </ul>
+  </div>
+
+  <div class="bloc" id="support">
+    <h2>6. Support et évolution de l'application</h2>
+    <p>
+      Pour toute anomalie technique (erreurs d’affichage, lenteurs, bugs) ou pour
+      demander une nouvelle fonctionnalité, contactez l’équipe de développement
+      responsable de la carte.
+    </p>
+    <p>
+      Notez si possible :
+    </p>
+    <ul>
+      <li>la date et l’heure du problème ;</li>
+      <li>la page ou l’onglet concernés (ex. « Demande d’ajout », « Marqueurs archivés ») ;</li>
+      <li>les actions effectuées juste avant l’apparition du problème.</li>
+    </ul>
+  </div>
+</body>
+</html>

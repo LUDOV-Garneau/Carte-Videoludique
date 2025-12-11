@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Guide d'utilisation – Application</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+    }
+    h1, h2, h3 {
+      color: #222;
+    }
+    h1 {
+      margin-bottom: 0.2rem;
+    }
+    .version {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+    ul {
+      padding-left: 1.2rem;
+    }
+    .bloc {
+      margin-bottom: 2rem;
+    }
+    .note {
+      background: #f3f3f3;
+      border-left: 4px solid #888;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Guide d'utilisation</h1>
+  <p class="version">Application : Carte interactive – Version 1.0</p>
+
+  <div class="bloc" id="intro">
+    <h2>1. Introduction</h2>
+    <p>
+      Cette application permet de consulter une carte interactive, d'afficher des marqueurs
+      et de visualiser des informations associées (catégorie, description, etc.).
+    </p>
+    <p>
+      Ce guide s'adresse aux utilisateurs réguliers de l'application et explique les
+      principales fonctionnalités disponibles.
+    </p>
+  </div>
+
+  <div class="bloc" id="acces">
+    <h2>2. Accès à l'application</h2>
+    <ul>
+      <li>Aucune connexion n'est requise pour un utilisateur qui n'est pas un administrateur du site</li>
+    </ul>
+  </div>
+
+  <div class="bloc" id="navigation">
+    <h2>3. Navigation dans l'interface</h2>
+    <h3>3.1 Carte principale</h3>
+    <ul>
+      <li>La carte occupe la partie centrale de l'écran.</li>
+      <li>Utilisez la souris ou les boutons +/- pour zoomer et dézoomer.</li>
+      <li>Cliquez-glissez pour déplacer la carte.</li>
+    </ul>
+
+    <h3>3.2 Panneau de filtres / menu</h3>
+    <ul>
+      <li>Un panneau latéral ou un menu permet de filtrer les marqueurs (par catégorie, par état, etc.).</li>
+      <li>Vous pouvez activer/désactiver certaines catégories pour réduire l'affichage.</li>
+    </ul>
+  </div>
+
+  <div class="bloc" id="marqueurs">
+    <h2>4. Consultation des marqueurs</h2>
+    <ul>
+      <li>Cliquez sur un marqueur pour ouvrir sa fiche d'information.</li>
+      <li>La fiche affiche généralement : le titre, la catégorie, la description et, au besoin, des images.</li>
+      <li>Fermez la fiche pour revenir à la vue complète de la carte.</li>
+    </ul>
+  </div>
+
+  <div class="bloc" id="modification">
+    <h2>5. Modification des marqueurs</h2>
+    <ul>
+      <li>Il est possible pour l'utilisateur de cliquer sur l'un des marqueur disponible sur la carte et de proposer une modification
+        s'il le souhiate, la demande sera ensuite envoyée à un administrateur pour validation.
+      </li>
+      <li>Il est possible pour l'utilisateur d'ajouter un commentaire (témoignage) lors du clic sur un marqueur disponible sur la carte,
+        le commentaire sera ensuite envoyé à un administrateur pour validation.
+      </li>
+      <li>Il est possible pour l'utilisateur d'ajouter des image </li>
+    </ul>
+  </div>
+
+  <div class="bloc" id="erreurs">
+    <h2>6. Problèmes fréquents</h2>
+    <ul>
+      <li><strong>La carte ne se charge pas :</strong> vérifiez votre connexion Internet, puis rechargez la page.</li>
+      <li><strong>Aucun marqueur n'apparaît :</strong> vérifiez que les filtres ne sont pas trop restrictifs.</li>
+      <li><strong>Message d'erreur de connexion :</strong> vérifiez vos identifiants ou contactez un administrateur.</li>
+    </ul>
+  </div>
+</body>
+</html>
