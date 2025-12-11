@@ -54,6 +54,7 @@ describe('AccountsView', () => {
 
     expect(actionTd.text()).toContain('Votre profil')
     expect(actionTd.text()).not.toContain('Modifier')
+    expect(actionTd.text()).not.toContain('Supprimer')
   })
 
   it('affiche les boutons pour les autres utilisateurs', async () => {
@@ -98,5 +99,32 @@ describe('AccountsView', () => {
     await editButton.trigger('click')
 
     expect(editSpy).toHaveBeenCalled()
+  })
+
+  it('affiche "Profil inactif" si le statut est inactif', async () => {
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            data: [
+              {
+                id: '789',
+                nom: 'Paul',
+                prenom: 'Martin',
+                role: 'User',
+                status: 'inactif',
+                _id: '789',
+              },
+            ],
+          }),
+      }),
+    )
+
+    const wrapper = mount(AccountsView)
+    await flushPromises()
+
+    const actionTd = wrapper.find('tbody tr td:nth-child(4)')
+    expect(actionTd.text()).toContain('Profil inactif')
   })
 })
