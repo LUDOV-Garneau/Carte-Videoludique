@@ -11,7 +11,9 @@ import NavBar from '../components/NavBar.vue';
         <LeafletMap /> 
       </section>      
     </main>
+    
   </div>
+  
 </template>
 
 <style scoped>
