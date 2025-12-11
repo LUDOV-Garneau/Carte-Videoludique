@@ -1,6 +1,7 @@
 "use strict";
 
 const Marqueur = require("../models/marqueur");
+const Categorie = require("../models/categorie");
 const dotenv = require("dotenv");
 const {
   formatErrorResponse,
@@ -822,6 +823,209 @@ exports.deleteMarqueurDefinitif = async (req, res, next) => {
           req.originalUrl
         )
       );
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Trouve ou crée une catégorie basée sur le nom
+ * @param {string} categoryName - Nom de la catégorie
+ * @returns {Promise<string|null>} - ID de la catégorie ou null
+ */
+async function findOrCreateCategory(categoryName) {
+  if (!categoryName || typeof categoryName !== 'string') {
+    return null;
+  }
+
+  const trimmedName = categoryName.trim();
+  if (!trimmedName) {
+    return null;
+  }
+
+  try {
+    // Chercher une catégorie existante (insensible à la casse)
+    let categorie = await Categorie.findOne({ 
+      nom: { $regex: new RegExp(`^${trimmedName}$`, 'i') } 
+    });
+
+    // Si elle n'existe pas, la créer
+    if (!categorie) {
+      // Trouver le prochain ordre disponible
+      const maxOrdre = await Categorie.findOne({}, {}, { sort: { ordre: -1 } });
+      const nextOrdre = maxOrdre ? maxOrdre.ordre + 1 : 1;
+
+      categorie = new Categorie({
+        nom: trimmedName,
+        description: `Catégorie créée automatiquement lors de l'import GeoJSON`,
+        image: {
+          type: 'predefined',
+          filename: 'default-marker.svg' // Icône par défaut
+        },
+        couleur: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), // Couleur aléatoire
+        ordre: nextOrdre,
+        active: true
+      });
+
+      await categorie.save();
+    }
+
+    return categorie._id;
+  } catch (error) {
+    console.error('Erreur lors de la création/recherche de catégorie:', error);
+    return null;
+  }
+}
+
+/**
+ * Importe des marqueurs à partir d'un fichier GeoJSON
+ * 
+ * @param {import('express').Request} req - req.body contient les données GeoJSON
+ * @param {import('express').Response} res 
+ * @param {import('express').NextFunction} next 
+ */
+exports.importGeoJSON = async (req, res, next) => {
+  try {
+    const geoJsonData = req.body;
+    
+    // Validation du format GeoJSON
+    if (!geoJsonData || !geoJsonData.type) {
+      return res.status(400).json(formatErrorResponse(
+        400,
+        "Bad Request",
+        "Format GeoJSON invalide : le champ 'type' est requis.",
+        req.originalUrl
+      ));
+    }
+
+    let features = [];
+    
+    if (geoJsonData.type === 'FeatureCollection') {
+      if (!geoJsonData.features || !Array.isArray(geoJsonData.features)) {
+        return res.status(400).json(formatErrorResponse(
+          400,
+          "Bad Request",
+          "Format GeoJSON invalide : 'features' doit être un tableau.",
+          req.originalUrl
+        ));
+      }
+      features = geoJsonData.features;
+    } else if (geoJsonData.type === 'Feature') {
+      features = [geoJsonData];
+    } else {
+      return res.status(400).json(formatErrorResponse(
+        400,
+        "Bad Request",
+        "Type GeoJSON non supporté. Seuls 'Feature' et 'FeatureCollection' sont acceptés.",
+        req.originalUrl
+      ));
+    }
+
+    const results = {
+      imported: 0,
+      skipped: 0,
+      errors: [],
+      categoriesCreated: []
+    };
+
+    // Traiter chaque feature
+    for (let i = 0; i < features.length; i++) {
+      const feature = features[i];
+      
+      try {
+        // Valider la structure de base
+        if (!feature.type || feature.type !== 'Feature') {
+          results.errors.push(`Feature ${i}: Type invalide (attendu: 'Feature')`);
+          results.skipped++;
+          continue;
+        }
+
+        if (!feature.geometry || !feature.properties) {
+          results.errors.push(`Feature ${i}: Géométrie ou propriétés manquantes`);
+          results.skipped++;
+          continue;
+        }
+
+        // Valider la géométrie (Point requis)
+        if (feature.geometry.type !== 'Point' || !feature.geometry.coordinates) {
+          results.errors.push(`Feature ${i}: Géométrie invalide (Point attendu avec coordonnées)`);
+          results.skipped++;
+          continue;
+        }
+
+        const [lng, lat] = feature.geometry.coordinates;
+        
+        // Valider les coordonnées
+        if (typeof lat !== 'number' || typeof lng !== 'number' ||
+            lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          results.errors.push(`Feature ${i}: Coordonnées invalides (lat: ${lat}, lng: ${lng})`);
+          results.skipped++;
+          continue;
+        }
+
+        // Extraire les propriétés avec des valeurs par défaut
+        const props = feature.properties;
+        const titre = props.titre || props.name || props.title || `Marqueur importé ${i + 1}`;
+        const description = props.description || props.desc || '';
+        
+        // Gérer la catégorie
+        let categorieId = null;
+        const categoryName = props.type || props.categorie || props.category;
+        
+        if (categoryName) {
+          categorieId = await findOrCreateCategory(categoryName);
+          if (categorieId && !results.categoriesCreated.includes(categoryName)) {
+            // Vérifier si c'est une nouvelle catégorie
+            const existingCategory = await Categorie.findById(categorieId);
+            if (existingCategory && existingCategory.description.includes('créée automatiquement')) {
+              results.categoriesCreated.push(categoryName);
+            }
+          }
+        }
+        
+        // Créer le marqueur
+        const nouveauMarqueur = new Marqueur({
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [lat, lng] // Format interne : [lat, lng]
+          },
+          properties: {
+            titre: titre.substring(0, 140), // Limite de 140 caractères
+            description: description.substring(0, 1000), // Limite de 1000 caractères
+            adresse: props.adresse || props.address || '',
+            temoignage: props.temoignage || props.story || '',
+            courriel: props.courriel || props.email || '',
+            categorie: categorieId,
+            images: [],
+            status: "approved", // Marqueurs importés approuvés par défaut
+            createdByName: "Import GeoJSON",
+            tags: props.tags || []
+          }
+        });
+
+        await nouveauMarqueur.save();
+        results.imported++;
+
+      } catch (error) {
+        results.errors.push(`Feature ${i}: Erreur lors de la sauvegarde - ${error.message}`);
+        results.skipped++;
+      }
+    }
+
+    // Réponse avec le résumé de l'importation
+    let message = `Import terminé : ${results.imported} marqueurs importés, ${results.skipped} ignorés.`;
+    if (results.categoriesCreated.length > 0) {
+      message += ` ${results.categoriesCreated.length} nouvelles catégories créées : ${results.categoriesCreated.join(', ')}.`;
+    }
+    
+    res.status(200).json(formatSuccessResponse(
+      200,
+      message,
+      results,
+      req.originalUrl
+    ));
+
   } catch (err) {
     next(err);
   }

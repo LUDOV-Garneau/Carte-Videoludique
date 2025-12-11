@@ -9,6 +9,7 @@ import { useAuthStore } from '../stores/auth.js'
 import FilterPanel from './FilterPanel.vue'
 import { useMarqueurStore } from '../stores/useMarqueur.js'
 import { useCategorieStore } from '@/stores/useCategorie.js'
+import { API_URL } from '../config.js'
 
 import 'leaflet.fullscreen'
 import 'leaflet.fullscreen/Control.FullScreen.css'
@@ -40,6 +41,9 @@ let btnAjoutMarqueur
 let controlEditCategorie
 let btnEditCategorie
 let controlFilter
+let controlImportGeoJSON
+let btnImportGeoJSON
+let fileInput
 
 const longitude = ref('')
 const latitude = ref('')
@@ -492,11 +496,39 @@ function addCustomControl() {
     }
   });
 
+  const ControlImportGeoJSON = L.Control.extend({
+    options: { position: 'topright' },
+    onAdd() {
+      const container = L.DomUtil.create('div', 'leaflet-control leaflet-control-custom');
+      btnImportGeoJSON = container;
+
+      const btn = L.DomUtil.create('a', 'btn-import-geojson', container);
+      btn.href = '#';
+      btn.title = 'Importer un fichier GeoJSON';
+      btn.textContent = 'Importer GeoJSON';
+      btn.setAttribute('role', 'button');
+      btn.setAttribute('aria-label', 'Importer un fichier GeoJSON');
+      btn.innerHTML = '<span aria-hidden="true"> 📁 </span><span class="sr-only">Importer GeoJSON</span>';
+
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.disableScrollPropagation(container);
+      L.DomEvent.on(btn, 'click', (e) => {
+        L.DomEvent.preventDefault(e);
+        openGeoJSONImport();
+      });
+      return container
+    }
+  });
+
   controlAjoutMarqueur = new ControlAjoutMarqueur()
   map.addControl(controlAjoutMarqueur)
   if (authStore.isAuthenticated) {
     controlEditCategorie = new ControlEditCategorie()
     map.addControl(controlEditCategorie)
+    
+    // Ajouter le contrôle d'importation GeoJSON pour les admins
+    controlImportGeoJSON = new ControlImportGeoJSON()
+    map.addControl(controlImportGeoJSON)
   }
 }
 
@@ -560,6 +592,93 @@ function resetFilters() {
   afficherMarqueurs();
 }
 
+/**
+ * Déclenche la sélection d'un fichier GeoJSON
+ */
+function openGeoJSONImport() {
+  if (fileInput) {
+    fileInput.click();
+  }
+}
+
+/**
+ * Traite le fichier GeoJSON sélectionné
+ */
+async function handleGeoJSONFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (!file.name.toLowerCase().endsWith('.geojson') && !file.name.toLowerCase().endsWith('.json')) {
+    alert('Veuillez sélectionner un fichier GeoJSON (.geojson ou .json)');
+    return;
+  }
+
+  console.log('Début de l\'import du fichier:', file.name, 'Taille:', file.size, 'octets');
+
+  try {
+    // Étape 1: Lire le fichier
+    console.log('Lecture du fichier...');
+    const text = await file.text();
+    console.log('Fichier lu, taille du texte:', text.length, 'caractères');
+    console.log('Début du contenu:', text.substring(0, 200));
+    
+    // Étape 2: Parser le JSON
+    console.log('Parsing JSON...');
+    let geoJsonData;
+    try {
+      geoJsonData = JSON.parse(text);
+      console.log('JSON parsé avec succès, type:', geoJsonData.type);
+    } catch (parseError) {
+      console.error('Erreur de parsing JSON:', parseError);
+      alert(`Erreur de format JSON: ${parseError.message}`);
+      return;
+    }
+    
+    // Étape 3: Vérifier que c'est un GeoJSON valide
+    if (!geoJsonData.type || (geoJsonData.type !== 'FeatureCollection' && geoJsonData.type !== 'Feature')) {
+      console.error('Type GeoJSON invalide:', geoJsonData.type);
+      alert(`Le fichier ne semble pas être un GeoJSON valide. Type trouvé: ${geoJsonData.type || 'undefined'}`);
+      return;
+    }
+
+    console.log('Validation GeoJSON OK, envoi à l\'API...');
+
+    // Étape 4: Envoyer à l'API
+    const response = await fetch(`${API_URL}/marqueurs/import-geojson`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authStore.token ? `Bearer ${authStore.token}` : ''
+      },
+      body: JSON.stringify(geoJsonData)
+    });
+
+    console.log('Réponse API reçue, status:', response.status);
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Résultat import:', result);
+      alert(`Import réussi ! ${result.data.imported} marqueurs importés${result.data.categoriesCreated?.length > 0 ? `, ${result.data.categoriesCreated.length} nouvelles catégories créées` : ''}.`);
+      await afficherMarqueurs(); // Recharger la carte
+    } else {
+      const errorText = await response.text();
+      console.error('Erreur API:', response.status, errorText);
+      try {
+        const error = JSON.parse(errorText);
+        alert(`Erreur lors de l'import: ${error.message}`);
+      } catch {
+        alert(`Erreur lors de l'import (${response.status}): ${errorText}`);
+      }
+    }
+  } catch (error) {
+    console.error('Erreur générale lors du traitement du fichier:', error);
+    alert(`Erreur lors du traitement: ${error.message}`);
+  } finally {
+    // Reset input pour permettre de re-sélectionner le même fichier
+    event.target.value = '';
+  }
+}
+
 onMounted(async() => {
   initMap()
   addTileLayer()
@@ -567,6 +686,15 @@ onMounted(async() => {
   addCustomControl()
   addFilterControl();
   setupKeyboardShortcuts()
+  
+  // Créer l'input file caché pour l'import GeoJSON
+  fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.geojson,.json';
+  fileInput.style.display = 'none';
+  fileInput.addEventListener('change', handleGeoJSONFile);
+  document.body.appendChild(fileInput);
+  
   await afficherMarqueurs();
 });
 
@@ -574,9 +702,15 @@ onUnmounted(() => {
   if (map) {
     if (controlAjoutMarqueur) map.removeControl(controlAjoutMarqueur)
     if (controlEditCategorie) map.removeControl(controlEditCategorie)
+    if (controlImportGeoJSON) map.removeControl(controlImportGeoJSON)
     if (controlFilter) map.removeControl(controlFilter)
     if (map.__onKey) window.removeEventListener('keydown', map.__onKey)
     map.remove()
+  }
+  
+  // Nettoyer l'input file
+  if (fileInput && fileInput.parentNode) {
+    fileInput.parentNode.removeChild(fileInput);
   }
 });
 
@@ -672,6 +806,23 @@ defineExpose({
 }
 :deep(.btn-edit-categorie:hover) {
   background-color: var(--accent);
+  color: white;
+}
+:deep(.btn-import-geojson) {
+  background-color: white;
+  border: 2px solid #2196F3;
+  color: #1976D2;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+:deep(.btn-import-geojson:hover) {
+  background-color: #2196F3;
   color: white;
 }
 
