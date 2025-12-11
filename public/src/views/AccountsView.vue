@@ -15,9 +15,10 @@
 
       <!-- Filtre par rôle -->
       <select v-model="roleFilter" class="form-select" style="max-width: 200px;">
-        <option value="">Tous les rôles</option>
+        <option value="">Tous les rôles et status</option>
         <option value="Gestionnaire">Gestionnaire</option>
         <option value="Éditeur">Éditeur</option>
+        <option value="Inactif">Inactif</option>
       </select>
 
     </div>
@@ -81,10 +82,16 @@ const filteredUsers = computed(() => {
       user.nom.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       user.prenom.toLowerCase().includes(searchQuery.value.toLowerCase())
 
-    const matchesRole =
-      roleFilter.value === "" || user.role === roleFilter.value
+    let matchesRoleOrStatus = false
+    if (roleFilter.value === "" ) {
+      matchesRoleOrStatus = true
+    } else if (roleFilter.value === "Inactif") {
+      matchesRoleOrStatus = user.status === "inactif"
+    } else {
+      matchesRoleOrStatus = user.role === roleFilter.value
+    }
 
-    return matchesSearch && matchesRole
+    return matchesSearch && matchesRoleOrStatus
   })
 })
 

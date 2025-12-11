@@ -206,6 +206,68 @@ describe('AdminController.getAdmin', () => {
     expect(res.statusCode).toBe(403)
     expect(res.body.error).toBe('Forbidden')
   })
+  /* ---------- DELETE ADMIN ---------- */
+  describe('AdminController.deleteAdmin', () => {
+    it('403 si admin tente de se désactiver lui-même', async () => {
+      const req = mockReq({}, { adminId: '42' }, '/api/admins/42')
+      req.admin = { id: '42', nom: 'Alice' }
+  
+      const res = mockRes()
+      const next = mockNext()
+  
+      await adminController.deleteAdmin(req, res, next)
+  
+      expect(res.statusCode).toBe(403)
+      expect(res.body.message).toBe('Cette ressource ne vous appartient pas')
+    })
+    it('403 si admin a le rôle "Éditeur"', async () => {
+    const req = mockReq({}, { adminId: '99' }, '/api/admins/99')
+    req.admin = { id: '42', nom: 'Alice', role: 'Éditeur' }
+
+    const res = mockRes()
+    const next = mockNext()
+
+    await adminController.deleteAdmin(req, res, next)
+
+    expect(res.statusCode).toBe(403)
+    expect(res.body.message).toBe('Cette ressource ne vous appartient pas')
+    expect(res.body.path).toBe(req.originalUrl)
+    expect(res.body.timestamp).toBeDefined()
+  })
+  
+    it('404 si admin introuvable', async () => {
+      vi.spyOn(Admin, 'findByIdAndUpdate').mockResolvedValue(null)
+      const req = mockReq({}, { adminId: '99' }, '/api/admins/99')
+      req.admin = { id: '42', nom: 'Alice' }
+      const res = mockRes()
+      const next = mockNext()
+  
+      await adminController.deleteAdmin(req, res, next)
+  
+      expect(res.statusCode).toBe(404)
+      expect(res.body.message).toBe('Administrateur introuvable')
+    })
+  
+    it('200 et rend l’admin inactif', async () => {
+      const updatedAdmin = { id: '123', nom: 'Bob', status: 'inactif' }
+      vi.spyOn(Admin, 'findByIdAndUpdate').mockResolvedValue(updatedAdmin)
+  
+      const req = mockReq({}, { adminId: '123' }, '/api/admins/123')
+      req.admin = { id: '42', nom: 'Alice' }
+      const res = mockRes()
+      const next = mockNext()
+  
+      await adminController.deleteAdmin(req, res, next)
+  
+      expect(Admin.findByIdAndUpdate).toHaveBeenCalledWith(
+        '123',
+        { status: 'inactif' },
+        { new: true }
+      )
+      expect(res.statusCode).toBe(200)
+      expect(res.body.message).toBe('Administrateur rendu inactif')
+      expect(res.body.admin).toMatchObject(updatedAdmin)
+    })
 })
 
 

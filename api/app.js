@@ -11,7 +11,7 @@ const cors = require("cors");
 const allowedOrigins = [
 
   //Accès pour le frontend localhost
-  'http://localhost:5174',
+  'http://localhost:5173',
 
   //Accès pour le site ludov officiel
   'https://ludov.ca',

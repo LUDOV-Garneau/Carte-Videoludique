@@ -176,7 +176,9 @@ exports.login = async (req, res, next) => {
  */
 exports.getAdmins = async (req, res, next) => {
   try {
-    const admins = await Admin.find();
+    const admins = await Admin.find().sort({ 
+      status: 1 // "actif" < "inactif" en ordre alphabétique
+    });
     return res
       .status(200)
       .json(
@@ -228,3 +230,46 @@ exports.getAdmin = (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * Fonction permettant de supprimer un administrateur en le rendant inactif
+ * @param {*} req - L'objet de requête Express.
+ * @param {*} res - L'objet de réponse Express.
+ * @param {*} next - La fonction middleware suivante
+ */
+exports.deleteAdmin = async (req, res, next) => {
+  const adminId = req.params.adminId;
+
+  try {
+    const admin = req.admin;
+
+    if (admin.id === adminId || admin.role === "Editeur") {
+      return res.status(403).json({
+        status: 403,
+        message: "Cette ressource ne vous appartient pas",
+        url: req.originalUrl,
+      });
+    }
+
+    // Mettre l'admin inactif
+    const resultat = await Admin.findByIdAndUpdate(
+      adminId,
+      { status: 'inactif' },  
+      { new: true }            
+    );
+
+    if (!resultat) {
+      return res.status(404).json({ message: "Administrateur introuvable" });
+    }
+
+    res.json({
+      status: 200,
+      message: "Administrateur rendu inactif",
+      admin: resultat,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
