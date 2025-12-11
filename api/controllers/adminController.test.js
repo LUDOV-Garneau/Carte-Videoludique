@@ -204,6 +204,7 @@ describe('AdminController.getAdmin', () => {
     expect(res.statusCode).toBe(403)
     expect(res.body.error).toBe('Forbidden')
   })
+})
   /* ---------- DELETE ADMIN ---------- */
   describe('AdminController.deleteAdmin', () => {
     it('403 si admin tente de se désactiver lui-même', async () => {
