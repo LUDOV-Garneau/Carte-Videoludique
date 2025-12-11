@@ -20,7 +20,6 @@ const adresse = ref('')
 const suggestions = ref([])
 const showSuggestions = ref(false)
 const description = ref('')
-const temoignage = ref('')
 const latitude = ref(null)
 const longitude = ref(null)
 
@@ -77,7 +76,6 @@ const hydrateFromProps = () => {
   categorie.value = p.categorie ?? null
   adresse.value = p.adresse ?? ''
   description.value = p.description ?? ''
-  temoignage.value = p.temoignage ?? ''
 }
 hydrateFromProps()
 
@@ -184,11 +182,6 @@ async function valider() {
     titreMessage.value = 'Le titre est obligatoire.'
     invalid.push(titreEl)
   }
-  if (!adresse.value.trim()) {
-    adresseValidation.value = true
-    adresseMessage.value = "L'adresse est obligatoire."
-    invalid.push(adresseEl)
-  }
   if (!description.value.trim()) {
     descriptionValidation.value = true
     descriptionMessage.value = 'La description est obligatoire.'
@@ -231,8 +224,7 @@ async function valider() {
       titre: titre.value.trim(),
       categorie: categorie.value,
       adresse: adresse.value.trim(),
-      description: description.value.trim(),
-      temoignage: temoignage.value.trim(),   
+      description: description.value.trim(),   
     },
 
     lat: latitude.value,
@@ -466,11 +458,6 @@ onUnmounted(() => {
               <p v-if="descriptionValidation" class="error-message">{{ descriptionMessage }}</p>
               <span class="char-count">{{ descCount }}/280</span>
             </div>
-          </div>
-
-          <div class="form-control form-col-2">
-            <label for="temoignageMarqueur">Témoignage</label>
-            <textarea id="temoignageMarqueur" v-model.trim="temoignage" rows="3" placeholder="Témoignage (optionnel)"></textarea>
           </div>
 
           <div class="form-control form-col-2">

@@ -339,7 +339,7 @@ onMounted(() => {
           >
             <strong>Titre : </strong>
             <span class="old-value">
-              {{ req.marqueur.properties.titre || '—' }}
+              {{ req.marqueur?.properties?.titre || '—' }}
             </span>
               ➜
             <span class="new-value">
@@ -355,7 +355,7 @@ onMounted(() => {
           >
             <strong>Adresse :</strong>
             <span class="old-value">
-              {{ req.marqueur.properties.adresse || '—' }}
+              {{ req.marqueur?.properties?.adresse || '—' }}
             </span>
             ➜
             <span class="new-value">
@@ -371,7 +371,7 @@ onMounted(() => {
           >
             <strong>Description : </strong>
             <span class="old-value">
-              {{ req.marqueur.properties.description || '—' }}
+              {{ req.marqueur?.properties?.description || '—' }}
             </span>
             ➜
             <span class="new-value">
