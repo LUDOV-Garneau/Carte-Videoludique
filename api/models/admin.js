@@ -28,6 +28,12 @@ const AdminSchema = new Schema(
       enum: ["Gestionnaire", "Éditeur"],
       required:true
     },
+    status: {
+      type: String,
+      enum: ["Actif", "Inactif"],
+      default: "Actif",
+      required:true
+    },
     motDePasse: {
       type: String,
       required: true,
