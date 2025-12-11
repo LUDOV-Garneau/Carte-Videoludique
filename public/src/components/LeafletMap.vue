@@ -254,6 +254,8 @@ async function verifyAdressInQuebec(lat, lng) {
  */
 async function afficherMarqueurs() {
   try {
+    // S'assurer que les catégories et marqueurs sont chargés
+    await categorieStore.fetchCategories();
     await marqueurStore.getMarqueurs();
 
     // Supprimer les anciens marqueurs
