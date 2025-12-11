@@ -1,13 +1,62 @@
 <script setup>
-import { onMounted, watch } from 'vue'
+import { onMounted, watch, computed } from 'vue'
 import { useEditRequestStore } from '@/stores/useEditRequest'
 import { useAuthStore } from '@/stores/auth'
 import { useCommentRequestStore } from "@/stores/useCommentRequestStore";
+import { useMarqueurStore } from "@/stores/useMarqueur";
+import { API_URL } from '@/config';
 
 
 const editRequestStore = useEditRequestStore()
 const authStore = useAuthStore()
+const marqueurStore = useMarqueurStore()
 const commentRequestStore = useCommentRequestStore();
+const archivedList = computed(() =>
+  (marqueurStore.marqueurs ?? []).filter(m => m.archived === true)
+);
+
+const restoreMarqueur = async (marqueur) => {
+  const id = marqueur.id || marqueur._id || marqueur.properties?.id;
+  if (!id) return;
+
+  try {
+    await fetch(`${API_URL}/marqueurs/${id}/restaurer`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + authStore.token
+      }
+    });
+
+    // Recharge les marqueurs
+    await marqueurStore.getMarqueurs();
+
+    // 🔥 NOTIFIE le parent (AdminView) qu’il faut rafraîchir la carte
+    emit("refresh");
+
+  } catch (err) {
+    console.error("Erreur restauration :", err);
+  }
+};
+
+const deleteMarqueurDefinitif = async (marqueur) => {
+  const id = marqueur.id || marqueur._id || marqueur.properties?.id;
+  if (!id) return;
+
+  try {
+    await fetch(`${API_URL}/marqueurs/${id}/definitif`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + authStore.token
+      }
+    });
+
+    await marqueurStore.getMarqueurs();
+  } catch (err) {
+    console.error("Erreur suppression définitive :", err);
+  }
+};
 
 
 const props = defineProps({
@@ -17,10 +66,10 @@ const props = defineProps({
 
 const emit = defineEmits([
   'update:filtreStatus',
-  'ouvrir-modal',
+  'ouvrir-modif-modal',
+  'ouvrir-info-modal',
   'accepter-marqueur',
   'refuser-marqueur',
-  'show-info',
   'focus-marqueur'
 ])
 
@@ -28,8 +77,8 @@ const setFiltre = (status) => {
   emit('update:filtreStatus', status)
 }
 
-const ouvrirModalLocal = (marqueur) => {
-  emit('ouvrir-modal', marqueur)
+const ouvrirModifLocal = (marqueur) => {
+  emit('ouvrir-modif-modal', marqueur)
 }
 
 const accepterLocal = (marqueur) => {
@@ -39,6 +88,11 @@ const accepterLocal = (marqueur) => {
 const refuserLocal = (marqueur) => {
   emit('refuser-marqueur', marqueur)
 }
+const showInfoLocal = (marqueur) => {
+  emit('ouvrir-info-modal', marqueur)
+}
+
+
 
 // --- ICI le fix complet ---
 const focusMarqueur = (marqueur) => {
@@ -64,24 +118,34 @@ const loadEditRequests = async () => {
 
 watch(
   () => props.filtreStatus,
-  (newVal) => {
+  async (newVal) => {
     if (newVal === 'edit-request') {
-      loadEditRequests()
+      await loadEditRequests();
     }
+
     if (newVal === "comments") {
-      commentRequestStore.getPendingComments();
+      await commentRequestStore.getPendingComments();
+    }
+
+    if (newVal === "comment-archived") {
+      await commentRequestStore.getArchivedComments();
     }
   }
-)
+);
 
 onMounted(() => {
   if (props.filtreStatus === 'edit-request') {
-    loadEditRequests()
+    loadEditRequests();
   }
+
   if (props.filtreStatus === "comments") {
     commentRequestStore.getPendingComments();
   }
-})
+
+  if (props.filtreStatus === "comment-archived") {
+    commentRequestStore.getArchivedComments();
+  }
+});
 </script>
 
 <template>
@@ -98,7 +162,12 @@ onMounted(() => {
         <button :class="{ active: filtreStatus === 'comments' }" @click="setFiltre('comments')">
           Commentaires à approuver
         </button>
-
+        <button :class="{ active: filtreStatus === 'archived' }" @click="setFiltre('archived')">
+          Marqueurs archivés
+        </button>
+        <button :class="{ active: filtreStatus === 'comment-archived' }" @click="setFiltre('comment-archived')">
+          Commentaires archivés
+        </button>
       </div>
     </div>
 
@@ -122,7 +191,7 @@ onMounted(() => {
           <td class="address">{{ marqueur.properties.adresse }}</td>
 
           <td class="info-col" @click.stop>
-            <button class="info-btn" @click="emit('show-info', marqueur)">
+            <button class="info-btn" @click="showInfoLocal(marqueur)">
               <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.75" />
                 <line x1="12" y1="10.5" x2="12" y2="17" stroke="currentColor" stroke-width="1.75" />
@@ -133,7 +202,7 @@ onMounted(() => {
           </td>
 
           <td class="menu-col" @click.stop>
-            <button class="kebab" aria-label="Modifier" @click="ouvrirModalLocal(marqueur)">
+            <button class="kebab" aria-label="Modifier" @click="ouvrirModifLocal(marqueur)">
               Modifier
             </button>
           </td>
@@ -244,6 +313,85 @@ onMounted(() => {
         </tr>
       </tbody>
     </table>
+    <!-- TABLE DES MARQUEURS ARCHIVÉS -->
+    <table v-if="filtreStatus === 'archived'" class="offers-table">
+      <thead>
+        <tr>
+          <th>Titre</th>
+          <th>Auteur</th>
+          <th class="accept-col">Restaurer</th>
+          <th class="reject-col">Supprimer définitivement</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr v-for="m in archivedList" :key="m.id" class="row-hover" @click="focusMarqueur(m)">
+          <td>{{ m.properties.titre }}</td>
+          <td>{{ m.properties.createdByName || 'Non spécifié' }}</td>
+
+          <td class="accept-col" @click.stop>
+            <button class="action-btn accept" @click="restoreMarqueur(m)">
+              Restaurer
+            </button>
+          </td>
+
+          <td class="reject-col" @click.stop>
+            <button class="action-btn reject" @click="deleteMarqueurDefinitif(m)">
+              Supprimer
+            </button>
+          </td>
+        </tr>
+
+        <tr v-if="archivedList.length === 0">
+          <td colspan="4" class="empty">Aucun marqueur archivé.</td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- COMMENTAIRES ARCHIVÉS -->
+    <table v-if="filtreStatus === 'comment-archived'" class="offers-table">
+      <thead>
+        <tr>
+          <th>Marqueur</th>
+          <th>Auteur</th>
+          <th>Commentaire</th>
+          <th class="accept-col">Restaurer</th>
+          <th class="reject-col">Supprimer</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr v-for="item in commentRequestStore.archivedComments" :key="item.commentId" class="row-hover"
+          @click="focusMarqueur(item.marqueur)">
+
+          <td>{{ item.marqueur?.properties?.titre }}</td>
+          <td>{{ item.comment?.auteur }}</td>
+          <td>{{ item.comment?.contenu }}</td>
+
+          <!-- Restaurer -->
+          <td class="accept-col" @click.stop>
+            <button class="action-btn accept"
+              @click="commentRequestStore.restore(item.marqueurId, item.commentId).then(() => emit('refresh'))">
+              Restaurer
+            </button>
+
+          </td>
+
+          <!-- Supprimer -->
+          <td class="reject-col" @click.stop>
+            <button class="action-btn reject"
+              @click="commentRequestStore.deletePermanent(item.marqueurId, item.commentId)">
+              Supprimer
+            </button>
+          </td>
+        </tr>
+
+        <tr v-if="commentRequestStore.archivedComments.length === 0">
+          <td colspan="5" class="empty">Aucun commentaire archivé.</td>
+        </tr>
+      </tbody>
+    </table>
+
+
   </div>
 </template>
 
@@ -380,7 +528,7 @@ tbody tr:nth-child(odd) td {
   background: transparent;
   cursor: pointer;
   padding: 0;
-  color: #2563eb;
+  color: var(--accent-dark);
 }
 .info-btn:hover {
   text-decoration: underline;
@@ -427,11 +575,12 @@ tbody tr:nth-child(odd) td {
 }
 
 .action-btn.accept {
-  background: #e8fbef;
-  color: #0f9b63; /* vert doux */
+  background: var(--accent);
+  color: white; 
 }
 .action-btn.accept:hover {
-  filter: brightness(0.98);
+  background: var(--accent-dark);
+  /* filter: brightness(0.50); */
 }
 
 .action-btn.reject {

@@ -11,11 +11,12 @@ const cors = require("cors");
 const allowedOrigins = [
 
   //Accès pour le frontend localhost
-  'http://localhost:5173',
+  'http://localhost:5174',
 
   //Accès pour le site ludov officiel
   'https://ludov.ca',
   
+  'https://www.ludov.ca',
   //Autorisation pour l'adresse github du site
   'https://ludov-garneau.github.io'  
 ]
@@ -51,7 +52,7 @@ app.use((req, res, next) => {
 });
 
 const adminRoutes = require("./routes/admin");
-
+const categorieRoutes = require("./routes/categorie");
 const marqueurRoutes = require("./routes/marqueur")
 const cloudinaryRoutes = require("./routes/cloudinary");
 const editRequestRoutes = require("./routes/editRequest");
@@ -61,10 +62,11 @@ app.use((req, res, next) => {
   console.log('[REQ]', req.method, req.originalUrl);
   next();
 });
-app.use(adminRoutes);
-app.use(marqueurRoutes);
-app.use(cloudinaryRoutes);
-app.use(editRequestRoutes);
+app.use('/nodejsapp', adminRoutes);
+app.use('/nodejsapp', categorieRoutes);
+app.use('/nodejsapp', marqueurRoutes);
+app.use('/nodejsapp', cloudinaryRoutes);
+app.use('/nodejsapp', editRequestRoutes);
 
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);

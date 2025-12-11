@@ -1,6 +1,7 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useMarqueurStore } from '../stores/useMarqueur.js';
+import { useCategorieStore } from '../stores/useCategorie.js';
 import AddImage from './AddImage.vue';
 import * as utils from '../utils/utils.js';
 import * as cloudinary from '../utils/cloudinary.js';
@@ -24,30 +25,23 @@ const props = defineProps({
 const emit = defineEmits(['close', 'marqueur-added', 'locate-address']);
 
 const marqueurStore = useMarqueurStore();
+const categorieStore = useCategorieStore();
 
 const files = ref([]);
 const suggestions = ref([])
 const showSuggestions = ref(false)
 
-const TYPES = [
-  'Écoles et instituts de formation',
-  'Développement et édition de jeux',
-  'Boutiques spécialisées',
-  'Magasins à grande surface',
-  'Friperies, marchés aux puces et d\'occasion',
-  'Dépanneurs et marchés',
-  'Clubs vidéo',
-  'Arcades et salles de jeux',
-  'Organismes et institutions',
-  'Autres',
-];
+// Charger les catégories au montage du composant
+onMounted(async () => {
+  await categorieStore.fetchCategories();
+});
 
 const form = ref({
   lng: '',
   lat: '',
   titre: '',
   description: '',
-  type: '',
+  categorie: null,
   nom: '',
   email: '',
   souvenir: '',
@@ -60,7 +54,7 @@ const formErrors = ref({
   lat: '',
   titre: '',
   description: '',
-  type: '',
+  categorie: '',
   nom: '',
   email: '',
   souvenir: '',
@@ -84,6 +78,12 @@ watch(
   },
   { immediate: true }
 );
+
+watch(() => props.isOpen, async (newVal) => {
+  if (newVal && newVal === true) {
+    await categorieStore.fetchCategories();
+  }
+});
 
 /**
  * Ferme le panneau d'ajout de marqueur.
@@ -121,7 +121,7 @@ function resetForm() {
     lat: '',
     titre: '',
     description: '',
-    type: '',
+    categorie: null,
     nom: '',
     email: '',
     souvenir: '',
@@ -133,7 +133,7 @@ function resetForm() {
     lat: '',
     titre: '',
     description: '',
-    type: '',
+    categorie: '',
     nom: '',
     email: '',
     souvenir: '',
@@ -166,7 +166,7 @@ function validateForm() {
     lat: '',
     titre: '',
     description: '',
-    type: '',
+    categorie: '',
     nom: '',
     email: '',
     souvenir: '',
@@ -518,12 +518,12 @@ function hideSuggestions() {
                     </div>
 
                     <div class="form-group">
-                        <label for="type">Type</label>
-                        <select id="type" v-model="form.type" class="form-select">
-                        <option value="" selected>Aucun</option>
-                        <option v-for="type in TYPES" :key="type" :value="type">{{ type }}</option>
+                        <label for="categorie">Catégorie</label>
+                        <select id="categorie" v-model="form.categorie" class="form-select" >
+                        <option :value="null" selected>Aucune</option>
+                        <option v-for="categorie in categorieStore.activeCategories" :key="categorie._id" :value="categorie._id">{{ categorie.nom }}</option>
                         </select>
-                        <span class="error" v-if="formErrors.type">{{ formErrors.type }}</span>
+                        <span class="error" v-if="formErrors.categorie">{{ formErrors.categorie }}</span>
                     </div>
 
                     <div class="form-group">
@@ -579,7 +579,7 @@ function hideSuggestions() {
 
   background: #f2f2f2;
   color: #111;
-  border: 2px solid #4CAF50;
+  border: 2px solid var(--accent);
   border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
   z-index: 1000;
@@ -609,16 +609,16 @@ function hideSuggestions() {
   font-size: 18px;
 
   border-radius: 4px;
-  border: 2px solid #4CAF50;
+  border: 2px solid var(--accent);
   background: white;
-  color: #4CAF50;
+  color: var(--accent);
 
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .panel__close:hover {
-  background: #4CAF50;
+  background: var(--accent);
   color: white;
 }
 
@@ -637,7 +637,6 @@ function hideSuggestions() {
 
 .form {
   flex: 1;
-
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -698,8 +697,8 @@ function hideSuggestions() {
   padding: 10px;
 
   background-color: white;
-  color: #4CAF50;
-  border: 2px solid #4CAF50;
+  color: var(--accent);
+  border: 2px solid var(--accent);
   border-radius: 4px;
 
   cursor: pointer;
@@ -718,8 +717,8 @@ function hideSuggestions() {
   padding: 8px;
 
   background-color: white;
-  color: #4CAF50;
-  border: 2px solid #4CAF50;
+  color: var(--accent);
+  border: 2px solid var(--accent);
   border-radius: 4px;
 
   cursor: pointer;
@@ -729,7 +728,7 @@ function hideSuggestions() {
 }
 
 .btn-locate:hover {
-  background-color: #4CAF50;
+  background-color: var(--accent);
   color: white;
 }
 
@@ -738,10 +737,8 @@ function hideSuggestions() {
 .form-submit {
   position: sticky;
   bottom: 0;
-
   padding: 12px 0;
   margin-top: auto;
-
   background: #f2f2f2;
   border-top: 1px solid #ddd;
 }

@@ -11,6 +11,7 @@ const CommentSchema = new mongoose.Schema({
     default: "pending",
     index: true
   },
+  archived: { type: Boolean, default: false, index: true },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -28,6 +29,7 @@ const ImageSchema = new mongoose.Schema({
 
 const MarqueurSchema = new mongoose.Schema(
   {
+    archived: { type: Boolean, default: false },
     type: { type: String, enum: ["Feature"], default: "Feature", required: true },
     geometry: {
       type: { type: String, enum: ["Point"], required: true, default: "Point" },
@@ -42,21 +44,9 @@ const MarqueurSchema = new mongoose.Schema(
     },
     properties: {
       titre: { type: String, required: true, trim: true, maxlength: 140 },
-      type: {
-        type: String,
-        enum: [
-          "Écoles et instituts de formation",
-          "Développement et édition de jeux",
-          "Boutiques spécialisées",
-          "Magasins à grande surface",
-          "Friperies, marchés aux puces et d'occasion",
-          "Dépanneurs et marchés",
-          "Clubs vidéo",
-          "Arcades et salles de jeux",
-          "Organismes et institutions",
-          "Autres"
-        ],
-        default: "Autres"
+      categorie: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Categorie",
       },
       adresse: { type: String, trim: true, maxlength: 150 },
       description: { type: String, trim: true, maxlength: 1000 },

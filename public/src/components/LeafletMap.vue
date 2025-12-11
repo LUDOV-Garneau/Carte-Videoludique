@@ -4,6 +4,8 @@ import L from 'leaflet'
 import { reverseGeocode, isAddressInQuebecProvince } from '../utils/geocode.js'
 import AddMarqueurPanel from './AddMarqueurPanel.vue'
 import MarqueurPanel from './MarqueurPanel.vue'
+import CategorieEditPanel from './CategorieEditPanel.vue'
+import { useAuthStore } from '../stores/auth.js'
 import FilterPanel from './FilterPanel.vue'
 import { useMarqueurStore } from '../stores/useMarqueur.js'
 
@@ -26,17 +28,22 @@ const DefaultIcon = L.icon({
 })
 L.Marker.prototype.options.icon = DefaultIcon
 
+const authStore = useAuthStore()
 const marqueurStore = useMarqueurStore()
 
 const mapEl = ref(null)
 let map
 let controlAjoutMarqueur
 let btnAjoutMarqueur
+let controlEditCategorie
+let btnEditCategorie
+let controlFilter
 
 const longitude = ref('')
 const latitude = ref('')
 const createPanelOpen = ref(false);
 const infoPanelOpen = ref(false);
+const categorieEditPanelOpen = ref(false);
 const marqueurs = ref([]);
 const selectedMarqueur = ref(null);
 const currentMarqueur = ref(null);
@@ -85,7 +92,6 @@ function initMap() {
       title: 'Plein écran',
       titleCancel: 'Quitter le plein écran'
     }
-
   })
   .setView([52.5, -71.0], 5);
 }
@@ -248,9 +254,9 @@ async function afficherMarqueurs() {
     marqueurs.value = [];
 
     const filtered = marqueurStore.marqueurs.filter(m => {
-      const type = m.properties?.type || "";
+      const categorie = m.properties?.categorie || null;
       if (activeFilters.value.length === 0) return true;
-      return activeFilters.value.includes(type);
+      return activeFilters.value.includes(categorie);
     });
 
     noResults.value = (filtered.length === 0);
@@ -294,6 +300,7 @@ function openCreatePanel() {
   const container = map?.getContainer?.()
   if(container?.style) container.style.cursor = 'crosshair'
   if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none'
+  if (btnEditCategorie) btnEditCategorie.style.display = 'none'
 }
 
 /**
@@ -305,6 +312,7 @@ function closeCreatePanel() {
   const container = map?.getContainer?.()
   if (container?.style) container.style.cursor = 'grab'
   if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = ''
+  if (btnEditCategorie) btnEditCategorie.style.display = ''
   if (currentMarqueur.value) {
     map.removeLayer(currentMarqueur.value)
     currentMarqueur.value = null
@@ -333,6 +341,26 @@ function closeInfoPanel() {
   selectedMarqueur.value = null;
   marqueurStore.marqueurActif = null;
   if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = '';
+}
+
+/**
+ * Ouvre le panneau d'édition des catégories.
+ * Masque les boutons d'ajout et d'édition.
+ */
+function openCategorieEditPanel() {
+  categorieEditPanelOpen.value = true;
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = 'none';
+  if (btnEditCategorie) btnEditCategorie.style.display = 'none';
+}
+
+/**
+ * Ferme le panneau d'édition des catégories.
+ * Réaffiche les boutons d'ajout et d'édition.
+ */
+function closeCategorieEditPanel() {
+  categorieEditPanelOpen.value = false;
+  if (btnAjoutMarqueur) btnAjoutMarqueur.style.display = '';
+  if (btnEditCategorie) btnEditCategorie.style.display = '';
 }
 
 /**
@@ -412,10 +440,38 @@ function addCustomControl() {
 
       return container
     }
-  })
+  });
+
+  const ControlEditCategorie = L.Control.extend({
+    options: { position: 'topright' },
+    onAdd() {
+      const container = L.DomUtil.create('div', 'leaflet-control leaflet-control-custom');
+      btnEditCategorie = container;
+
+      const btn = L.DomUtil.create('a', 'btn-edit-categorie', container);
+      btn.href = '#';
+      btn.title = 'Gérer les catégories';
+      btn.textContent = 'Gérer les catégories';
+      btn.setAttribute('role', 'button');
+      btn.setAttribute('aria-label', 'Gérer les catégories');
+      btn.innerHTML = '<span aria-hidden="true"> ✎ </span><span class="sr-only">Gérer les catégories</span>';
+
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.disableScrollPropagation(container);
+      L.DomEvent.on(btn, 'click', (e) => {
+        L.DomEvent.preventDefault(e);
+        openCategorieEditPanel();
+      });
+      return container
+    }
+  });
 
   controlAjoutMarqueur = new ControlAjoutMarqueur()
   map.addControl(controlAjoutMarqueur)
+  if (authStore.isAuthenticated) {
+    controlEditCategorie = new ControlEditCategorie()
+    map.addControl(controlEditCategorie)
+  }
 }
 
 /**
@@ -446,10 +502,9 @@ function addFilterControl() {
     }
   });
 
-  const controlFilter = new FilterControl();
+  controlFilter = new FilterControl();
   map.addControl(controlFilter);
 }
-
 
 /**
  * Configure les raccourcis clavier globaux liés à la carte.
@@ -492,6 +547,8 @@ onMounted(async() => {
 onUnmounted(() => {
   if (map) {
     if (controlAjoutMarqueur) map.removeControl(controlAjoutMarqueur)
+    if (controlEditCategorie) map.removeControl(controlEditCategorie)
+    if (controlFilter) map.removeControl(controlFilter)
     if (map.__onKey) window.removeEventListener('keydown', map.__onKey)
     map.remove()
   }
@@ -522,14 +579,32 @@ defineExpose({
   </div>
 
 
-  <AddMarqueurPanel :is-open="createPanelOpen" :coordinates="{ lat: latitude, lng: longitude }"
-    :adresse="currentAdresse" @close="closeCreatePanel" @marqueur-added="handleMarqueurAdded"
-    @locate-address="handlelocateFromAddress" />
+  <MarqueurPanel
+    :is-open="infoPanelOpen"
+    @close="closeInfoPanel"
+    @marqueur-deleted="handleMarqueurDeleted"
+  />
 
-  <MarqueurPanel :is-open="infoPanelOpen" @close="closeInfoPanel" @marqueur-deleted="handleMarqueurDeleted" />
+  <AddMarqueurPanel 
+    :is-open="createPanelOpen" 
+    :coordinates="{ lat: latitude, lng: longitude }"
+    :adresse="currentAdresse" 
+    @close="closeCreatePanel" 
+    @marqueur-added="handleMarqueurAdded"
+    @locate-address="handlelocateFromAddress" 
+  />
 
-  <FilterPanel :is-open="filterPanelOpen" @close="closeFilterPanel" @apply-filters="applyFilters"
-    @reset-filters="resetFilters" />
+  <CategorieEditPanel
+    :is-open="categorieEditPanelOpen"
+    @close="closeCategorieEditPanel"
+  />
+
+  <FilterPanel 
+    :is-open="filterPanelOpen" 
+    @close="closeFilterPanel" 
+    @apply-filters="applyFilters"
+    @reset-filters="resetFilters" 
+  />
 </template>
 
 <style scoped>
@@ -538,132 +613,11 @@ defineExpose({
   inset: 0;
 }
 
-/* ---------- Petite fenêtre d'image ---------- */
-.image-window {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 20px;
-}
-
-.image-window__content {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  max-width: 500px;
-  max-height: 80vh;
-  overflow: auto;
-  position: relative;
-  padding: 20px;
-}
-
-.image-window__close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: #f44336;
-  color: white;
-  border-radius: 50%;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.image-window__close:hover {
-  background: #d32f2f;
-}
-
-.image-window__header {
-  margin-bottom: 15px;
-  padding-right: 40px;
-}
-
-.image-window__header h4 {
-  margin: 0 0 5px 0;
-  color: #4CAF50;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.image-window__type {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
-  font-style: italic;
-}
-
-.image-window__images {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-}
-
-.image-window__image {
-  width: 100%;
-  height: auto;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  cursor: zoom-in;
-}
-
-.image-window__image:hover {
-  transform: scale(1.02);
-  transition: transform 0.2s ease;
-}
-
-.image-window__no-image {
-  text-align: center;
-  padding: 40px 20px;
-  color: #999;
-}
-
-.image-window__no-image p {
-  margin: 0;
-  font-style: italic;
-}
-
-/* Transition pour la fenêtre d'image */
-.image-window-fade-enter-active,
-.image-window-fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.image-window-fade-enter-from,
-.image-window-fade-leave-to {
-  opacity: 0;
-}
-
-.image-window-fade-enter-active .image-window__content,
-.image-window-fade-leave-active .image-window__content {
-  transition: transform 0.3s ease;
-}
-
-.image-window-fade-enter-from .image-window__content,
-.image-window-fade-leave-to .image-window__content {
-  transform: scale(0.8);
-}
-
 /* ---------- Contrôle Leaflet custom ---------- */
 :deep(.btn-ajout-marqueur) {
   background-color: white;
-  border: 2px solid #4CAF50;
-  color: #4CAF50;
+  border: 2px solid var(--accent);
+  color: var(--accent-dark);
   padding: 5px 10px;
   text-align: center;
   text-decoration: none;
@@ -674,7 +628,24 @@ defineExpose({
   transition: all 0.3s ease;
 }
 :deep(.btn-ajout-marqueur:hover) {
-  background-color: #4CAF50;
+  background-color: var(--accent);
+  color: white;
+}
+:deep(.btn-edit-categorie) {
+  background-color: white;
+  border: 2px solid var(--accent);
+  color: var(--accent-dark);
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+:deep(.btn-edit-categorie:hover) {
+  background-color: var(--accent);
   color: white;
 }
 
@@ -715,7 +686,7 @@ defineExpose({
 
 :deep(.btn-filter-map) {
   background: white;
-  border: 2px solid #0077ff;
+  border: 2px solid var(--accent);
   padding: 6px;
   border-radius: 6px;
   cursor: pointer;
@@ -728,7 +699,7 @@ defineExpose({
 }
 
 :deep(.btn-filter-map:hover) {
-  background: #0077ff;
+  background: var(--accent);
   color: white;
 }
 

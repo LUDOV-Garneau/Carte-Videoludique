@@ -1,7 +1,20 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createPinia } from 'pinia'
 import MarqueurModal from '@/components/MarqueurModalComponent.vue'
 
+// Mock du store de catégories
+const mockCategorieStore = {
+  activeCategories: [
+    { _id: 'cat1', nom: 'Restaurant' },
+    { _id: 'cat2', nom: 'Hôtel' },
+    { _id: 'cat3', nom: 'Autres' }
+  ]
+}
+
+vi.mock('../stores/useCategorie.js', () => ({
+  useCategorieStore: vi.fn(() => mockCategorieStore)
+}))
 
 vi.mock('../utils/geocode', () => ({
   fetchAdresseSuggestions: vi.fn(() => Promise.resolve()),
@@ -19,12 +32,21 @@ vi.mock('../components/AddImage.vue', () => ({
 
 import { fetchAdresseSuggestions, geocodeAddress } from '@/utils/geocode'
 
+function createWrapper(props = {}) {
+  return mount(MarqueurModal, {
+    global: {
+      plugins: [createPinia()]
+    },
+    ...props
+  })
+}
+
 const baseMarqueur = {
   _id: 'marq-123',
   properties: {
     id: 'marq-123',
     titre: '172, avenue Pagnuelo',
-    type: 'Autres',
+    categorie: 'cat3',
     adresse: '172, avenue Pagnuelo, Montréal, QC',
     description: 'Desc initiale',
     temoignage: '',
@@ -39,26 +61,26 @@ describe('MarqueurModalComponent', () => {
   })
 
   it('hydrate les champs à partir des props', async () => {
-    const wrapper = mount(MarqueurModal, {
+    const wrapper = createWrapper({
+      attachTo: document.body,
       props: {
-        attachTo: document.body,
         marqueur: baseMarqueur,
       },
     })
 
     const titreInput = wrapper.get('#titreMarqueur')
-    const typeSelect = wrapper.get('#typeMarqueur')
+    const categorieSelect = wrapper.get('#categorieMarqueur')
     const adresseInput = wrapper.get('#adresseMarqueur')
     const descTextarea = wrapper.get('#descriptionMarqueur')
 
     expect(titreInput.element.value).toBe(baseMarqueur.properties.titre)
-    expect(typeSelect.element.value).toBe(baseMarqueur.properties.type)
+    expect(categorieSelect.element.value).toBe(baseMarqueur.properties.categorie || '')
     expect(adresseInput.element.value).toBe(baseMarqueur.properties.adresse)
     expect(descTextarea.element.value).toBe(baseMarqueur.properties.description)
   })
 
   it("appelle fetchAdresseSuggestions et émet 'locate-from-address' quand on choisit une suggestion", async () => {
-    const wrapper = mount(MarqueurModal, {
+    const wrapper = createWrapper({
       attachTo: document.body,
       props: { marqueur: baseMarqueur },
     })
@@ -97,12 +119,12 @@ describe('MarqueurModalComponent', () => {
       lng: -73.6023346,
     })
 
-    const wrapper = mount(MarqueurModal, {
+    const wrapper = createWrapper({
       props: { marqueur: baseMarqueur },
     })
 
     await wrapper.get('#titreMarqueur').setValue('Titre test')
-    await wrapper.get('#typeMarqueur').setValue('Autres')
+    await wrapper.get('#categorieMarqueur').setValue('cat1')
     await wrapper.get('#adresseMarqueur').setValue('1304 Boulevard du Mont-Royal')
     await wrapper.get('#descriptionMarqueur').setValue('Une description')
 
@@ -113,7 +135,7 @@ describe('MarqueurModalComponent', () => {
   })
 
   it("émet 'valider' avec les champs mis à jour et lat/lng", async () => {
-    const wrapper = mount(MarqueurModal, {
+    const wrapper = createWrapper({
       props: {
         marqueur: baseMarqueur,
       },
