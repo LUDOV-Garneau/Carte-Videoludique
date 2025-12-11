@@ -203,7 +203,7 @@ onMounted(() => {
   <NavBar />
   <div class="layout">
     <main class="content">
-      <h2 class="section-title">Notifications</h2>
+      <h2 class="section-title">Journal d'activité</h2>
 
       <TableauNotification
         v-model:filtre-status="filtreStatus"
