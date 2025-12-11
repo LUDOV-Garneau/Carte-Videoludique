@@ -259,6 +259,7 @@ function encodeSVG(svg) {
  */
 async function afficherMarqueurs() {
   try {
+    await categorieStore.fetchCategories();
     await marqueurStore.getMarqueurs();
 
     // Supprimer anciens markers
@@ -559,7 +560,7 @@ function addCustomControl() {
  */
 function addFilterControl() {
   const FilterControl = L.Control.extend({
-    options: { position: "topright" },
+    options: { position: "topleft" },
     onAdd() {
       const container = L.DomUtil.create("div", "leaflet-control leaflet-control-custom");
 
@@ -604,14 +605,14 @@ function setupKeyboardShortcuts() {
   map.__onKey = onKey
 }
 
-function applyFilters(filters) {
+async function applyFilters(filters) {
   activeFilters.value = filters;
-  afficherMarqueurs(); // refresh
+  await afficherMarqueurs(); // refresh
 }
 
-function resetFilters() {
+async function resetFilters() {
   activeFilters.value = [];
-  afficherMarqueurs();
+  await afficherMarqueurs();
 }
 
 /**
