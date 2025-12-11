@@ -233,6 +233,11 @@ async function verifyAdressInQuebec(lat, lng) {
   }
 }
 
+// Fonction utilitaire pour encoder correctement un SVG
+function encodeSVG(svg) {
+  return btoa(unescape(encodeURIComponent(svg)));
+}
+
 /**
  * Affiche tous les marqueurs sur la carte Leaflet.
  *
@@ -257,52 +262,69 @@ async function afficherMarqueurs() {
     await categorieStore.fetchCategories();
     await marqueurStore.getMarqueurs();
 
-    // Supprimer les anciens marqueurs
+    // Supprimer anciens markers
     marqueurs.value.forEach(m => map.removeLayer(m));
     marqueurs.value = [];
 
     const filtered = marqueurStore.marqueurs.filter(m => {
       const categorie = m.properties?.categorie || null;
-      if (activeFilters.value.length === 0) return true;
-      return activeFilters.value.includes(categorie);
+      return activeFilters.value.length === 0 || activeFilters.value.includes(categorie);
     });
 
-    noResults.value = (filtered.length === 0);
+    noResults.value = filtered.length === 0;
     if (filtered.length === 0) return;
 
-    filtered.forEach(mData => {
-      if (!mData.geometry?.coordinates) return;
+    for (const mData of filtered) {
+      if (!mData.geometry?.coordinates) continue;
 
       const [lat, lng] = mData.geometry.coordinates;
       const props = mData.properties;
 
-      // -------------------------------
-      // 1️⃣ Icône basée sur la catégorie
-      // -------------------------------
       let icon = DefaultIcon;
 
       if (props.categorie) {
         const cat = categorieStore.getCategorie(props.categorie);
 
         if (cat?.image?.filename) {
-          const iconUrl = categorieStore.getIconUrl(cat.image.filename);
+          const iconInfo = categorieStore.getIconInfoSync(
+            cat.image.filename,
+            categorieStore.findIconCategory(cat.image.filename)
+          );
+
+          const bgColor = cat.couleur || "#4CAF50";
+
+          // ⭐ Charger le SVG réel de l’icône
+          const rawSvg = await fetch(iconInfo.url).then(r => r.text());
+
+          // ⭐ Nettoyer le SVG pour inline
+          const cleaned = rawSvg
+            .replace(/<\?xml.*?\?>/g, "")
+            .replace(/<!DOCTYPE.*?>/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+          // ⭐ Construire l’icône finale : fond + SVG inline centré
+          const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+  <rect x="2" y="2" width="36" height="36" rx="8" ry="8" fill="${bgColor}" />
+  <g transform="translate(10,10) scale(1)">
+    ${cleaned}
+  </g>
+</svg>`.trim();
+
+          const svgBase64 = encodeSVG(svg);
 
           icon = L.icon({
-            iconUrl,
-            iconSize: [28, 28],
-            iconAnchor: [14, 28],
+            iconUrl: "data:image/svg+xml;base64," + svgBase64,
+            iconSize: [40, 40],
+            iconAnchor: [20, 40],
           });
         }
       }
 
-      // -------------------------------
-      // 2️⃣ Création du marker Leaflet
-      // -------------------------------
       const marker = L.marker([lat, lng], { icon });
 
-      if (props.status === "pending") {
-        marker.setOpacity(0.45);
-      }
+      if (props.status === "pending") marker.setOpacity(0.45);
 
       marker.properties = props;
 
@@ -315,7 +337,7 @@ async function afficherMarqueurs() {
 
       marker.addTo(map);
       marqueurs.value.push(marker);
-    });
+    }
 
   } catch (e) {
     console.error("afficherMarqueurs ERROR →", e);
@@ -526,7 +548,7 @@ function addCustomControl() {
   if (authStore.isAuthenticated) {
     controlEditCategorie = new ControlEditCategorie()
     map.addControl(controlEditCategorie)
-    
+
     // Ajouter le contrôle d'importation GeoJSON pour les admins
     controlImportGeoJSON = new ControlImportGeoJSON()
     map.addControl(controlImportGeoJSON)
@@ -622,7 +644,7 @@ async function handleGeoJSONFile(event) {
     const text = await file.text();
     console.log('Fichier lu, taille du texte:', text.length, 'caractères');
     console.log('Début du contenu:', text.substring(0, 200));
-    
+
     // Étape 2: Parser le JSON
     console.log('Parsing JSON...');
     let geoJsonData;
@@ -634,7 +656,7 @@ async function handleGeoJSONFile(event) {
       alert(`Erreur de format JSON: ${parseError.message}`);
       return;
     }
-    
+
     // Étape 3: Vérifier que c'est un GeoJSON valide
     if (!geoJsonData.type || (geoJsonData.type !== 'FeatureCollection' && geoJsonData.type !== 'Feature')) {
       console.error('Type GeoJSON invalide:', geoJsonData.type);
@@ -687,7 +709,7 @@ onMounted(async() => {
   addCustomControl()
   addFilterControl();
   setupKeyboardShortcuts()
-  
+
   // Créer l'input file caché pour l'import GeoJSON
   fileInput = document.createElement('input');
   fileInput.type = 'file';
@@ -695,7 +717,7 @@ onMounted(async() => {
   fileInput.style.display = 'none';
   fileInput.addEventListener('change', handleGeoJSONFile);
   document.body.appendChild(fileInput);
-  
+
   await afficherMarqueurs();
 });
 
@@ -708,7 +730,7 @@ onUnmounted(() => {
     if (map.__onKey) window.removeEventListener('keydown', map.__onKey)
     map.remove()
   }
-  
+
   // Nettoyer l'input file
   if (fileInput && fileInput.parentNode) {
     fileInput.parentNode.removeChild(fileInput);
