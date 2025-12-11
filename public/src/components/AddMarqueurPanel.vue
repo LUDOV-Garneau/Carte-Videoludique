@@ -224,10 +224,12 @@ function validateForm() {
 async function sendRequest() {
   try {
     if (validateForm()) {
-      if (files.value.length > 0) {
-        form.value.images = await cloudinary.uploadMultipleImages(files.value);
-      }
       const created = await marqueurStore.ajouterMarqueur(form.value);
+      console.log('Marqueur créé avec succès :', created);
+      if (files.value.length > 0) {
+        form.value.images = await cloudinary.uploadMultipleImages(files.value, created.id);
+        await marqueurStore.updateMarqueurImages(created.id, form.value.images);
+      }
 
       emit('marqueur-added', created);
       closePanel();

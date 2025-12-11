@@ -45,7 +45,7 @@ exports.createMarqueur = async (req, res, next) => {
         description: form.description,
         temoignage: form.souvenir,
         courriel: form.email,
-        images: form.images || [],
+        images: [],
         status: isAdmin ? "approved" : "pending",
         createdByName: form.nom || "Anonyme"
       }
@@ -427,6 +427,54 @@ exports.deleteCommentMarqueur = async (req, res, next) => {
       marqueur,
       req.originalUrl
     ));
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Met à jour les images d'un marqueur existant.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+exports.updateMarqueurImages = async (req, res, next) => {
+  try {
+    const { marqueurId } = req.params;
+    const { images } = req.body;
+
+    if (!images || !Array.isArray(images)) {
+      return res.status(400).json(formatErrorResponse(
+        400,
+        "Bad Request",
+        "Le champ images doit être un tableau.",
+        req.originalUrl
+      ));
+    }
+
+    const updated = await Marqueur.findByIdAndUpdate(
+      marqueurId,
+      { $set: { "properties.images": images } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json(formatErrorResponse(
+        404,
+        "Not Found",
+        "Le marqueur à mettre à jour n'existe pas.",
+        req.originalUrl
+      ));
+    }
+
+    return res.status(200).json(formatSuccessResponse(
+      200,
+      "Images mises à jour avec succès!",
+      updated,
+      req.originalUrl
+    ));
+
   } catch (err) {
     next(err);
   }
