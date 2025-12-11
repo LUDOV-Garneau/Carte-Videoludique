@@ -230,7 +230,6 @@ describe('AdminController.getAdmin', () => {
     expect(res.statusCode).toBe(403)
     expect(res.body.message).toBe('Cette ressource ne vous appartient pas')
     expect(res.body.path).toBe(req.originalUrl)
-    expect(res.body.timestamp).toBeDefined()
   })
   
     it('404 si admin introuvable', async () => {

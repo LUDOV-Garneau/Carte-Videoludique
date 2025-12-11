@@ -243,7 +243,7 @@ exports.deleteAdmin = async (req, res, next) => {
   try {
     const admin = req.admin;
 
-    if (admin.id === adminId || admin.role === "Editeur") {
+    if (admin.id === adminId || admin.role === "Éditeur") {
       return res.status(403).json({
         status: 403,
         message: "Cette ressource ne vous appartient pas",
