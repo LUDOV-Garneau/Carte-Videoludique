@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import HomeView from '../views/HomeView.vue'
 import AdminView from '@/views/AdminView.vue'
@@ -10,11 +10,10 @@ import ForbiddenView from '@/views/ForbiddenView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 
 const LUDOV_FRONT_HOME =
-  'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/#/'
+  'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/'
 
 const router = createRouter({
-  //history: createWebHistory(import.meta.env.BASE_URL),
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes: [
     {
       path: '/',

@@ -6,6 +6,3 @@ export const API_URL = isDev
 
 export const CLOUD_NAME = "drlryvrl2";
 
-//export const API_URL = 'http://localhost:3000';
-//export const API_URL = 'https://www.ludov.ca/nodejsapp';
-
