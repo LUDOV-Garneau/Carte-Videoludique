@@ -80,7 +80,7 @@ describe('AdminController.signup', () => {
 
     expect(bcrypt.hash).toHaveBeenCalledWith('x', 12)
     expect(res.statusCode).toBe(201)
-    // ⚠️ attend le format: status, message (texte), data (objet admin), path, timestamp
+    //attend le format: status, message (texte), data (objet admin), path, timestamp
     expect(res.body.status).toBe(201)
     expect(res.body.message).toBe('Administrateur créé !') // ← nécessite la correction dans ton controller
     expect(res.body.data).toMatchObject({
