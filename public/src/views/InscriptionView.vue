@@ -54,11 +54,12 @@
         {{ messageSucces }}
       </div>
     </form>
+    <a :href="homeUrl">Retour à la carte</a>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed} from 'vue'
 import { useRouter } from 'vue-router'
 import { API_URL } from '@/config'
 import { useAuthStore } from '@/stores/auth'
@@ -74,6 +75,14 @@ const erreurs = ref({})
 const erreurServeur = ref('')
 const messageSucces = ref('')
 const router = useRouter()
+
+const isDev = import.meta.env.DEV
+
+const homeUrl = computed(() => 
+  isDev
+    ? '/'
+    : 'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/'
+)
 
 const soumettreFormulaire = async () => {
   erreurs.value = {}

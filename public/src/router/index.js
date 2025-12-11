@@ -10,7 +10,7 @@ import ForbiddenView from '@/views/ForbiddenView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 
 const LUDOV_FRONT_HOME =
-  'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/#/'
+  'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/'
 
 const router = createRouter({
   history: createWebHistory(),
