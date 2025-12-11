@@ -113,7 +113,7 @@ describe('AccountsView', () => {
                 nom: 'Paul',
                 prenom: 'Martin',
                 role: 'User',
-                status: 'inactif',
+                status: 'Inactif',
                 _id: '789',
               },
             ],
