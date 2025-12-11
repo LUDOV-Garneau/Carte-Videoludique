@@ -252,7 +252,7 @@ async function afficherMarqueurs() {
   try {
     await marqueurStore.getMarqueurs();
 
-    // Suppression des anciens marqueurs
+    // Supprimer les anciens marqueurs
     marqueurs.value.forEach(m => map.removeLayer(m));
     marqueurs.value = [];
 
@@ -271,44 +271,30 @@ async function afficherMarqueurs() {
       const [lat, lng] = mData.geometry.coordinates;
       const props = mData.properties;
 
-      /**
-       * 1️⃣ Récupérer l’icône de la catégorie
-       */
-      let icon = DefaultIcon; // fallback si pas de catégorie
+      // -------------------------------
+      // 1️⃣ Icône basée sur la catégorie
+      // -------------------------------
+      let icon = DefaultIcon;
 
       if (props.categorie) {
-        try {
-          const cat = categorieStore.getCategorie(props.categorie);
+        const cat = categorieStore.getCategorie(props.categorie);
 
-          // L’utilisateur a probablement choisi un icône particulier dans cat.image
-          if (cat?.image) {
-            icon = L.icon({
-              iconUrl: cat.image,
-              iconSize: [28, 28],
-              iconAnchor: [14, 28],
-            });
-          } else if (cat?.icone) {
-            // Si la catégorie stocke un nom d'icône
-            const info = categorieStore.getIconInfoSync(cat.icone);
-            icon = L.icon({
-              iconUrl: info.url,
-              iconSize: [info.size + 10, info.size + 10],
-              iconAnchor: [(info.size + 10)/2, info.size + 10],
-            });
-          }
-        } catch (e) {
-          console.warn("Erreur icône catégorie:", e);
+        if (cat?.image?.filename) {
+          const iconUrl = categorieStore.getIconUrl(cat.image.filename);
+
+          icon = L.icon({
+            iconUrl,
+            iconSize: [28, 28],
+            iconAnchor: [14, 28],
+          });
         }
       }
 
-      /**
-       * 2️⃣ Création du marker Leaflet
-       */
+      // -------------------------------
+      // 2️⃣ Création du marker Leaflet
+      // -------------------------------
       const marker = L.marker([lat, lng], { icon });
 
-      /**
-       * 3️⃣ Transparence si pending
-       */
       if (props.status === "pending") {
         marker.setOpacity(0.45);
       }
