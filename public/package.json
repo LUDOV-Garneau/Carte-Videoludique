@@ -20,6 +20,7 @@
     "cloudinary": "^2.8.0",
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
+    "leaflet-fullscreen": "^1.0.2",
     "leaflet.fullscreen": "^4.0.0",
     "maki": "^2.1.0",
     "mongoose": "^8.19.0",
