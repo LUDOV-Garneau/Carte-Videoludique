@@ -17,6 +17,9 @@ const optionalAuth = require("../middlewares/optionalAuth");
 // POST => /marqueurs (création - admin optionnel)
 router.post("/marqueurs", optionalAuth, marqueurController.createMarqueur);
 
+// POST => /marqueurs/import-geojson (importation GeoJSON - admin uniquement)
+router.post("/marqueurs/import-geojson", isAuth, marqueurController.importGeoJSON);
+
 // GET => /marqueurs (liste des marqueurs NON archivés)
 router.get("/marqueurs", marqueurController.getMarqueurs);
 
