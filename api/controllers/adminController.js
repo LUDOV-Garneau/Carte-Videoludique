@@ -247,7 +247,7 @@ exports.deleteAdmin = async (req, res, next) => {
       return res.status(403).json({
         status: 403,
         message: "Cette ressource ne vous appartient pas",
-        url: req.originalUrl,
+        path: req.originalUrl,
       });
     }
 
