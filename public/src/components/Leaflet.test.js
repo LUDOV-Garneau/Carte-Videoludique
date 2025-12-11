@@ -108,6 +108,19 @@ const mockMarqueurStore = {
   ajouterMarqueur: vi.fn(() => Promise.resolve({ id: 1 }))
 }
 
+// ---- Mock STORE CATEGORIES
+const mockCategorieStore = {
+  categories: [],
+  getCategorie: vi.fn(() => null),
+  getIconUrl: vi.fn(() => "/icons/mock.svg"), // utilisé dans afficherMarqueurs()
+  fetchCategories: vi.fn(() => Promise.resolve()),
+  getIconAltWithSource: vi.fn(() => "mock alt")
+}
+
+vi.mock('@/stores/useCategorie.js', () => ({
+  useCategorieStore: vi.fn(() => mockCategorieStore)
+}))
+
 vi.mock('../stores/useMarqueur.js', () => ({
   useMarqueurStore: vi.fn(() => mockMarqueurStore)
 }))
@@ -197,7 +210,7 @@ describe('LeafletMap.vue', () => {
     expect(editBtn.getAttribute('aria-label')).toBe('Gérer les catégories')
 
     wrapper.unmount()
-    
+
     // Vérifier que les trois contrôles sont supprimés (ajout + edit + filter)
     expect(mapApi.removeControl).toHaveBeenCalledTimes(3)
 
@@ -267,19 +280,28 @@ describe('afficherMarqueurs', () => {
       bindPopup: vi.fn(() => defaultMarkerChain),
       openPopup: vi.fn(() => defaultMarkerChain),
       on: vi.fn(() => defaultMarkerChain),
+      setOpacity: vi.fn(),
       properties: {}
     }
 
-    L.marker.mockImplementation(() => defaultMarkerChain)
+    // Mock Leaflet.marker
+    L.marker = vi.fn(() => defaultMarkerChain)
 
+    // Mock map.removeLayer()
+    mapApi.removeLayer = vi.fn()
+
+    // Mock categories icon URL (nouvelle version du code)
+    mockCategorieStore.getIconUrl = vi.fn(() => "/icons/mock.svg")
+
+    // Marqueurs du store
     mockMarqueurStore.marqueurs = [
       {
-        geometry: { coordinates: [-73.56, 45.5] },
-        properties: { type: "A", id: 1 }
+        geometry: { coordinates: [45.5, -73.56] },
+        properties: { categorie: null, id: 1 }
       },
       {
-        geometry: { coordinates: [-73.57, 45.51] },
-        properties: { type: "B", id: 2 }
+        geometry: { coordinates: [45.51, -73.57] },
+        properties: { categorie: null, id: 2 }
       }
     ]
 
@@ -292,21 +314,22 @@ describe('afficherMarqueurs', () => {
     vi.clearAllMocks()
 
     await wrapper.vm.afficherMarqueurs()
+    await nextTick()
 
     expect(L.marker).toHaveBeenCalledTimes(2)
     expect(wrapper.vm.noResults).toBe(false)
+    expect(wrapper.vm.marqueurs.length).toBe(2)
   })
 
   it('met noResults = true si aucun marqueur après filtrage', async () => {
-  wrapper.vm.applyFilters(["Z"]) // Aucun type "Z"
+    wrapper.vm.applyFilters(["Z"]) // Aucun marqueur ayant categorie = "Z"
 
-  await wrapper.vm.$nextTick()
-  await wrapper.vm.$nextTick() // nécessaire car afficherMarqueurs() est async
+    await nextTick()
+    await nextTick() // async + rendu DOM
 
-  expect(wrapper.vm.noResults).toBe(true)
-  expect(wrapper.find('.no-results').exists()).toBe(true)
-})
-
+    expect(wrapper.vm.noResults).toBe(true)
+    expect(wrapper.find(".no-results").exists()).toBe(true)
+  })
 
   it('resetFilters réaffiche tous les marqueurs', async () => {
     wrapper.vm.applyFilters(["Z"])
@@ -316,11 +339,13 @@ describe('afficherMarqueurs', () => {
 
     wrapper.vm.resetFilters()
     await nextTick()
+    await nextTick()
 
     expect(wrapper.vm.noResults).toBe(false)
     expect(wrapper.vm.marqueurs.length).toBe(2)
   })
 })
+
 
 /* -------------------------------------------------- */
 /* Tests focusOn() */
@@ -341,7 +366,7 @@ describe('focusOn', () => {
     expect(mapApi.flyTo).toHaveBeenCalledWith([45, -73], 16)
   })
 
-  it("n'appelle pas flyTo si map null", () => {
+  it("n'appelle pas flyTo si map est null", () => {
     wrapper.vm.map = null
     wrapper.vm.focusOn(45, -73)
     expect(mapApi.flyTo).not.toHaveBeenCalled()
