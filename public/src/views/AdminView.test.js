@@ -63,7 +63,7 @@ describe('AdminView.vue', () => {
     })
     const h2 = wrapper.find('h2')
     expect(h2.exists()).toBe(true)
-    expect(h2.text()).toBe('Notifications')
+    expect(h2.text()).toBe('Journal d\'activité')
   })
 
   it('affiche un message vide si aucune offre', () => {
