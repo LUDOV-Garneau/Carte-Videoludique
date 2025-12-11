@@ -4,6 +4,7 @@ import { useEditRequestStore } from '@/stores/useEditRequest'
 import { useAuthStore } from '@/stores/auth'
 import { useCommentRequestStore } from "@/stores/useCommentRequestStore";
 import { useMarqueurStore } from "@/stores/useMarqueur";
+import * as cloudinary from '../utils/cloudinary.js';
 import { API_URL } from '@/config';
 
 
@@ -44,7 +45,7 @@ const deleteMarqueurDefinitif = async (marqueur) => {
   if (!id) return;
 
   try {
-    await fetch(`${API_URL}/marqueurs/${id}/definitif`, {
+    const response = await fetch(`${API_URL}/marqueurs/${id}/definitif`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -52,6 +53,20 @@ const deleteMarqueurDefinitif = async (marqueur) => {
       }
     });
 
+    const deletedMarqueur = await response.json();
+    console.log('Marqueur supprimé définitivement :', deletedMarqueur);
+    if (deletedMarqueur.status === 200) {
+      console.log(archivedList.value);
+      console.log(marqueur.properties.images);
+      if (marqueur.properties.images && marqueur.properties.images.length > 0) {
+        // Supprimer les images associées du cloudinary
+        const publicIds = marqueur.properties.images.map(img => img.publicId);
+        const result = await cloudinary.cleanupImages(publicIds, {
+          folderPath: `MapImages/Marqueurs/${id}`
+        });
+        console.log('Résultat de la suppression des images Cloudinary :', result);
+      }
+    }
     await marqueurStore.getMarqueurs();
   } catch (err) {
     console.error("Erreur suppression définitive :", err);
