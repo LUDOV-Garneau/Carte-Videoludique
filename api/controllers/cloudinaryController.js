@@ -51,7 +51,7 @@ exports.createUploadSignature = async(req, res, next) => {
  */
 exports.cleanupImages = async(req, res, next) => {
     try {
-        const { publicIds } = req.body;
+        const { publicIds, folderPath } = req.body;
         if (!Array.isArray(publicIds) || publicIds.length === 0) {
             return res.status(400).json(formatErrorResponse(
                 400,
@@ -60,11 +60,26 @@ exports.cleanupImages = async(req, res, next) => {
                 req.originalUrl
             ));
         }
+        
         const results = [];
+        
+        // Supprimer les images individuelles
         for (const id of publicIds) {
             const response = await cloudinary.uploader.destroy(id);
             results.push(response);
         }
+        
+        // Supprimer le dossier si folderPath est fourni
+        if (folderPath) {
+            try {
+                const folderResponse = await cloudinary.api.delete_folder(folderPath);
+                results.push({ folder_deleted: folderResponse });
+            } catch (folderErr) {
+                console.warn('Erreur lors de la suppression du dossier:', folderErr);
+                results.push({ folder_error: folderErr.message });
+            }
+        }
+        
         return res.status(200).json(formatSuccessResponse(
             200,
             'Nettoyage des images Cloudinary effectué avec succès.',
