@@ -307,39 +307,105 @@ onMounted(() => {
           </select>
       </label>
     </div>
-    <table v-if="filtreStatus === 'edit-request'">
+    <table v-if="filtreStatus === 'edit-request'" class="offers-table">
       <thead>
         <tr>
           <th>Lieu</th>
           <th>Modifications proposées</th>
-          <th class="info-col">Info</th>
           <th class="accept-col">Accepter</th>
           <th class="reject-col">Refuser</th>
         </tr>
       </thead>
 
       <tbody>
-        <tr v-for="req in editRequestSorted" :key="req._id" class="row-hover"
-          @click="focusMarqueur(req.marqueur)">
-          <td>
-            {{ req.proposedProperties?.titre || req.marqueur?.properties?.titre }}
+        <tr
+          v-for="req in editRequestSorted"
+          :key="req._id"
+          class="row-hover"
+          @click="focusMarqueur(req.marqueur)"
+        >
+        <!-- Lieu -->
+        <td>
+          {{ req.proposedProperties?.titre || req.marqueur?.properties?.titre }}
+        </td>
+
+        <!-- Modifications proposées -->
+        <td>
+          <!-- Titre -->
+          <div
+            v-if="req.proposedProperties?.titre
+              && req.marqueur?.properties?.titre !== req.proposedProperties.titre"
+            class="field-change"
+          >
+            <strong>Titre : </strong>
+            <span class="old-value">
+              {{ req.marqueur.properties.titre || '—' }}
+            </span>
+              ➜
+            <span class="new-value">
+            {{ req.proposedProperties.titre }}
+            </span>
+          </div>
+
+          <!-- Adresse -->
+          <div
+            v-if="req.proposedProperties?.adresse
+            && req.marqueur?.properties?.adresse !== req.proposedProperties.adresse"
+            class="field-change"
+          >
+            <strong>Adresse :</strong>
+            <span class="old-value">
+              {{ req.marqueur.properties.adresse || '—' }}
+            </span>
+            ➜
+            <span class="new-value">
+              {{ req.proposedProperties.adresse }}
+            </span>
+          </div>
+
+          <!-- Description -->
+          <div
+            v-if="req.proposedProperties?.description
+            && req.marqueur?.properties?.description !== req.proposedProperties.description"
+            class="field-change"
+          >
+            <strong>Description : </strong>
+            <span class="old-value">
+              {{ req.marqueur.properties.description || '—' }}
+            </span>
+            ➜
+            <span class="new-value">
+              {{ req.proposedProperties.description }}
+            </span>
+          </div>
+
+          <!-- Si jamais rien n'est vraiment modifié -->
+          <p
+            v-if="!req.proposedProperties
+              || (
+                req.marqueur?.properties?.titre === req.proposedProperties?.titre
+                && req.marqueur?.properties?.adresse === req.proposedProperties?.adresse
+                && req.marqueur?.properties?.description === req.proposedProperties?.description
+              )"
+            class="no-change"
+          >
+              Aucune modification détectée.
+            </p>
           </td>
 
-          <td>
-            {{ req.proposedProperties?.adresse }} <br>
-            {{ req.proposedProperties?.description }}
-          </td>
 
-          <td class="info-col" @click.stop>
-            <button class="info-btn">Voir détails</button>
-          </td>
-
+          <!-- Accepter -->
           <td class="accept-col" @click.stop>
-            <button class="action-btn accept">Accepter</button>
+            <button class="action-btn accept">
+              Accepter
+            </button>
           </td>
 
+          <!-- Refuser -->
           <td class="reject-col" @click.stop>
-            <button class="action-btn reject">Refuser</button>
+            <button class="action-btn reject">
+              Refuser
+            </button>
           </td>
         </tr>
 
@@ -507,7 +573,7 @@ onMounted(() => {
 <style scoped>
 .offers-wrapper {
   width: 100%;
-  max-width: 1100px;
+  /* max-width: 1100px; */
   margin: 0 auto;
   overflow-x: auto;
   background: #ffffff;
@@ -520,7 +586,7 @@ onMounted(() => {
 
 .offers-table {
   width: 100%;
-  border-collapse: separate;
+  border-collapse: fixed;
   border-spacing: 0;
   table-layout: fixed;
   color: #111827;
@@ -531,7 +597,8 @@ onMounted(() => {
 .tabs-wrapper {
   display:flex;
   justify-content: flex-start;
-  max-width: 1100px;
+  width: 100%;
+  max-width: none;
   margin: 0 auto -1px;
   padding-top: 5px;
   background: #d7dce2;
@@ -599,6 +666,34 @@ onMounted(() => {
   outline: none;
   border-color: #1976d2;
   box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+/* Bloc de champ modifié */
+.field-change {
+  margin-bottom: 0.4rem;
+  line-height: 1.5;
+}
+
+/* Ancienne valeur (barrée, gris clair) */
+.old-value {
+  color: #9ca3af;
+  text-decoration: line-through;
+  margin: 0 0.25rem;
+}
+
+/* Nouvelle valeur (vert accentué) */
+.new-value {
+  color: #16a34a;
+  font-weight: 600;
+  margin: 0 0.25rem;
+}
+
+/* Texte affiché si aucune modification */
+.no-change {
+  color: #6b7280;
+  font-style: italic;
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
 }
 /* ONGLET ACTIF */
 .tabs button.active {
