@@ -4,6 +4,7 @@ import AddImage from './AddImage.vue'
 import { fetchAdresseSuggestions, geocodeAddress } from '../utils/geocode'
 import { useCategorieStore } from '../stores/useCategorie.js'
 import { useBodyScroll } from '../composables/useBodyScroll.js'
+import * as cloudinary from '../utils/cloudinary.js'
 
 const props = defineProps({
   marqueur: { type: Object, required: true },
@@ -20,11 +21,12 @@ const adresse = ref('')
 const suggestions = ref([])
 const showSuggestions = ref(false)
 const description = ref('')
-const temoignage = ref('')
 const latitude = ref(null)
 const longitude = ref(null)
 
 const files = ref([])
+const removedImages = ref([]) // Images supprimées à nettoyer
+const addImageRef = ref(null)
 
 const descCount = ref(0)
 
@@ -77,7 +79,10 @@ const hydrateFromProps = () => {
   categorie.value = p.categorie ?? null
   adresse.value = p.adresse ?? ''
   description.value = p.description ?? ''
-  temoignage.value = p.temoignage ?? ''
+  
+  // Réinitialiser les images supprimées et les fichiers
+  removedImages.value = []
+  files.value = []
 }
 hydrateFromProps()
 
@@ -146,7 +151,7 @@ function confirmClose() {
 * Gère le changement des images sélectionnées dans le composant.
 *
 * - Met à jour la liste des fichiers sélectionnés (`files`).
-* - Si aucun fichier n'est choisi, conserve l’URL existante.
+* - Traquet les images supprimées pour le nettoyage Cloudinary.
 * - Met également à jour le champ `image` avec le nom du fichier choisi.
 *
 * @param allFiles Liste de fichiers sélectionnés (généralement depuis <input type="file">)
@@ -184,11 +189,6 @@ async function valider() {
     titreMessage.value = 'Le titre est obligatoire.'
     invalid.push(titreEl)
   }
-  if (!adresse.value.trim()) {
-    adresseValidation.value = true
-    adresseMessage.value = "L'adresse est obligatoire."
-    invalid.push(adresseEl)
-  }
   if (!description.value.trim()) {
     descriptionValidation.value = true
     descriptionMessage.value = 'La description est obligatoire.'
@@ -224,6 +224,43 @@ async function valider() {
 
   console.log('Dans valider(), lat/lng envoyés :', lat, lng)
 
+  // Détecter les images supprimées en comparant avec l'état actuel du composant AddImage
+  const originalImages = originalProps.images || []
+  if (addImageRef.value && addImageRef.value.images) {
+    const currentImages = addImageRef.value.images
+    
+    originalImages.forEach(originalImg => {
+      const stillExists = currentImages.some(currentImg => 
+        currentImg.isExternal && currentImg.url === originalImg.url
+      )
+      
+      if (!stillExists && !removedImages.value.some(img => img.publicId === originalImg.publicId)) {
+        removedImages.value.push(originalImg)
+      }
+    })
+  }
+
+  // Upload des nouvelles images si nécessaire
+  let finalImages = [...originalImages]
+  
+  if (files.value && files.value.length > 0) {
+    try {
+      const marqueurId = original._id || original.properties?.id
+      const uploadedImages = await cloudinary.uploadMultipleImages(files.value, marqueurId)
+      finalImages = [...finalImages, ...uploadedImages]
+    } catch (error) {
+      console.error('Erreur lors de l\'upload des images:', error)
+      // On continue sans les nouvelles images plutôt que d'échouer complètement
+    }
+  }
+  
+  // Retirer les images supprimées de la liste finale
+  if (removedImages.value.length > 0) {
+    finalImages = finalImages.filter(img => 
+      !removedImages.value.some(removedImg => removedImg.publicId === img.publicId)
+    )
+  }
+
   emit('valider', {
     _id: original._id,
     properties: {
@@ -232,13 +269,13 @@ async function valider() {
       categorie: categorie.value,
       adresse: adresse.value.trim(),
       description: description.value.trim(),
-      temoignage: temoignage.value.trim(),   
+      images: finalImages
     },
 
     lat: latitude.value,
     lng: longitude.value,
 
-    files: files.value
+    removedImages: removedImages.value // Passer les images à supprimer
   })
 }
 
@@ -469,14 +506,10 @@ onUnmounted(() => {
           </div>
 
           <div class="form-control form-col-2">
-            <label for="temoignageMarqueur">Témoignage</label>
-            <textarea id="temoignageMarqueur" v-model.trim="temoignage" rows="3" placeholder="Témoignage (optionnel)"></textarea>
-          </div>
-
-          <div class="form-control form-col-2">
             <label>Image</label>
             <div class="image-row">
               <AddImage
+                ref="addImageRef"
                 v-model="files"
                 :initial-urls="initialImageUrls"
                 @change="onImagesChange"

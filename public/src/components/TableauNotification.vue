@@ -168,6 +168,57 @@ const focusMarqueur = (marqueur) => {
 }
 // ---------------------------
 
+const accepterEditRequest = async (editRequest) => {
+  try {
+    const response = await fetch(`${API_URL}/edit-requests/${editRequest._id}/approve`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + authStore.token
+      }
+    });
+
+    if (response.ok) {
+      console.log('Demande de modification acceptée');
+      // Recharger les demandes de modification
+      await loadEditRequests();
+      // Recharger les marqueurs pour voir les changements
+      await marqueurStore.getMarqueurs();
+      // Notifier le parent pour rafraîchir la carte
+      emit('refresh');
+    } else {
+      console.error('Erreur lors de l\'acceptation de la demande');
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'acceptation de la demande de modification :', error);
+  }
+};
+
+const refuserEditRequest = async (editRequest) => {
+  try {
+    const response = await fetch(`${API_URL}/edit-requests/${editRequest._id}/reject`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + authStore.token
+      },
+      body: JSON.stringify({
+        adminComment: 'Demande refusée par l\'administrateur'
+      })
+    });
+
+    if (response.ok) {
+      console.log('Demande de modification refusée');
+      // Recharger les demandes de modification
+      await loadEditRequests();
+    } else {
+      console.error('Erreur lors du refus de la demande');
+    }
+  } catch (error) {
+    console.error('Erreur lors du refus de la demande de modification :', error);
+  }
+};
+
 const loadEditRequests = async () => {
   try {
     const token = authStore.token
@@ -339,7 +390,7 @@ onMounted(() => {
           >
             <strong>Titre : </strong>
             <span class="old-value">
-              {{ req.marqueur.properties.titre || '—' }}
+              {{ req.marqueur?.properties?.titre || '—' }}
             </span>
               ➜
             <span class="new-value">
@@ -355,7 +406,7 @@ onMounted(() => {
           >
             <strong>Adresse :</strong>
             <span class="old-value">
-              {{ req.marqueur.properties.adresse || '—' }}
+              {{ req.marqueur?.properties?.adresse || '—' }}
             </span>
             ➜
             <span class="new-value">
@@ -371,7 +422,7 @@ onMounted(() => {
           >
             <strong>Description : </strong>
             <span class="old-value">
-              {{ req.marqueur.properties.description || '—' }}
+              {{ req.marqueur?.properties?.description || '—' }}
             </span>
             ➜
             <span class="new-value">
@@ -396,14 +447,14 @@ onMounted(() => {
 
           <!-- Accepter -->
           <td class="accept-col" @click.stop>
-            <button class="action-btn accept">
+            <button class="action-btn accept" @click="accepterEditRequest(req)">
               Accepter
             </button>
           </td>
 
           <!-- Refuser -->
           <td class="reject-col" @click.stop>
-            <button class="action-btn reject">
+            <button class="action-btn reject" @click="refuserEditRequest(req)">
               Refuser
             </button>
           </td>

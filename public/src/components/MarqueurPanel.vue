@@ -73,18 +73,53 @@ async function handleEditRequestSubmit(payloadFromModal) {
 		if (!original) return;
 		const marqueurId = original.properties?.id || original._id;
 		const props = payloadFromModal.properties || {};
-		const body = {
-			titre: props.titre,
-			categorie: props.categorie,
-	  		adresse: props.adresse,
-	  		description: props.description,
-	  		temoignage: props.temoignage,
+
+		if (authStore.isAuthenticated) {
+			// Admin : modification directe
+			const updatePayload = {
+				titre: props.titre,
+				categorie: props.categorie,
+				adresse: props.adresse,
+				description: props.description,
+				temoignage: props.temoignage,
+			};
+
+			// Ajouter les coordonnées si elles ont changé
+			if (payloadFromModal.lat != null && payloadFromModal.lng != null) {
+				updatePayload.lat = payloadFromModal.lat;
+				updatePayload.lng = payloadFromModal.lng;
+			}
+
+			// Ajouter les images modifiées
+			if (payloadFromModal.properties && payloadFromModal.properties.images) {
+				updatePayload.images = payloadFromModal.properties.images;
+			}
+
+			// Ajouter les images supprimées pour le nettoyage côté serveur
+			if (payloadFromModal.removedImages && payloadFromModal.removedImages.length > 0) {
+				updatePayload.removedImages = payloadFromModal.removedImages;
+			}
+
+			await marqueurStore.modifierMarqueur(marqueurId, authStore.token, updatePayload);
+			// Recharger le marqueur actif pour voir les changements
+			await marqueurStore.getMarqueur(marqueurId);
+			console.log('Marqueur modifié directement avec succès');
+		} else {
+			// Utilisateur normal : demande de modification
+			const body = {
+				titre: props.titre,
+				categorie: props.categorie,
+				adresse: props.adresse,
+				description: props.description,
+				temoignage: props.temoignage,
+			};
+			await editRequestStore.createEditRequest(marqueurId, body);
+			console.log('Demande de modification soumise avec succès');
 		}
-		await editRequestStore.createEditRequest(marqueurId, body);
+
 		isEditModalOpen.value = false;
-		console.log('Demande de modification soumise avec succès');
 	} catch (err) {
-		console.error('Erreur lors de la soumission de la demande de modification :', err);
+		console.error('Erreur lors de la soumission :', err);
 	}
 }
 
@@ -228,7 +263,7 @@ async function deleteComment(commentId) {
             <span>Créé par : {{ marqueurProperties.createdByName }}</span>
           </div>
           <button class="btn-panel1" @click="openModificationRequest()">
-            Demander une modification
+            {{ authStore.isAuthenticated ? 'Modifier' : 'Demander une modification' }}
           </button>
           <div class="panel__info-list">
             <div v-if="marqueurProperties.adresse" class="info-item">

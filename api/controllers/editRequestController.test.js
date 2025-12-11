@@ -205,7 +205,7 @@ describe('editRequestController.getEditRequest', () => {
 
     const req = mockReq(
       {},
-      { id: 'nonexistentid' },
+      { editRequestId: 'nonexistentid' },
       '/api/edit-requests/nonexistentid'
     )
     const res = mockRes()
@@ -237,7 +237,7 @@ describe('editRequestController.getEditRequest', () => {
 
     const req = mockReq(
       {},
-      { id: 'editrequestid' },
+      { editRequestId: 'editrequestid' },
       '/api/edit-requests/editrequestid'
     )
     const res = mockRes()
@@ -264,7 +264,7 @@ describe('editRequestController.getEditRequest', () => {
 describe('editRequestController.approveEditRequest', () => {
   it('404 si edit request non trouvée', async () => {
     vi.spyOn(EditRequest, 'findById').mockResolvedValue(null)
-    const req = mockReq({}, { id: 'nonexistentid' }, '/api/edit-requests/nonexistentid/approve')
+    const req = mockReq({}, { editRequestId: 'nonexistentid' }, '/api/edit-requests/nonexistentid/approve')
     const res = mockRes()
     const next = mockNext()
     await editRequestController.approveEditRequest(req, res, next)
@@ -297,11 +297,12 @@ describe('editRequestController.approveEditRequest', () => {
     }
 
     vi.spyOn(EditRequest, 'findById').mockResolvedValue(mockEditRequest)
+    vi.spyOn(EditRequest, 'findByIdAndDelete').mockResolvedValue(mockEditRequest)
     vi.spyOn(Marqueur, 'findById').mockResolvedValue(mockMarqueur)
 
     const req = mockReq(
         {}, 
-        { id: 'editrequestid' }, 
+        { editRequestId: 'editrequestid' }, 
         '/api/edit-requests/editrequestid/approve' 
     )
     const res = mockRes()
@@ -311,14 +312,12 @@ describe('editRequestController.approveEditRequest', () => {
 
     expect(mockMarqueur.properties.titre).toBe('Updated Title')
     expect(mockMarqueur.save).toHaveBeenCalled()
-
-    expect(mockEditRequest.status).toBe('approved')
-    expect(mockEditRequest.save).toHaveBeenCalled()
+    expect(EditRequest.findByIdAndDelete).toHaveBeenCalledWith('editrequestid')
 
     expect(res.statusCode).toBe(200)
     expect(res.body).toMatchObject({
         status: 200,
-        message: 'Demande de modification approuvée avec succès',
+        message: 'Demande de modification acceptée et appliquée avec succès',
     })
     })
 })
@@ -326,7 +325,7 @@ describe('editRequestController.approveEditRequest', () => {
 describe('editRequestController.rejectEditRequest', () => {
     it('404 si edit request non trouvée', async () => {
         vi.spyOn(EditRequest, 'findById').mockResolvedValue(null)
-        const req = mockReq({}, { id: 'nonexistentid' }, '/api/edit-requests/nonexistentid/approve')
+        const req = mockReq({}, { editRequestId: 'nonexistentid' }, '/api/edit-requests/nonexistentid/reject')
         const res = mockRes()
         const next = mockNext()
         await editRequestController.rejectEditRequest(req, res, next)
@@ -346,16 +345,16 @@ describe('editRequestController.rejectEditRequest', () => {
             save: vi.fn().mockResolvedValue(true)
         }
         vi.spyOn(EditRequest, 'findById').mockResolvedValue(mockEditRequest)
-        const req = mockReq({}, { id: 'editrequestid' }, '/api/edit-requests/editrequestid/reject')
+        vi.spyOn(EditRequest, 'findByIdAndDelete').mockResolvedValue(mockEditRequest)
+        const req = mockReq({}, { editRequestId: 'editrequestid' }, '/api/edit-requests/editrequestid/reject')
         const res = mockRes()
         const next = mockNext()
         await editRequestController.rejectEditRequest(req, res, next)
-        expect(mockEditRequest.status).toBe('rejected')
-        expect(mockEditRequest.save).toHaveBeenCalled()
+        expect(EditRequest.findByIdAndDelete).toHaveBeenCalledWith('editrequestid')
         expect(res.statusCode).toBe(200)
         expect(res.body).toMatchObject({
             status: 200,
-            message: 'Demande de modification rejetée avec succès',
+            message: 'Demande de modification refusée et supprimée avec succès',
         })
     })
 })
