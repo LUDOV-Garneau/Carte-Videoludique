@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed} from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { API_URL } from '@/config'
@@ -13,6 +13,13 @@ const auth = useAuthStore()
 
 const router = useRouter()
 
+const isDev = import.meta.env.DEV
+
+const homeUrl = computed(() => 
+  isDev
+    ? '/'
+    : 'https://www.ludov.ca/fr/carte-du-jeu-video-au-quebec-test/#/'
+)
 
 const validateForm = () => {
   let isValid = true
@@ -96,7 +103,7 @@ function isValidEmail(email) {
 
         <button type="submit" class="btn">Se connecter</button>
       </form>
-      <a href="/">Retour à la carte</a>
+      <a :href="homeUrl">Retour à la carte</a>
     </div>
   </div>
 </template>
